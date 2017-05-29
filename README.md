@@ -16,6 +16,7 @@ None. Optionally add the EPOS dir to your python path
 
 ### Dependencies ###
 python 2.7
+
 * numpy
 * scipy
 * matplotlib
