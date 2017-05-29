@@ -4,6 +4,8 @@ from scipy import interpolate
 from scipy.stats import ks_2samp
 import os, pickle
 import cgs
+import multi
+
 def once(epos, fac=1.0):
 	'''
 	A test run with equal weights
@@ -196,6 +198,11 @@ def prep_obs(epos):
 		z[key]= np.sort(var) # add (x0,0) and (x1,1)?
 		z[key+' cum']= np.arange(z[key].size,dtype=float)
 		z[key+' cdf']= z[key+' cum']/z[key+' cum'][-1]
+	
+	# multis
+	z['multi']={}
+	z['multi']['bin'], z['multi']['count']= multi.frequency(epos.obs_starID[ix&iy])
+
 
 def MC(epos, Store=False, Verbose=True, Parametric=True, KS=True, fpara=[],
 		CoPlanar=False, Isotropic=False):
@@ -286,38 +293,29 @@ def MC(epos, Store=False, Verbose=True, Parametric=True, KS=True, fpara=[],
 		# from MC
 		mc_trans= np.arcsin(themc) < np.arcsin(R_a)
 		print itrans.sum(), mc_trans.sum() # duh
-	elif False:
-		# test integrated transit probability 
-		# draw angle proportionate to sin theta
-		themc= np.random.uniform(0,1,allP.size)
-		R_a= cgs.Rsun/ (cgs.au*(allP/365.24)**(2./3.))
-		delta_inc= allI *np.cos(np.random.uniform(0,np.pi,allP.size))
-		itrans= np.abs(np.arcsin(themc)+delta_inc) < np.arcsin(R_a)
-
 	else:
 		# draw same numbers for multi-planet systems
 		IDsys, toplanet= np.unique(allID, return_inverse=True) # return_counts=True
 		print '  {}/{} systems'.format(IDsys.size, allID.size)
 		
-		# draw angle proportionate to sin theta
+		# draw system viewing angle proportionate to sin theta
 		inc_sys= np.arcsin(np.random.uniform(0,1,IDsys.size))
 		inc_pl= inc_sys[toplanet]
 		assert inc_pl.size == allP.size
 		
 		R_a= cgs.Rsun/ (cgs.au*(allP/365.24)**(2./3.))
 		mutual_inc= allI
-		mutual_inc= 0 # planar distribution
-		print '  Average mutual inc={:.1f}'.format(np.median(allI))
-		delta_inc= mutual_inc *np.cos(np.random.uniform(0,np.pi,allP.size))
+		mutual_inc= 0.0 # planar distribution
+		#mutual_inc= 10.0 # fit at large P?
+		print '  Average mutual inc={:.1f} degrees'.format(np.median(allI))
+		delta_inc= mutual_inc *np.cos(np.random.uniform(0,np.pi,allP.size)) * np.pi/180.
 		itrans= np.abs(inc_pl+delta_inc) < np.arcsin(R_a)
 	
 	# Print multi statistics	
 	if Verbose and not Parametric: 
-		print '  {} planets, {} transit their star'.format(itrans.size, itrans.sum())
-		#print '  multis: {}'.format() 
-		multis= np.bincount(np.bincount(allID[itrans]))
-		for nmulti, text in zip(multis[1:], ['single','double','triple','quad','quint']):
-			print '  {}: {}'.format(nmulti, text)
+		print '\n  {} planets, {} transit their star'.format(itrans.size, itrans.sum())
+		multi.frequency(allID[itrans], Verbose=True)
+
 		
 	# going to MC with these arrays
 	if Parametric:
@@ -360,8 +358,8 @@ def MC(epos, Store=False, Verbose=True, Parametric=True, KS=True, fpara=[],
 		# doesn't seem to make a big difference
 		IDsys, toplanet= np.unique(MC_ID, return_inverse=True) 
 		idet= p_snr >= np.random.uniform(0,1,IDsys.size)[toplanet]
-		det_ID= MC_ID[idet]
-		
+	
+	det_ID= MC_ID[idet]
 	det_P= MC_P[idet]
 	det_R= MC_R[idet]
 	#if len(alldP)>0: 
@@ -370,10 +368,7 @@ def MC(epos, Store=False, Verbose=True, Parametric=True, KS=True, fpara=[],
 	#print np.min(p_snr), np.max(p_snr)
 	if Verbose and not Parametric: 
 		print '  {} transiting planets, {} detectable'.format(idet.size, idet.sum())
-		print det_ID.size
-		multis= np.bincount(np.bincount(det_ID))
-		for nmulti, text in zip(multis[1:], ['single','double','triple','quad','quint']):
-			print '  {}: {}'.format(nmulti, text)
+		multi.frequency(det_ID, Verbose=True)
 
 
 	# Compare with obs
@@ -406,7 +401,10 @@ def MC(epos, Store=False, Verbose=True, Parametric=True, KS=True, fpara=[],
 			ss['i sg']= MC_SG[idet]
 		
 		#if len(alldP)>0
-		if (not Parametric) and 'all_Pratio' in sg: ss['dP']= det_dP
+		if not Parametric:
+			if 'all_Pratio' in sg: ss['dP']= det_dP
+			ss['multi']={}
+			ss['multi']['bin'], ss['multi']['count']= multi.frequency(det_ID)
 		
 		epos.gof=gof # not parallel proof
 		ss['P zoom']= det_P[ix&iy]

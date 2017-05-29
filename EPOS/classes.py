@@ -1,5 +1,6 @@
 import numpy as np
 import aux # only for plotdefaults
+from EPOS import multi
 
 def readme():
 	print '\nThis module defines the EPOS class, that contains the observed exoplanets,'
@@ -45,7 +46,15 @@ class epos:
 		self.obs_ylim=[ymin/dy,ymax*dy]
 		
 		self.Observation=True
-
+		
+		# print some stuff
+		print '\nObservations:\n  {:.0f} stars'.format(nstars)
+		print '  {} planets'.format(self.obs_starID.size)
+		multi.indices(self.obs_starID, Verbose=True)
+		epos.multi={}
+		epos.multi['bin'], epos.multi['count']= multi.frequency(self.obs_starID, Verbose=True)
+		print 
+		
 	def set_survey(self, xvar, yvar, eff_2D):
 		self.eff_xvar=np.asarray(xvar)
 		self.eff_yvar=np.asarray(yvar)

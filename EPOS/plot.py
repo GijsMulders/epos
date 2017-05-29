@@ -30,6 +30,7 @@ def input(epos):
 	elif epos.populationtype is 'model':
 		population_input(epos, PlotBox=False)
 		population_input_diag(epos, PlotBox=False)
+		multiplicity(epos, MC=False, Log=True)
 		if epos.RadiusMassConversion: 
 			massradius(epos, Input=True, MC=False)
 			massradius(epos, Input=True, MC=False, Log=True)
@@ -121,8 +122,8 @@ def massradius(epos, Input=True, MC=False, Log=False):
 	
 	# MC data
 	if MC:
-		tr=epos.transit
-		ax.plot(tr['M'], tr['R'], ls='', marker='.', mew=0, ms=5.0, color='k', zorder=1)
+		ss=epos.synthetic_survey
+		ax.plot(ss['M'], ss['R'], ls='', marker='.', mew=0, ms=5.0, color='k', zorder=1)
 		
 	if Input:	
 		xM= np.logspace(*np.log10(ax.get_xlim())) if Log else np.linspace(*ax.get_xlim()) #np.max(tr['M']))
@@ -209,6 +210,43 @@ def parametric_2D(epos, PlotZoom=False):
 	cbar.ax.set_yticklabels(labels)
 
 	aux.save(plt, epos.plotdir+'input/parametric_initial')
+
+def multiplicity(epos, MC=False, Log=False):
+	# plot multiplicity
+	f, ax = plt.subplots()
+	ax.set_title('planet multiplicity')
+	ax.set_xlabel('planets per system')
+	ax.set_ylabel('number of systems')
+
+	ax.set_xlim(0, 9)
+
+	if Log:
+		ax.set_ylim(0.5, 1e4) # 7.	
+		ax.set_yscale('log')
+	else:
+		#ax.set_ylim(0, 7.) # 7.
+		pass
+	
+	# MC data
+	if MC:
+		ss=epos.synthetic_survey
+		ax.plot(ss['multi']['bin'], ss['multi']['count'], 
+			ls='', marker='+', mew=2, ms=10, color='k',label=epos.name)
+	
+	ax.plot(epos.obs_zoom['multi']['bin'], epos.obs_zoom['multi']['count'], 
+		drawstyle='steps-mid', 
+		ls='-', marker='', color='k', label='Kepler subset')
+	ax.plot(epos.multi['bin'], epos.multi['count'], drawstyle='steps-mid', 
+		ls='--', marker='', color='gray', label='Kepler all')
+		
+	ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
+	
+	prefix= 'output' if MC else 'input'
+	
+	suffix='_log' if Log else ''	
+	
+	aux.save(plt, '{}{}/multiplicity{}'.format(epos.plotdir,prefix,suffix))		
+
 	
 def population_input(epos, PlotBox=True):
 	assert epos.populationtype is 'model'
@@ -404,6 +442,7 @@ def output(epos):
 		periodradius(epos, Parametric=True, SNR=False)
 		periodradius(epos, Parametric=True, SNR=True)
 	elif epos.populationtype is 'model':
+		multiplicity(epos, MC=True, Log=True)
 		massradius(epos, Input=True, MC=True)
 		massradius(epos, Input=True, MC=True, Log=True)
 		periodradius(epos, SNR=False)
@@ -592,7 +631,7 @@ def population_output_cdf(epos):
 	top left: synthetic obsservation
 	'''
 	sim= epos.synthetic_survey	
-	ax1.set_title('Synthetic ({})'.format(sim['P'].size))
+	ax1.set_title('Synthetic ({})'.format(sim['P zoom'].size))
 	_set_axes(ax1, epos, Trim=True)
 	ax1.plot(sim['P'], sim['R'], ls='', marker='.', mew=0, ms=5.0, color='r', alpha=0.5)
 		
