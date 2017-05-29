@@ -24,3 +24,4 @@ to remove: cvs
 
 ### Who do I talk to? ###
 Gijs Mulders: gdmulders@gmail.com
+Slack: eposua.slack.com
