@@ -1,7 +1,7 @@
 #import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-import aux, color
+import aux
 import numpy as np
 from EPOS import regression
 
