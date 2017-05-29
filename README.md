@@ -16,11 +16,11 @@ None. Optionally add the EPOS dir to your python path
 
 ### Dependencies ###
 python 2.7
-*numpy
-*scipy
-*matplotlib
-*hdf5 (maybe?)
-*csv (maybe? to be removed)
+* numpy
+* scipy
+* matplotlib
+* hdf5 (maybe?)
+* csv (maybe? to be removed)
 
 ### How to run tests ###
 ./example.py
