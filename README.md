@@ -27,5 +27,6 @@ python 2.7
 ./example.py
 
 ### Who do I talk to? ###
-Gijs Mulders: gdmulders@gmail.com
-Slack: eposua.slack.com
+
+* Gijs Mulders: gdmulders@gmail.com
+* Slack: eposua.slack.com
