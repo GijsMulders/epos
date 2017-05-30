@@ -1,6 +1,7 @@
 #import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from mpl_toolkits.mplot3d import Axes3D
 import aux
 import numpy as np
 from EPOS import regression
@@ -448,6 +449,7 @@ def output(epos):
 		periodradius(epos, SNR=False)
 		periodradius(epos, SNR=True)
 		population_output_pdf(epos)
+		population_output_pdf_3d(epos)
 		if 'all_Pratio' in epos.groups[0]: 
 			out_Pratio(epos)
 			hist_Pratio(epos)
@@ -542,6 +544,97 @@ def hist_Pratio(epos, SNR=True, Parametric=False):
 		
 		ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
 		aux.save(plt, '{}output/hist_Pratio.{}'.format(epos.plotdir,sg['name']))
+
+def population_output_pdf_3d(epos):
+	#plot in 3D
+	# doesn't support log scale on axes, need a workaround
+	
+	fig = plt.figure()
+	ax = fig.gca(projection='3d')
+
+	ax.set_title('Synthetic Model Populations')
+	ax.set_xlabel('Orbital Period [days]')
+	ax.set_zlabel('Planets/bin')
+	
+	if epos.Radius:	ax.set_ylabel(r'Planet Radius [R$_\bigoplus$]')
+	else:			ax.set_ylabel(r'Planet Mass [M$_\bigoplus$]')
+	
+	ax.set_xlim(np.log10(epos.xtrim))
+	ax.set_ylim(np.log10(epos.ytrim))
+	xplane, yplane= np.log10(epos.xtrim[0]), np.log10(epos.ytrim[-1])
+	ax.set_zlim(0,2000)
+
+	#ax.set_xscale('log')
+	#ax.set_yscale('log')
+
+	sim=epos.synthetic_survey
+	
+	# PDF, individual contributions
+	if epos.populationtype is 'model':
+		for k, sg in enumerate(epos.groups):
+			subset= sim['i sg']==k
+			P= sim['P'][subset]
+			R= sim['R'][subset]
+			ax.plot(np.log10(P),np.log10(R), zs=0,zdir='z',
+				ls='',marker='.',mew=0,ms=5.0,color=clrs[k % 4])
+				
+			xgrid= np.logspace(*np.log10(epos.xtrim))
+			pdf= regression.sliding_window_log(P, None, xgrid) #, width=2. )
+			ax.plot(np.log10(xgrid), pdf, zs=yplane,zdir='y', 
+				ls='-', marker='', color=clrs[k % 4],
+				label='{} x{:.3f}'.format(sg['name'], sg['weight']))
+
+			ygrid= np.logspace(*np.log10(epos.ytrim))
+			pdf= regression.sliding_window_log(R, None, ygrid) #, width=2. )
+			ax.plot(np.log10(ygrid), pdf, zs=xplane, zdir='x', 
+				ls='-', marker='', color=clrs[k % 4])
+	else:
+		# top left panel (P,R)
+		ax.plot(np.log10(sim['P']), np.log10(sim['R']),zs=0,zdir='z', 
+				ls='', marker='.', mew=0, ms=5.0, color='k')
+		
+	# PDF, all combined, 2 panels
+	xgrid= np.logspace(*np.log10(epos.xtrim))
+	pdf= regression.sliding_window_log(sim['P'], None, xgrid) #, width=2. )
+	weight= np.sum([sg['weight'] for sg in epos.groups]) if epos.populationtype is 'model' else epos.fac
+	ax.plot(np.log10(xgrid), pdf, zs=yplane,zdir='y', 
+		ls='-', marker='', color='k',label='combined x {:.3f}'.format(weight))
+
+	ygrid= np.logspace(*np.log10(epos.ytrim))
+	pdf= regression.sliding_window_log(sim['R'], None, ygrid) #, width=2. )
+	ax.plot(np.log10(ygrid), pdf, zs=xplane,zdir='x', ls='-', marker='', color='k')
+
+	# observations
+	if epos.Observation and epos.DetectionEfficiency:
+		ax.plot(np.log10(epos.obs_xvar), np.log10(epos.obs_yvar), zs=-10,zdir='z',
+			ls='', marker='.', mew=0, ms=5.0, color='0.7',zorder=0)
+		
+		pdf= regression.sliding_window_log(epos.obs_xvar, None, xgrid)
+		ax.plot(np.log10(xgrid), pdf, zs=yplane,zdir='y', ls=':', marker='', color='k', label='Kepler')
+
+		pdf= regression.sliding_window_log(epos.obs_yvar, None, ygrid) 
+		ax.plot(np.log10(ygrid), pdf, zs=xplane,zdir='x', ls=':', marker='', color='k')
+	
+# 	xmax= ax.get_ylim()[-1]
+# 	ymax= ax.get_zlim()[-1]
+# 	ax.errorbar(xmax/1.5, ymax*0.9, yerr=(xmax/1.5*(1.-np.sqrt(1./2.)) ), 
+# 				zs=0,zdir='y', color='k')
+# 	
+# 	xmax= ax.get_xlim()[-1]
+# 	ymax= ax.get_zlim()[-1]
+# 	ax.errorbar(xmax/1.5, ymax*0.9, xerr=(xmax/1.5*(1.-np.sqrt(1./2.)) ), 
+# 				zs=0,zdir='x', color='k')
+	
+	#ax2.tick_params(labelbottom='on') # does not re-enable axis
+	
+	''' Legend instead of 4th plot'''
+	#ax.legend()
+	ax.legend(shadow=False, prop={'size':14},bbox_to_anchor=(0.7,0.0))
+	
+	ax.view_init(elev=20., azim=-35)
+	
+	aux.save(plt, epos.plotdir+'output/pdf.3D.diag')
+
 
 
 def population_output_pdf(epos):
