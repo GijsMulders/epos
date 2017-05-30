@@ -26,6 +26,9 @@ python 2.7
 ### How to run tests ###
 ./example.py
 
+### Where can I find documentation? ###
+An incomplete draft paper describing the code can be [dowloaded here](https://www.dropbox.com/s/964mwknjdcueyj9/EPOS-draft.pdf?dl=0)
+
 ### Who do I talk to? ###
 
 * Gijs Mulders: gdmulders@gmail.com
