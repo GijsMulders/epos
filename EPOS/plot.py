@@ -211,44 +211,7 @@ def parametric_2D(epos, PlotZoom=False):
 	cbar.ax.set_yticklabels(labels)
 
 	aux.save(plt, epos.plotdir+'input/parametric_initial')
-
-def multiplicity(epos, MC=False, Log=False):
-	# plot multiplicity
-	f, ax = plt.subplots()
-	ax.set_title('planet multiplicity')
-	ax.set_xlabel('planets per system')
-	ax.set_ylabel('number of systems')
-
-	ax.set_xlim(0, 9)
-
-	if Log:
-		ax.set_ylim(0.5, 1e4) # 7.	
-		ax.set_yscale('log')
-	else:
-		#ax.set_ylim(0, 7.) # 7.
-		pass
-	
-	# MC data
-	if MC:
-		ss=epos.synthetic_survey
-		ax.plot(ss['multi']['bin'], ss['multi']['count'], 
-			ls='', marker='+', mew=2, ms=10, color='k',label=epos.name)
-	
-	ax.plot(epos.obs_zoom['multi']['bin'], epos.obs_zoom['multi']['count'], 
-		drawstyle='steps-mid', 
-		ls='-', marker='', color='k', label='Kepler subset')
-	ax.plot(epos.multi['bin'], epos.multi['count'], drawstyle='steps-mid', 
-		ls='--', marker='', color='gray', label='Kepler all')
 		
-	ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
-	
-	prefix= 'output' if MC else 'input'
-	
-	suffix='_log' if Log else ''	
-	
-	aux.save(plt, '{}{}/multiplicity{}'.format(epos.plotdir,prefix,suffix))		
-
-	
 def population_input(epos, PlotBox=True):
 	assert epos.populationtype is 'model'
 	
@@ -444,6 +407,7 @@ def output(epos):
 		periodradius(epos, Parametric=True, SNR=True)
 	elif epos.populationtype is 'model':
 		multiplicity(epos, MC=True, Log=True)
+		periodratio(epos)
 		massradius(epos, Input=True, MC=True)
 		massradius(epos, Input=True, MC=True, Log=True)
 		periodradius(epos, SNR=False)
@@ -485,6 +449,94 @@ def periodradius(epos, SNR=True, Parametric=False):
 	#ax.legend(loc='lower left', shadow=False, prop={'size':14}, numpoints=1)
 	aux.save(plt, '{}output/periodradius{}'.format(epos.plotdir,fsuffix))
 
+def multiplicity(epos, MC=False, Log=False):
+	# plot multiplicity
+	f, ax = plt.subplots()
+	ax.set_title('planet multiplicity')
+	ax.set_xlabel('planets per system')
+	ax.set_ylabel('number of systems')
+
+	ax.set_xlim(0, 9)
+
+	if Log:
+		ax.set_ylim(0.5, 1e4) # 7.	
+		ax.set_yscale('log')
+	else:
+		#ax.set_ylim(0, 7.) # 7.
+		pass
+	
+	# MC data
+	if MC:
+		ss=epos.synthetic_survey
+		ax.plot(ss['multi']['bin'], ss['multi']['count'], 
+			ls='', marker='+', mew=2, ms=10, color='k',label=epos.name)
+	
+	ax.plot(epos.obs_zoom['multi']['bin'], epos.obs_zoom['multi']['count'], 
+		drawstyle='steps-mid', 
+		ls='-', marker='', color='k', label='Kepler subset')
+	ax.plot(epos.multi['bin'], epos.multi['count'], drawstyle='steps-mid', 
+		ls='--', marker='', color='gray', label='Kepler all')
+		
+	ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
+	
+	prefix= 'output' if MC else 'input'
+	
+	suffix='_log' if Log else ''	
+	
+	aux.save(plt, '{}{}/multiplicity{}'.format(epos.plotdir,prefix,suffix))		
+
+def periodratio(epos):
+	# plot multiplicity
+	f, ax = plt.subplots()
+	ax.set_title('period ratio adjecent planets')
+	ax.set_xlabel('period outer/inner')
+	ax.set_ylabel('PDF')
+
+	ax.set_xlim(1, 10)
+	
+	bins=np.linspace(1,10, 9*5+1)
+	
+	# MC data
+	ss=epos.synthetic_survey
+	ax.hist(ss['multi']['Pratio'], bins=bins, color='b', label=epos.name)
+	
+	# Observed
+	ax.hist(epos.obs_zoom['multi']['Pratio'], bins=bins, ec='k', histtype='step', label='Kepler subset')
+	ax.hist(epos.multi['Pratio'], bins=bins, ec='gray', histtype='step', label='Kepler all')
+		
+	ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
+		
+	aux.save(plt, '{}output/periodratio'.format(epos.plotdir))	
+
+	# plot multiplicity CDF
+	f, ax = plt.subplots()
+	ax.set_title('period ratio adjecent planets')
+	ax.set_xlabel('period outer/inner')
+	ax.set_ylabel('CDF')
+
+	ax.set_xlim(1, 10)
+	ax.set_xscale('log')
+	
+	# MC data
+	ss=epos.synthetic_survey
+	Psort= np.sort(ss['multi']['Pratio'])
+	cdf= np.linspace(0,1,Psort.size)
+	ax.plot(Psort, cdf, color='b', label=epos.name)
+	
+	# Observed
+	Psort= np.sort(epos.obs_zoom['multi']['Pratio'])
+	cdf= np.linspace(0,1,Psort.size)
+	ax.plot(Psort, cdf, color='k', label='Kepler subset')
+	
+	Psort= np.sort(epos.multi['Pratio'])
+	cdf= np.linspace(0,1,Psort.size)
+	ax.plot(Psort, cdf ,color='gray', label='Kepler all')
+		
+	ax.legend(loc='lower right', shadow=False, prop={'size':14}, numpoints=1)
+		
+	aux.save(plt, '{}output/periodratio.cdf'.format(epos.plotdir))	
+
+	
 def out_Pratio(epos, SNR=True, Parametric=False):
 
 	if SNR:
@@ -634,8 +686,6 @@ def population_output_pdf_3d(epos):
 	ax.view_init(elev=20., azim=-35)
 	
 	aux.save(plt, epos.plotdir+'output/pdf.3D.diag')
-
-
 
 def population_output_pdf(epos):
 	#assert epos.populationtype is 'model'

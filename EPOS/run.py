@@ -202,6 +202,9 @@ def prep_obs(epos):
 	# multis
 	z['multi']={}
 	z['multi']['bin'], z['multi']['count']= multi.frequency(epos.obs_starID[ix&iy])
+	
+	z['multi']['Pratio']= multi.periodratio(epos.obs_starID[ix&iy], 
+							epos.obs_xvar[ix&iy])
 
 
 def MC(epos, Store=False, Verbose=True, Parametric=True, KS=True, fpara=[],
@@ -305,8 +308,8 @@ def MC(epos, Store=False, Verbose=True, Parametric=True, KS=True, fpara=[],
 		
 		R_a= cgs.Rsun/ (cgs.au*(allP/365.24)**(2./3.))
 		mutual_inc= allI
-		mutual_inc= 0.0 # planar distribution
-		#mutual_inc= 10.0 # fit at large P?
+		#mutual_inc= 0.0 # planar distribution
+		#mutual_inc= 1.0 # fit 
 		print '  Average mutual inc={:.1f} degrees'.format(np.median(allI))
 		delta_inc= mutual_inc *np.cos(np.random.uniform(0,np.pi,allP.size)) * np.pi/180.
 		itrans= np.abs(inc_pl+delta_inc) < np.arcsin(R_a)
@@ -404,7 +407,8 @@ def MC(epos, Store=False, Verbose=True, Parametric=True, KS=True, fpara=[],
 		if not Parametric:
 			if 'all_Pratio' in sg: ss['dP']= det_dP
 			ss['multi']={}
-			ss['multi']['bin'], ss['multi']['count']= multi.frequency(det_ID)
+			ss['multi']['bin'], ss['multi']['count']= multi.frequency(det_ID[ix&iy])
+			ss['multi']['Pratio']= multi.periodratio(det_ID[ix&iy], det_P[ix&iy])
 		
 		epos.gof=gof # not parallel proof
 		ss['P zoom']= det_P[ix&iy]

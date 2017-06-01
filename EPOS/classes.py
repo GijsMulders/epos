@@ -29,9 +29,10 @@ class epos:
 		aux.plot_defaults() # not immune to double execution
 
 	def set_observation(self, xvar, yvar, starID, nstars=1.6862e5):
-		self.obs_xvar=np.asarray(xvar)
-		self.obs_yvar=np.asarray(yvar)
-		self.obs_starID=np.asarray(starID)
+		order= np.lexsort((xvar,starID)) # sort by ID, then P
+		self.obs_xvar=np.asarray(xvar)[order]
+		self.obs_yvar=np.asarray(yvar)[order]
+		self.obs_starID=np.asarray(starID)[order]
 		self.nstars=nstars
 		
 		assert self.obs_xvar.ndim == self.obs_yvar.ndim == self.obs_starID.ndim == 1, 'only 1D arrays'
@@ -52,7 +53,10 @@ class epos:
 		print '  {} planets'.format(self.obs_starID.size)
 		multi.indices(self.obs_starID, Verbose=True)
 		epos.multi={}
-		epos.multi['bin'], epos.multi['count']= multi.frequency(self.obs_starID, Verbose=True)
+		epos.multi['bin'], epos.multi['count']= \
+			multi.frequency(self.obs_starID, Verbose=True)
+		epos.multi['Pratio']= \
+			multi.periodratio(self.obs_starID, self.obs_xvar, Verbose=True)
 		print 
 		
 	def set_survey(self, xvar, yvar, eff_2D):
