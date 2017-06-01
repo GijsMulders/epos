@@ -510,27 +510,31 @@ def periodratio(epos):
 
 	# plot multiplicity CDF
 	f, ax = plt.subplots()
-	ax.set_title('period ratio adjecent planets')
+	ax.set_title('period ratio adjacent planets')
 	ax.set_xlabel('period outer/inner')
 	ax.set_ylabel('CDF')
 
 	ax.set_xlim(1, 10)
+	for f in [ax.set_xticks,ax.set_xticklabels]: f([1,2,3,4,5,7,10])
 	ax.set_xscale('log')
 	
 	# MC data
 	ss=epos.synthetic_survey
 	Psort= np.sort(ss['multi']['Pratio'])
-	cdf= np.linspace(0,1,Psort.size)
+	cdf= np.arange(Psort.size, dtype=float)/Psort.size
 	ax.plot(Psort, cdf, color='b', label=epos.name)
 	
 	# Observed
 	Psort= np.sort(epos.obs_zoom['multi']['Pratio'])
-	cdf= np.linspace(0,1,Psort.size)
+	cdf= np.arange(Psort.size, dtype=float)/Psort.size
 	ax.plot(Psort, cdf, color='k', label='Kepler subset')
 	
 	Psort= np.sort(epos.multi['Pratio'])
-	cdf= np.linspace(0,1,Psort.size)
+	cdf= cdf= np.arange(Psort.size, dtype=float)/Psort.size
 	ax.plot(Psort, cdf ,color='gray', label='Kepler all')
+	
+	#for resonance in [2./1., 3./2.]: ax.axvline(resonance, ls=':', color='g')
+	
 		
 	ax.legend(loc='lower right', shadow=False, prop={'size':14}, numpoints=1)
 		

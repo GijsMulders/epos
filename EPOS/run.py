@@ -354,11 +354,12 @@ def MC(epos, Store=False, Verbose=True, Parametric=True, KS=True, fpara=[],
 	p_snr= f_snr(MC_P, MC_R, grid=False)
 	assert p_snr.ndim == 1
 
-	if Isotropic:
+	if True or Isotropic:
 		idet= p_snr >= np.random.uniform(0,1,MC_P.size)
 	else:
 		# draw same random number for S/N calc
-		# doesn't seem to make a big difference
+		# correlated noise
+		# makes a big difference for smaller planets?
 		IDsys, toplanet= np.unique(MC_ID, return_inverse=True) 
 		idet= p_snr >= np.random.uniform(0,1,IDsys.size)[toplanet]
 	
@@ -386,7 +387,8 @@ def MC(epos, Store=False, Verbose=True, Parametric=True, KS=True, fpara=[],
 		gof['D xvar'], gof['p xvar']=  ks_2samp(epos.obs_zoom['x'], det_P[ix&iy])
 		gof['D yvar'], gof['p yvar']=  ks_2samp(epos.obs_zoom['y'], det_R[ix&iy])
 		# chi^2: (np-nobs)/nobs**0.5 -> p: e^-0.5 x^2
-		gof['p n']= np.exp(-0.5* np.abs(epos.obs_zoom['x'].size-(ix&iy).size)/np.sqrt(epos.obs_zoom['x'].size) ) 
+		gof['p n']= np.exp(-0.5*(epos.obs_zoom['x'].size-np.sum(ix&iy))**2. /epos.obs_zoom['x'].size ) 
+		print '  p(n={})={}'.format(np.sum(ix&iy), gof['p n'])
 		#print gof['p n'], epos.obs_zoom['x'].size,  (ix&iy).size
 		# add to list: probability that they are drawn from the same distribution (0=bad, 1=good)
 		# if chain
