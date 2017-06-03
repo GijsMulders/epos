@@ -1,6 +1,6 @@
 import numpy as np
-import aux # only for plotdefaults
 from EPOS import multi
+from EPOS.plot.helpers import set_pyplot_defaults
 
 def readme():
 	print '\nThis module defines the EPOS class, that contains the observed exoplanets,'
@@ -25,9 +25,8 @@ class epos:
 		self.populationtype=None # ['parametric','model']
 				
 		self.Debug= False
+		set_pyplot_defaults() # nicer plots
 		
-		aux.plot_defaults() # not immune to double execution
-
 	def set_observation(self, xvar, yvar, starID, nstars=1.6862e5):
 		order= np.lexsort((xvar,starID)) # sort by ID, then P
 		self.obs_xvar=np.asarray(xvar)[order]

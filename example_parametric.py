@@ -21,5 +21,5 @@ epos.set_parametric(xfunc=bp1d, yfunc=bp1d, xparams=[10.5, 1.5, 0.35], yparams=[
 
 EPOS.run.once(epos)
 
-EPOS.plot.input(epos)
-EPOS.plot.output(epos)
+EPOS.plot.input.all(epos)
+EPOS.plot.output.all(epos)

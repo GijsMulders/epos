@@ -363,7 +363,8 @@ def MC(epos, Store=False, Verbose=True, Parametric=True, KS=True, fpara=[],
 		IDsys, toplanet= np.unique(MC_ID, return_inverse=True) 
 		idet= p_snr >= np.random.uniform(0,1,IDsys.size)[toplanet]
 	
-	det_ID= MC_ID[idet]
+		det_ID= MC_ID[idet]
+		
 	det_P= MC_P[idet]
 	det_R= MC_R[idet]
 	#if len(alldP)>0: 
