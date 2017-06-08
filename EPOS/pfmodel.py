@@ -88,6 +88,8 @@ def symba(fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False):
 	 
 			
 	return sma, mass, inc
+	#return {'sma':sma, 'mass':mass, 'inc':inc}
+	
 
 def pa_bert(name='1Dlin', dir='PA_Bert/', Verbose=False):
 	fname= '{}/Data{}.out'.format(dir,name)

@@ -5,6 +5,7 @@ from scipy.stats import ks_2samp
 import os, pickle
 import cgs
 import multi
+from functools import partial
 
 def once(epos, fac=1.0):
 	'''
@@ -44,7 +45,7 @@ def once(epos, fac=1.0):
 	''' Time the first MC run'''
 	print '\nStarting the first MC run'
 	tstart=time.time()
-	MC(epos, Store=True, Parametric=(epos.populationtype is 'parametric'), fpara=fpara) # parallel: epos.weights, epos.xp separetely
+	MC(epos, fpara, Store=True, Parametric=(epos.populationtype is 'parametric')) # parallel: epos.weights, epos.xp separetely
 	tMC= time.time()
 	print 'Finished one MC in {:.3f} sec'.format(tMC-tstart)
 	epos.tMC= tMC-tstart
@@ -121,7 +122,8 @@ def para(epos, nres= 11, fac= 2, dex=0.5, grid=None):
 			# now do grid[0][ijk[0]], grid[1][ijk[1]] etc.
 			pars= [grid[k][ijk[k]] for k in range(len(grid))] # array with input para?
 			#for k, par in enumerate(pars): print '  k={}, par={}'.format(k,par)
-			p_nd[ijk]= MC(epos, Parametric=(epos.populationtype is 'parametric'), Verbose=False, fpara=pars) 
+			p_nd[ijk]= MC(epos, pars, Parametric=(epos.populationtype is 'parametric'),
+							Verbose=False) 
 			#print 'p= {}'.format(p_nd[ijk])
 	
 		# flatten and reshape if parallel?
@@ -142,8 +144,58 @@ def para(epos, nres= 11, fac= 2, dex=0.5, grid=None):
 	ijk= np.unravel_index(np.argmax(p_nd), shape)
 	pars= [grid[k][ijk[k]] for k in range(len(grid))] 
 	for k, par in enumerate(pars): print '  k={}, par={}'.format(k,par)
-	MC(epos, Store=True, Parametric=(epos.populationtype is 'parametric'), fpara=pars) 
+	MC(epos, pars, Store=True, Parametric=(epos.populationtype is 'parametric')) 
 
+def iter(epos, nMC=500, nwalkers = 100):
+	assert epos.Prep
+	import emcee
+	
+	''' set starting parameters '''
+	if epos.populationtype is 'parametric':
+		fpara= [epos.norm0]+epos.xp0+epos.yp0
+	elif epos.populationtype is 'model':
+		fpara= [sg['weight'] for sg in epos.groups]
+	else: assert False
+	
+	''' start the timer '''
+	tstart=time.time()
+	nsims= nMC*nwalkers
+	runtime= (epos.tMC/3600.)*nsims
+	if runtime>1:
+		print '\nPredicted runtime {:.3f} hours for {} runs at {:.3f} sec'.format(
+				runtime, nsims, epos.tMC)
+	else:
+		print '\nPredicted runtime {:.1f} minutes for {} runs at {:.3f} sec'.format(
+				runtime*60., nsims, epos.tMC)
+	
+	''' Wrap function '''
+	lnmc= partial(MC, epos, Parametric=(epos.populationtype is 'parametric'),
+					Verbose=False, LogProb= True)
+	
+	''' Start the MCMC chain '''
+	#p0 = [np.array(fpara)+1e-5*i for i in range(nwalkers)]
+	dx=0.1
+	p0 = [np.array(fpara)*np.random.uniform(1.-dx,1+dx,len(fpara)) 
+			for i in range(nwalkers)]
+	sampler = emcee.EnsembleSampler(nwalkers, len(fpara), lnmc) # args= ...
+	sampler.run_mcmc(p0, nMC)
+	print '\nDone running\n'
+
+	''' Print run time'''	
+	tMC= time.time()
+	runtime= tMC-tstart
+	if runtime>3600:
+		print '  Runtime was {:.3f} hours at {:.3f} sec'.format(runtime/3600, (tMC-tstart)/nsims )
+	else:
+		print '  Runtime was {:.1f} minutes at {:.3f} sec'.format(runtime/60., (tMC-tstart)/nsims)
+	
+	epos.chain= sampler.chain
+	
+	print '\nStarting the best-fit MC run'
+	#for k, par in enumerate(pars): print '  k={}, par={}'.format(k,par)
+	#MC(epos, Store=True, Parametric=(epos.populationtype is 'parametric'), fpara=pars) 
+	
+	
 def prep_eff(epos):
 	# censor P, R range with epos.xtrim
 	# make sure range _encompasses_ trim
@@ -206,10 +258,8 @@ def prep_obs(epos):
 	z['multi']['Pratio']= multi.periodratio(epos.obs_starID[ix&iy], 
 							epos.obs_xvar[ix&iy])
 
-
-def MC(epos, Store=False, Verbose=True, Parametric=True, KS=True, fpara=[],
-		CoPlanar=False, Isotropic=False):
-
+def MC(epos, fpara, Store=False, Verbose=True, Parametric=True, KS=True,
+		CoPlanar=False, Isotropic=False, LogProb=False):
 	''' construct arrays with P, M for MC 
 	NOTE: increase speed by reducing sample size with epos.MC_max
 		to discard non-transiting geometries a-priori
@@ -222,29 +272,44 @@ def MC(epos, Store=False, Verbose=True, Parametric=True, KS=True, fpara=[],
 	# dimension equal to sample size
 	# also keeping track off subgroup (SG), inc (I), and period ratio (dP)
 	if Parametric:
-		assert len(fpara) is 7
-		#epos.pdf= epos.norm* epos.xfunc(epos.X,*epos.xp) * epos.yfunc(epos.Y,*epos.yp)
-		epos.pdf= fpara[0]* epos.xfunc(epos.X,*fpara[1:4]) * epos.yfunc(epos.Y,*fpara[4:7])
+		assert len(fpara) is 7, '{}'.format(fpara)
+		if fpara[0] <= 0:
+			print 'oops: {}'.format(fpara)
+			if Store: raise ValueError('normalization needs to be larger than 0')
+			return -np.inf
+		if (fpara[1]<= 0) or (fpara[4]<= 0):
+			print 'oops II: {}'.format(fpara)
+			if Store: raise ValueError('breaks needs to be larger than 0')
+			return -np.inf
+		pdf= fpara[0]* epos.xfunc(epos.X,*fpara[1:4]) * epos.yfunc(epos.Y,*fpara[4:7])
 		
 		#print '  {}x{} array ({}x{})'.format(epos.MC_xvar.size, epos.MC_yvar.size, *epos.pdf.shape)
-		pdf_X= np.sum(epos.pdf, axis=1)
-		pdf_Y= np.sum(epos.pdf, axis=0)
+		pdf_X= np.sum(pdf, axis=1)
+		pdf_Y= np.sum(pdf, axis=0)
 		#print '  nX {} x nY {}'.format(pdf_X.size, pdf_Y.size) 
 		cum_X= np.cumsum(pdf_X)
 		cum_Y= np.cumsum(pdf_Y)
 		xfac, yfac= cum_X[-1], cum_Y[-1]
-		epos.fac= 0.5*(xfac+yfac)
+		fac= 0.5*(xfac+yfac)
 		#print 'Integrated probabilities: {} =?= {}'.format(xfac, yfac)
 		tcdf= time.time()
 		#print '  CDF in {:.3f} sec'.format(tcdf-tstart) # this is pretty fast :)
 		
-		ndraw= int(round(1.*epos.nstars*epos.fac))
+		ndraw= int(round(1.*epos.nstars*fac))
+		if ndraw < 1: 
+			print 'no draws ({}, {}*{})'.format(ndraw, epos.nstars, fac)
+			if Store: raise ValueError('no planets')
+			return -np.inf
 		allP= np.interp(np.random.uniform(0,xfac,ndraw), cum_X, epos.MC_xvar)
 		allR= np.interp(np.random.uniform(0,yfac,ndraw), cum_Y, epos.MC_yvar)
 		
 # 		i,j= -1, 4
 # 		print ' eta_earth= {:.2f}'.format(epos.pdf[i,j] *(4./epos.MC_scale) )
 # 		print ' P={:.0f}, R={:.1f}'.format(epos.MC_xvar[i], epos.MC_xvar[j])
+		
+		if Store:
+			epos.pdf= pdf
+			epos.fac= fac
 		
 	else:
 		# Draw systems from subgroups, array with length survey size
@@ -388,10 +453,15 @@ def MC(epos, Store=False, Verbose=True, Parametric=True, KS=True, fpara=[],
 		gof['D xvar'], gof['p xvar']=  ks_2samp(epos.obs_zoom['x'], det_P[ix&iy])
 		gof['D yvar'], gof['p yvar']=  ks_2samp(epos.obs_zoom['y'], det_R[ix&iy])
 		# chi^2: (np-nobs)/nobs**0.5 -> p: e^-0.5 x^2
-		gof['p n']= np.exp(-0.5*(epos.obs_zoom['x'].size-np.sum(ix&iy))**2. /epos.obs_zoom['x'].size ) 
-		print '  p(n={})={}'.format(np.sum(ix&iy), gof['p n'])
-		#print gof['p n'], epos.obs_zoom['x'].size,  (ix&iy).size
-		# add to list: probability that they are drawn from the same distribution (0=bad, 1=good)
+		gof['p n']= np.exp(-0.5*(epos.obs_zoom['x'].size-np.sum(ix&iy))**2. /epos.obs_zoom['x'].size )
+		
+		if Verbose:
+			print '  logp= {:.2f}'.format(np.log(gof['p xvar']* gof['p yvar']*gof['p n']))
+			print '  - p(x)={:.2e}'.format(gof['p xvar'])
+			print '  - p(y)={:.2e}'.format(gof['p yvar'])
+			print '  - p(n={})={:.2e}'.format(np.sum(ix&iy), gof['p n'])
+			#print gof['p n'], epos.obs_zoom['x'].size,  (ix&iy).size
+			# add to list: probability that they are drawn from the same distribution (0=bad, 1=good)
 		# if chain
 		# if para
 		tgof= time.time()
@@ -419,7 +489,7 @@ def MC(epos, Store=False, Verbose=True, Parametric=True, KS=True, fpara=[],
 	else:
 		# normalization
 		prob= gof['p xvar']* gof['p yvar']*gof['p n']
-		return prob
+		return np.log(prob) if LogProb else prob
 	
 
 def _trimarray(array,trim):

@@ -123,7 +123,8 @@ class epos:
 		
 		self.Range=True
 	
-	def set_parametric(self, xfunc=None, yfunc=None, xparams=[], yparams=[], normalization=0.01 ):
+	def set_parametric(self, xfunc=None, yfunc=None, 
+						xparams=[], yparams=[], normalization=0.01 ):
 		if self.populationtype is None:
 			self.populationtype='parametric'
 		elif self.populationtype is not 'parametric':
@@ -145,7 +146,11 @@ class epos:
 		self.yp0= yparams
 		self.norm0= normalization
 		
-	def add_population(self, name, sma, mass, inc=None, tag1=None, Verbose=False, weight=1.):
+		self.spara= ['norm','P break','P1','P2','R break','R1','R2']
+		self.para_in= [normalization]+xparams+yparams
+		
+	def add_population(self, name, sma, mass, 
+					inc=None, tag1=None, Verbose=False, weight=1.):
 		# tag is fit parameter, i.e. metallicity or surface density
 		if self.populationtype is None:
 			self.populationtype='model'
@@ -207,7 +212,7 @@ class epos:
 			
 		print '  {} planetary systems'.format(sg['n'])
 		if Verbose:
-# 			print '\nLoaded subgroup {} with {} planetary systems'.format(sg['name'], sg['n'])
+			# print '\nLoaded subgroup {} with {} planetary systems'.format(sg['name'], sg['n'])
 			for system in sg['system']:
 				print 'system has {} planets:'.format(system['np'])
 				for a,m in zip(system['sma'], system['mass']):
