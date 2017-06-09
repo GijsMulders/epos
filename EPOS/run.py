@@ -2,7 +2,7 @@ import numpy as np
 import time
 from scipy import interpolate
 from scipy.stats import ks_2samp
-import os, pickle
+import os
 import cgs
 import multi
 from functools import partial
@@ -17,9 +17,8 @@ def once(epos, fac=1.0):
 		print '\nPreparing EPOS run...'
 		# prep the input population (this should be after MC run?)
 		if epos.populationtype is 'parametric':
-			epos.xp= epos.xp0
-			epos.yp= epos.yp0
-			epos.norm= epos.norm0 # instead of fac
+			#epos.p= epos.p0 # ??
+			pass
 		elif epos.populationtype is 'model':
 			summedweight= np.sum([sg['weight'] for sg in epos.groups])
 			for sg in epos.groups:
@@ -37,7 +36,7 @@ def once(epos, fac=1.0):
 	
 	''' set weights / parameters '''
 	if epos.populationtype is 'parametric':
-		fpara= [epos.norm0]+epos.xp0+epos.yp0
+		fpara= epos.p0 
 	elif epos.populationtype is 'model':
 		fpara= [sg['weight'] for sg in epos.groups]
 	else: assert False
@@ -45,183 +44,123 @@ def once(epos, fac=1.0):
 	''' Time the first MC run'''
 	print '\nStarting the first MC run'
 	tstart=time.time()
-	MC(epos, fpara, Store=True, Parametric=(epos.populationtype is 'parametric')) # parallel: epos.weights, epos.xp separetely
+	MC(epos, fpara, Store=True, Parametric=(epos.populationtype is 'parametric')) # parallel: epos.weights separetely
 	tMC= time.time()
 	print 'Finished one MC in {:.3f} sec'.format(tMC-tstart)
 	epos.tMC= tMC-tstart
 	
-def para(epos, nres= 11, fac= 2, dex=0.5, grid=None):
-	'''
-	parametrized grid
-	can be slow...
-	grid is a list of np.arrays with each parameter
-	stored in epos.para['grid','prob']
-	'''
-	assert epos.Prep
-	
-	''' set grid center '''
-	if epos.populationtype is 'parametric':
-		fpara= [epos.norm0]+epos.xp0+epos.yp0
-	elif epos.populationtype is 'model':
-		fpara= [sg['weight'] for sg in epos.groups]
-	else: assert False
-	
-	''' Read/Make input arrays'''
-	if grid is None:
-		#ndim= [10,nres,nres,nres,1,1,1]
-		grid=[]
-		#for i in range(nres):
-		#	grid.append(np.logspace)
-		
-		grid.append(np.logspace(-3,-2,51))
-		if False:
-			grid.append(np.logspace(np.log10(fpara[1]/fac),np.log10(fpara[1]*fac), nres))
-			grid.append(np.linspace(fpara[2]-dex,fpara[2]+dex, nres))
-			grid.append(np.linspace(fpara[3]-dex,fpara[3]+dex, nres))
-			grid.append([fpara[4]])
-			grid.append([fpara[5]])
-			grid.append([fpara[6]])
-		else:
-			grid.append([fpara[1]])
-			grid.append([fpara[2]])
-			grid.append([fpara[3]])
-			grid.append(np.logspace(np.log10(fpara[4]/fac),np.log10(fpara[4]*fac), nres))
-			grid.append(np.linspace(fpara[5]-dex,fpara[5]+dex, nres))
-			grid.append(np.linspace(fpara[6]-dex,fpara[6]+dex, nres))
-
-	
-	epos.para={}
-	epos.para['grid']= grid
-	#print grid
-	
-	''' Read from file or rerun para?'''
-	shape= () # empty tuple
-	for g in grid: shape+= (len(g),)
-	print '\nParameter study dimensions: {}'.format(shape)
-	
-	fname= 'pickle/{}/{}.pickle'.format(epos.name, 'x'.join(str(x) for x in shape))
-	if os.path.isfile(fname):
-		print 'Loading saved status from {}'.format(fname)
-		with open(fname,'r') as f: p_nd= epos.para['prob']= pickle.load(f)
-	else:
-		''' loop over all dimensions of parameter space with unravel_index'''
-		p_nd= epos.para['prob']= np.empty(shape)
-		#p_1d= parallel? 
-		
-		tstart=time.time()
-		nMC= np.prod(shape)
-		runtime= (epos.tMC/3600.)*nMC
-		if runtime>1:
-			print '  Predicted runtime {:.3f} hours for {} runs at {:.3f} sec'.format(runtime, nMC, epos.tMC)
-		else:
-			print '  Predicted runtime {:.1f} minutes for {} runs at {:.3f} sec'.format(runtime*60., nMC, epos.tMC)
-		
-		for i in range(nMC):
-			ijk= np.unravel_index(i, shape) # can also do with arrays for speedup?
-			#print '  i={}, ijk={}'.format(i,ijk)
-			# now do grid[0][ijk[0]], grid[1][ijk[1]] etc.
-			pars= [grid[k][ijk[k]] for k in range(len(grid))] # array with input para?
-			#for k, par in enumerate(pars): print '  k={}, par={}'.format(k,par)
-			p_nd[ijk]= MC(epos, pars, Parametric=(epos.populationtype is 'parametric'),
-							Verbose=False) 
-			#print 'p= {}'.format(p_nd[ijk])
-	
-		# flatten and reshape if parallel?
-		#np.reshape(a,shape) # this works from 1d -> nd
-		print '  min, max probability found: {:.3g},{:.2e}'.format(np.min(p_nd), np.max(p_nd))
-	
-		tMC= time.time()
-		runtime= tMC-tstart
-		if runtime>3600:
-			print '  Runtime was {:.3f} hours at {:.3f} sec'.format(runtime/3600, (tMC-tstart)/nMC )
-		else:
-			print '  Runtime was {:.1f} minutes at {:.3f} sec'.format(runtime/60., (tMC-tstart)/nMC)
-		
-		# check for directory
-		with open(fname,'w') as f: pickle.dump(p_nd, f)
-	
-	print '\nStarting the best-fit MC run'
-	ijk= np.unravel_index(np.argmax(p_nd), shape)
-	pars= [grid[k][ijk[k]] for k in range(len(grid))] 
-	for k, par in enumerate(pars): print '  k={}, par={}'.format(k,par)
-	MC(epos, pars, Store=True, Parametric=(epos.populationtype is 'parametric')) 
-
-def iter(epos, nMC=500, nwalkers = 100):
+def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50):
 	assert epos.Prep
 	import emcee
 	
 	''' set starting parameters '''
 	if epos.populationtype is 'parametric':
-		fpara= [epos.norm0]+epos.xp0+epos.yp0
+		fpara= epos.p0
 	elif epos.populationtype is 'model':
 		fpara= [sg['weight'] for sg in epos.groups]
 	else: assert False
 	
-	''' start the timer '''
-	tstart=time.time()
-	nsims= nMC*nwalkers
-	runtime= (epos.tMC/3600.)*nsims
-	if runtime>1:
-		print '\nPredicted runtime {:.3f} hours for {} runs at {:.3f} sec'.format(
-				runtime, nsims, epos.tMC)
+	''' Load previous chain?'''
+	ndim= len(epos.p0)
+	shape= (nwalkers, nMC, ndim)
+	
+	# store, npy is uncompressed, savez returns as dict instead of array
+	dir= 'chain/{}'.format(epos.name)
+	fname= '{}/{}x{}x{}.npy'.format(dir, nwalkers, nMC, ndim)
+	if not os.path.exists(dir): os.makedirs(dir)
+	if os.path.isfile(fname):
+		print '\nLoading saved status from {}'.format(fname)
+		epos.chain= np.load(fname) 
+		assert epos.chain.shape == (nwalkers, nMC, ndim)
 	else:
-		print '\nPredicted runtime {:.1f} minutes for {} runs at {:.3f} sec'.format(
-				runtime*60., nsims, epos.tMC)
+		
+		''' start the timer '''
+		tstart=time.time()
+		nsims= nMC*nwalkers
+		runtime= (epos.tMC/3600.)*nsims
+		if runtime>1:
+			print '\nPredicted runtime {:.3f} hours for {} runs at {:.3f} sec'.format(
+					runtime, nsims, epos.tMC)
+		else:
+			print '\nPredicted runtime {:.1f} minutes for {} runs at {:.3f} sec'.format(
+					runtime*60., nsims, epos.tMC)
 	
-	''' Wrap function '''
-	lnmc= partial(MC, epos, Parametric=(epos.populationtype is 'parametric'),
-					Verbose=False, LogProb= True)
+		''' Wrap function '''
+		lnmc= partial(MC, epos, Parametric=(epos.populationtype is 'parametric'),
+						Verbose=False, LogProb= True)
 	
-	''' Start the MCMC chain '''
-	#p0 = [np.array(fpara)+1e-5*i for i in range(nwalkers)]
-	dx=0.1
-	p0 = [np.array(fpara)*np.random.uniform(1.-dx,1+dx,len(fpara)) 
-			for i in range(nwalkers)]
-	sampler = emcee.EnsembleSampler(nwalkers, len(fpara), lnmc) # args= ...
-	sampler.run_mcmc(p0, nMC)
-	print '\nDone running\n'
+		''' Set up the MCMC walkers '''
+		p0 = [np.array(fpara)*np.random.uniform(1.-dx,1+dx,len(fpara)) 
+				for i in range(nwalkers)]
+		sampler = emcee.EnsembleSampler(nwalkers, len(fpara), lnmc) # args= ...
+	
+		''' run the chain '''
+		# add progress bar?
+		sampler.run_mcmc(p0, nMC)
+		print '\nDone running\n'
+		print 'Mean acceptance fraction: {0:.3f}'.format(
+					np.mean(sampler.acceptance_fraction))
 
-	''' Print run time'''	
-	tMC= time.time()
-	runtime= tMC-tstart
-	if runtime>3600:
-		print '  Runtime was {:.3f} hours at {:.3f} sec'.format(runtime/3600, (tMC-tstart)/nsims )
-	else:
-		print '  Runtime was {:.1f} minutes at {:.3f} sec'.format(runtime/60., (tMC-tstart)/nsims)
+		''' Print run time'''	
+		tMC= time.time()
+		runtime= tMC-tstart
+		if runtime>3600:
+			print '  Runtime was {:.3f} hours at {:.3f} sec'.format(
+					runtime/3600, (tMC-tstart)/nsims )
+		else:
+			print '  Runtime was {:.1f} minutes at {:.3f} sec'.format(
+					runtime/60., (tMC-tstart)/nsims)
 	
-	epos.chain= sampler.chain
+		epos.chain= sampler.chain
+		print 'Saving status in {}'.format(fname)
+		np.save(fname, epos.chain) 
+		
+	''' the posterior samples after burn-in '''
+	epos.samples= epos.chain[:, nburn:, :].reshape((-1, len(epos.p0)))
+	epos.burnin= nburn
+	fitpars = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
+                             zip(*np.percentile(epos.samples, [16, 50, 84],
+                                                axis=0)))
+	epos.pfit=[p[0] for p in fitpars]
 	
-	print '\nStarting the best-fit MC run'
-	#for k, par in enumerate(pars): print '  k={}, par={}'.format(k,par)
-	#MC(epos, Store=True, Parametric=(epos.populationtype is 'parametric'), fpara=pars) 
+	''' estimate #planets/star '''
+	#print epos.samples.shape # 30000, 7
+	pps= [np.sum(epos.func(epos.X, epos.Y,*para)) for para in epos.samples]
+	eta= np.percentile(pps, [16, 50, 84]) 
+	print '  eta= {:.3g} +{:.3g} -{:.3g}'.format(eta[1], 
+			eta[2]-eta[1], eta[1]-eta[0])
+	
+	''' estimate eta_earth'''
+	# eta_earth
+	n_earth= epos.func(365., 1.0, *epos.samples.transpose() )
+	xnorm= epos.MC_xvar.size-1 #  == xrange/dx
+	ynorm= epos.MC_yvar.size-1 #  == yrange/dy
+	xHZ= np.log10((1.67/0.95)**(1.5) )/ np.log10(epos.MC_xvar[-1]/epos.MC_xvar[0])
+	yHZ= np.log10((1.5/0.7))/ np.log10(epos.MC_yvar[-1]/epos.MC_yvar[0])
+
+	eta_earth= np.percentile(n_earth, [16, 50, 84]) * (xHZ*xnorm) * (yHZ*ynorm)
+	print '  eta_earth= {:.3g} +{:.3g} -{:.3g}'.format(eta_earth[1], 
+			eta_earth[2]-eta_earth[1], eta_earth[1]-eta_earth[0])
+
+	''' Best-fit values'''
+	print '\nBest-fit values'
+	for pname, fpar in zip(epos.pname, fitpars): 
+		print '  {}= {:.3g} +{:.3g} -{:.3g}'.format(pname,*fpar)
+
+
+	print '\nStarting the best-fit MC run'	
+	MC(epos, Store=True, Parametric=(epos.populationtype is 'parametric'),
+		fpara=epos.pfit)
 	
 	
 def prep_eff(epos):
-	# censor P, R range with epos.xtrim
-	# make sure range _encompasses_ trim
-	ixmin,ixmax= _trimarray(epos.eff_xvar, epos.xtrim)
-	iymin,iymax= _trimarray(epos.eff_yvar, epos.ytrim)
-	
-	epos.MC_xvar= epos.eff_xvar[ixmin:ixmax]
-	epos.MC_yvar= epos.eff_yvar[iymin:iymax]
-	eff_trim= epos.eff_2D[ixmin:ixmax,iymin:iymax]
-	
-	epos.MC_scale= (epos.MC_xvar[-1]/epos.MC_xvar[-2])*(epos.MC_yvar[1]/epos.MC_yvar[0])
+	#epos.MC_scale= (epos.MC_xvar[-1]/epos.MC_xvar[-2])* (epos.MC_yvar[1]/epos.MC_yvar[0])
 	#print 'scale={}'.format(epos.MC_scale)
-	
-# 	print '\nTrimming {} to {}'.format(epos.eff_2D.shape,eff_trim.shape) 
-# 	print 'xlim: {}-{}'.format(*epos.xtrim)
-# 	print 'ylim: {}-{}'.format(*epos.ytrim)
-# 	print '\nTrim: {}'.format(epos.eff_xvar)
-# 	print 'To  : {}'.format(epos.MC_xvar)
-# 	print '\nTrim: {}'.format(epos.eff_yvar)
-# 	print 'To  : {}'.format(epos.MC_yvar)
 	
 	# MC det eff
 	# NOTE: the efficiency factor epos.MC_max can be used to decrease sample size
-	epos.X, epos.Y= np.meshgrid(epos.MC_xvar, epos.MC_yvar, indexing='ij') 
 	epos.Pindex= 2./3.
-	epos.MC_eff= eff_trim * epos.X**epos.Pindex
+	epos.MC_eff= epos.eff_trim * epos.X**epos.Pindex
 	epos.MC_max= np.max(epos.MC_eff)
 	epos.MC_eff/= epos.MC_max
 	
@@ -268,48 +207,48 @@ def MC(epos, fpara, Store=False, Verbose=True, Parametric=True, KS=True,
 	
 	tstart=time.time()
 	
-	# construct 1D arrays for P, R
-	# dimension equal to sample size
-	# also keeping track off subgroup (SG), inc (I), and period ratio (dP)
+	''' construct 1D arrays for P, R
+	dimension equal to sample size
+	also keeping track off subgroup (SG), inc (I), and period ratio (dP)
+	'''
 	if Parametric:
+		
+		''' Check if parameters make sense'''
 		assert len(fpara) is 7, '{}'.format(fpara)
 		if fpara[0] <= 0:
-			print 'oops: {}'.format(fpara)
+			#print 'oops: {}'.format(fpara) # rare
 			if Store: raise ValueError('normalization needs to be larger than 0')
 			return -np.inf
 		if (fpara[1]<= 0) or (fpara[4]<= 0):
-			print 'oops II: {}'.format(fpara)
+			#print 'oops II: {}'.format(fpara) # rare
 			if Store: raise ValueError('breaks needs to be larger than 0')
 			return -np.inf
-		pdf= fpara[0]* epos.xfunc(epos.X,*fpara[1:4]) * epos.yfunc(epos.Y,*fpara[4:7])
 		
-		#print '  {}x{} array ({}x{})'.format(epos.MC_xvar.size, epos.MC_yvar.size, *epos.pdf.shape)
-		pdf_X= np.sum(pdf, axis=1)
-		pdf_Y= np.sum(pdf, axis=0)
-		#print '  nX {} x nY {}'.format(pdf_X.size, pdf_Y.size) 
-		cum_X= np.cumsum(pdf_X)
-		cum_Y= np.cumsum(pdf_Y)
-		xfac, yfac= cum_X[-1], cum_Y[-1]
-		fac= 0.5*(xfac+yfac)
-		#print 'Integrated probabilities: {} =?= {}'.format(xfac, yfac)
+		''' create PDF, CDF'''
+		pdf= epos.func(epos.X, epos.Y, *fpara)
+		pdf_X, pdf_Y= np.sum(pdf, axis=1), np.sum(pdf, axis=0)
+		cum_X, cum_Y= np.cumsum(pdf_X), np.cumsum(pdf_Y)
+		pps_x, pps_y=  cum_X[-1], cum_Y[-1]
+		planets_per_star= 0.5*(pps_x+pps_y) # should be equal
 		tcdf= time.time()
 		#print '  CDF in {:.3f} sec'.format(tcdf-tstart) # this is pretty fast :)
 		
-		ndraw= int(round(1.*epos.nstars*fac))
+		ndraw= int(round(planets_per_star*epos.nstars))
 		if ndraw < 1: 
-			print 'no draws ({}, {}*{})'.format(ndraw, epos.nstars, fac)
+			print 'no draws ({}, {}*{})'.format(ndraw, epos.nstars, planets_per_star)
 			if Store: raise ValueError('no planets')
 			return -np.inf
-		allP= np.interp(np.random.uniform(0,xfac,ndraw), cum_X, epos.MC_xvar)
-		allR= np.interp(np.random.uniform(0,yfac,ndraw), cum_Y, epos.MC_yvar)
+		allP= np.interp(np.random.uniform(0,pps_x,ndraw), cum_X, epos.MC_xvar)
+		allR= np.interp(np.random.uniform(0,pps_y,ndraw), cum_Y, epos.MC_yvar)
 		
 # 		i,j= -1, 4
 # 		print ' eta_earth= {:.2f}'.format(epos.pdf[i,j] *(4./epos.MC_scale) )
 # 		print ' P={:.0f}, R={:.1f}'.format(epos.MC_xvar[i], epos.MC_xvar[j])
 		
-		if Store:
-			epos.pdf= pdf
-			epos.fac= fac
+# 		if Store:
+# 			epos.pdf= pdf
+# 			epos.pdf_X, epos.pdf_Y= pdf_X, pdf_Y
+# 			epos.planets_per_star= planets_per_star
 		
 	else:
 		# Draw systems from subgroups, array with length survey size
@@ -490,21 +429,7 @@ def MC(epos, fpara, Store=False, Verbose=True, Parametric=True, KS=True,
 		# normalization
 		prob= gof['p xvar']* gof['p yvar']*gof['p n']
 		return np.log(prob) if LogProb else prob
-	
 
-def _trimarray(array,trim):
-	# trims array of points not needed for interpolation
-	if trim[0] < array[1]:
-		imin=0
-	else:
-		imin = np.searchsorted(array, trim[0], side='left')-1
-	
-	if trim[1] > array[-2]:
-		imax=len(array)
-	else:
-		imax = np.searchsorted(array, trim[1], side='left')+1
-	
-	return imin, imax
 		
 
 	

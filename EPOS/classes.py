@@ -85,6 +85,7 @@ class epos:
 		if not self.Observation: raise ValueError('No observation defined')
 		if not self.DetectionEfficiency: raise ValueError('No detection effifiency defined')
 		
+		''' Define the region where completeness is calculated'''
 		if xtrim is None:
 			print 'Trimming x-axis from detection efficiency'
 			self.xtrim= self.eff_xlim
@@ -96,7 +97,8 @@ class epos:
 			self.ytrim= self.eff_ylim
 		else:
 			self.ytrim= [max(ytrim[0], self.eff_ylim[0]), min(ytrim[1], self.eff_ylim[1])]
-			
+		
+		''' Define a smaller region where observational comparison is performed'''	
 		if xzoom is None:
 			print 'Not zooming in on x-axis for model comparison'
 			self.xzoom= self.xtrim
@@ -116,38 +118,44 @@ class epos:
 			print 'Not a zoom'
 		else:
 			self.Zoom=True
-			
-# 		self.Mlim=[0.5, 20.]
-# 		self.Rlim=[0.25, 22.]
-# 		self.Plim=[0.4, 731.]
 		
+		''' Prep the grid '''
+		# make sure range _encompasses_ trim
+		ixmin,ixmax= _trimarray(self.eff_xvar, self.xtrim)
+		iymin,iymax= _trimarray(self.eff_yvar, self.ytrim)
+	
+		self.MC_xvar= self.eff_xvar[ixmin:ixmax]
+		self.MC_yvar= self.eff_yvar[iymin:iymax]
+		self.eff_trim= self.eff_2D[ixmin:ixmax,iymin:iymax]
+	
+		self.X, self.Y= np.meshgrid(self.MC_xvar, self.MC_yvar, indexing='ij')
+		
+		#print '\nTrimming {} to {}'.format(self.eff_2D.shape,self.eff_trim.shape) 
+		#print 'xlim: {}-{}'.format(*self.xtrim)
+		#print 'ylim: {}-{}'.format(*self.ytrim)
+		#print '\nTrim: {}'.format(self.eff_xvar)
+		#print 'To  : {}'.format(self.MC_xvar)
+		#print '\nTrim: {}'.format(self.eff_yvar)
+		#print 'To  : {}'.format(self.MC_yvar)
+
 		self.Range=True
 	
-	def set_parametric(self, xfunc=None, yfunc=None, 
-						xparams=[], yparams=[], normalization=0.01 ):
+	def set_parametric(self, func=None, p0=[], pname=None):
 		if self.populationtype is None:
 			self.populationtype='parametric'
 		elif self.populationtype is not 'parametric':
 			raise ValueError('You have already defined a planet population ({})'.format(self.populationtype))
 		
-		if not callable(xfunc): raise ValueError('xfunc is not a callable function')
-		if not callable(yfunc): raise ValueError('yfunc is not a callable function')
-		if not len(xparams)>0: raise ValueError('nonzero list of xparams')
-		if not len(yparams)>0: raise ValueError('nonzero list of yparams')
+		if not callable(func): raise ValueError('func is not a callable function')
+		if not len(p0)>0: raise ValueError('nonzero list of starting params')
 		
-		try: 	xfunc(np.asarray([1.]), *xparams)
-		except:	raise
-		try: 	yfunc(np.asarray([1.]), *yparams)
+		# Call function once to see if it works, P=1, R=1
+		try: 	func(np.asarray([1.]), np.asarray([1.]), *p0)
 		except:	raise
 		
-		self.xfunc=xfunc
-		self.yfunc=yfunc
-		self.xp0= xparams
-		self.yp0= yparams
-		self.norm0= normalization
-		
-		self.spara= ['norm','P break','P1','P2','R break','R1','R2']
-		self.para_in= [normalization]+xparams+yparams
+		self.func=func
+		self.p0= p0
+		self.pname= ['c{}'.format(i) for i in range(len(p0))] if pname is None else pname
 		
 	def add_population(self, name, sma, mass, 
 					inc=None, tag1=None, Verbose=False, weight=1.):
@@ -239,4 +247,17 @@ class epos:
 		self.RadiusMassConversion=True
 		self.RM=RM
 		self.RM_label=name
-		
+
+def _trimarray(array,trim):
+	# trims array of points not needed for interpolation
+	if trim[0] < array[1]:
+		imin=0
+	else:
+		imin = np.searchsorted(array, trim[0], side='left')-1
+	
+	if trim[1] > array[-2]:
+		imax=len(array)
+	else:
+		imax = np.searchsorted(array, trim[1], side='left')+1
+	
+	return imin, imax
