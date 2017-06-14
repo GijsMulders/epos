@@ -23,11 +23,11 @@ def periodradius(epos, SNR=True, Parametric=False):
 	ax.set_title('transiting planet sample'+suffix)
 	helpers.set_axes(ax, epos, Trim=True)
 	if Parametric or len(epos.groups)==1:
-		ax.plot(sim['P'], sim['R'], ls='', marker='.', mew=0, ms=5.0, color='k')
+		ax.plot(sim['P'], sim['Y'], ls='', marker='.', mew=0, ms=5.0, color='k')
 	else:
 		for k, sg in enumerate(epos.groups):
 			subset= sim['i sg']==k
-			ax.plot(sim['P'][subset], sim['R'][subset], ls='', marker='.', mew=0, ms=5.0, color=clrs[k % 4], label=sg['name'])
+			ax.plot(sim['P'][subset], sim['Y'][subset], ls='', marker='.', mew=0, ms=5.0, color=clrs[k % 4], label=sg['name'])
 
 	
 	#ax.legend(loc='lower left', shadow=False, prop={'size':14}, numpoints=1)
@@ -44,8 +44,8 @@ def pdf_3d(epos):
 	ax.set_xlabel('Orbital Period [days]')
 	ax.set_zlabel('Planets/bin')
 	
-	if epos.Radius:	ax.set_ylabel(r'Planet Radius [R$_\bigoplus$]')
-	else:			ax.set_ylabel(r'Planet Mass [M$_\bigoplus$]')
+	if epos.RV:	ax.set_ylabel(r'Planet Mass [M$_\bigoplus$]')
+	else:		ax.set_ylabel(r'Planet Radius [R$_\bigoplus$]')
 	
 	ax.set_xlim(np.log10(epos.xtrim))
 	ax.set_ylim(np.log10(epos.ytrim))
@@ -62,7 +62,7 @@ def pdf_3d(epos):
 		for k, sg in enumerate(epos.groups):
 			subset= sim['i sg']==k
 			P= sim['P'][subset]
-			R= sim['R'][subset]
+			R= sim['Y'][subset]
 			ax.plot(np.log10(P),np.log10(R), zs=0,zdir='z',
 				ls='',marker='.',mew=0,ms=5.0,color=clrs[k % 4])
 				
@@ -78,7 +78,7 @@ def pdf_3d(epos):
 				ls='-', marker='', color=clrs[k % 4])
 	else:
 		# top left panel (P,R)
-		ax.plot(np.log10(sim['P']), np.log10(sim['R']),zs=0,zdir='z', 
+		ax.plot(np.log10(sim['P']), np.log10(sim['Y']),zs=0,zdir='z', 
 				ls='', marker='.', mew=0, ms=5.0, color='k')
 		
 	# PDF, all combined, 2 panels
@@ -89,7 +89,7 @@ def pdf_3d(epos):
 		ls='-', marker='', color='k',label='combined x {:.3f}'.format(weight))
 
 	ygrid= np.logspace(*np.log10(epos.ytrim))
-	pdf= regression.sliding_window_log(sim['R'], None, ygrid) #, width=2. )
+	pdf= regression.sliding_window_log(sim['Y'], None, ygrid) #, width=2. )
 	ax.plot(np.log10(ygrid), pdf, zs=xplane,zdir='x', ls='-', marker='', color='k')
 
 	# observations
@@ -134,8 +134,8 @@ def pdf(epos):
 	ax1.set_title('Synthetic Model Populations',loc='left')
 
 	ax3.set_xlabel('Orbital Period [days]')
-	if epos.Radius:	ax1.set_ylabel(r'Planet Radius [R$_\bigoplus$]')
-	else:			ax1.set_ylabel(r'Planet Mass [M$_\bigoplus$]')
+	if epos.RV:	ax1.set_ylabel(r'Planet Mass [M$_\bigoplus$]')
+	else:		ax1.set_ylabel(r'Planet Radius [R$_\bigoplus$]')
 	
 	ax2.set_xlabel('Planets/bin')
 	ax3.set_ylabel('Planets/bin')
@@ -153,7 +153,7 @@ def pdf(epos):
 		for k, sg in enumerate(epos.groups):
 			subset= sim['i sg']==k
 			P= sim['P'][subset]
-			R= sim['R'][subset]
+			R= sim['Y'][subset]
 			ax1.plot(P,R, ls='', marker='.', mew=0, ms=5.0, color=clrs[k % 4])
 				
 			xgrid= np.logspace(*np.log10(epos.xtrim))
@@ -165,7 +165,7 @@ def pdf(epos):
 			ax2.plot(pdf, ygrid, ls='-', marker='', color=clrs[k % 4])
 	else:
 		# top left panel (P,R)
-		ax1.plot(sim['P'], sim['R'], ls='', marker='.', mew=0, ms=5.0, color='k')
+		ax1.plot(sim['P'], sim['Y'], ls='', marker='.', mew=0, ms=5.0, color='k')
 		
 	# PDF, all combined, 2 panels
 	xgrid= np.logspace(*np.log10(epos.xtrim))
@@ -174,7 +174,7 @@ def pdf(epos):
 	ax3.plot(xgrid, pdf, ls='-', marker='', color='k',label='combined x {:.3f}'.format(weight))
 
 	ygrid= np.logspace(*np.log10(epos.ytrim))
-	pdf= regression.sliding_window_log(sim['R'], None, ygrid) #, width=2. )
+	pdf= regression.sliding_window_log(sim['Y'], None, ygrid) #, width=2. )
 	ax2.plot(pdf, ygrid, ls='-', marker='', color='k')
 
 	# observations
@@ -212,7 +212,7 @@ def cdf(epos):
 	sim= epos.synthetic_survey	
 	ax1.set_title('Synthetic ({})'.format(sim['P zoom'].size))
 	helpers.set_axes(ax1, epos, Trim=True)
-	ax1.plot(sim['P'], sim['R'], ls='', marker='.', mew=0, ms=5.0, color='r', alpha=0.5)
+	ax1.plot(sim['P'], sim['Y'], ls='', marker='.', mew=0, ms=5.0, color='r', alpha=0.5)
 		
 	if epos.Zoom:
 		ax1.add_patch(patches.Rectangle( (epos.xzoom[0],epos.yzoom[0]), 
@@ -252,15 +252,15 @@ def cdf(epos):
 	CDF planet radius
 	'''
 	ax4.set_title('Radius, p={:.3g}'.format(epos.gof['p yvar']))
-	if epos.Radius:	ax4.set_xlabel(r'Planet Radius [R$_\bigoplus$]')
-	else:			ax4.set_xlabel(r'Planet Mass [M$_\bigoplus$]')
+	if epos.RV:	ax4.set_xlabel(r'Planet Mass [M$_\bigoplus$]')
+	else:		ax4.set_xlabel(r'Planet Radius [R$_\bigoplus$]')
 	ax4.set_ylabel('CDF')
 	ax4.set_xscale('log')
 	ax4.set_ylim([-0.05,1.05])
 	ax4.set_xlim(*epos.yzoom)
 
 	#model histogram x
-	R= sim['R zoom']
+	R= sim['Y zoom']
 	ax4.plot(np.sort(R), np.arange(R.size, dtype=float)/R.size, ls='-', marker='', color='r')
 
 	#obs histogram x

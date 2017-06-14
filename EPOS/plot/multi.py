@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import helpers
 
-def multiplicity(epos, MC=False, Log=False):
+def multiplicity(epos, MC=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
 	ax.set_title('planet multiplicity')
@@ -10,14 +10,9 @@ def multiplicity(epos, MC=False, Log=False):
 	ax.set_ylabel('number of systems')
 
 	ax.set_xlim(0, 9)
+	ax.set_ylim(0.5, 1e4) # 7.	
+	ax.set_yscale('log')
 
-	if Log:
-		ax.set_ylim(0.5, 1e4) # 7.	
-		ax.set_yscale('log')
-	else:
-		#ax.set_ylim(0, 7.) # 7.
-		pass
-	
 	# MC data
 	if MC:
 		ss=epos.synthetic_survey
@@ -37,10 +32,45 @@ def multiplicity(epos, MC=False, Log=False):
 	
 	prefix= 'output' if MC else 'survey'
 	
-	suffix='_log' if Log else ''	
-	
-	helpers.save(plt, '{}{}/multiplicity{}'.format(epos.plotdir,prefix,suffix))		
+	helpers.save(plt, '{}{}/multiplicity'.format(epos.plotdir,prefix))
 
+def multiplicity_cdf(epos, MC=False):
+	# plot multiplicity cdf
+	f, ax = plt.subplots()
+	ax.set_title('planet multiplicity')
+	ax.set_xlabel('planets per system')
+	ax.set_ylabel('cumulative number of planets')
+
+	ax.set_xlim(0, 9)
+	ax.set_ylim(-0.01,1.05)
+	#ax.set_yscale('log')
+
+	# MC data
+	if MC:
+		ss=epos.synthetic_survey
+		bincounts= np.sort(ss['multi']['cdf'])
+		cdf= np.arange(bincounts.size, dtype=float)/bincounts.size
+		ax.plot(bincounts, cdf, 
+			drawstyle='steps-mid', 
+			ls='-', marker='', mew=2, ms=10, color='b',label=epos.name)
+	
+		# observations in same region 
+		bincounts= np.sort(epos.obs_zoom['multi']['cdf'])
+		cdf= np.arange(bincounts.size, dtype=float)/bincounts.size
+		ax.plot(bincounts, cdf,  
+			drawstyle='steps-mid', 
+			ls='-', marker='', color='k', label='Kepler subset')
+
+	# observations
+	#ax.plot(epos.multi['bin'], epos.multi['count'], drawstyle='steps-mid', 
+	#	ls='--', marker='', color='gray', label='Kepler all')
+		
+	ax.legend(loc='lower right', shadow=False, prop={'size':14}, numpoints=1)
+	
+	prefix= 'output' if MC else 'survey'
+	
+	helpers.save(plt, '{}{}/cdf'.format(epos.plotdir,prefix))
+	
 def periodratio(epos, MC=False):
 	# plot multiplicity
 	f, ax = plt.subplots()

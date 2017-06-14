@@ -5,10 +5,13 @@ import corner
 import parametric
 
 def all(epos):
-	chain(epos)
-	corners(epos)
-	parametric.oneD(epos, MCMC=True)
-	parametric.twoD(epos, MCMC=True)
+	if hasattr(epos, 'chain'):
+		chain(epos)
+		corners(epos)
+		parametric.oneD(epos, MCMC=True)
+		parametric.twoD(epos, MCMC=True)
+	else:
+		print '\nNo chain to plot, did you run EPOS.run.mcmc()? \n'
 	
 
 def chain(epos):

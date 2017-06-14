@@ -1,4 +1,5 @@
 import numpy as np
+import cgs
 from EPOS import multi
 from EPOS.plot.helpers import set_pyplot_defaults
 
@@ -7,20 +8,46 @@ def readme():
 	print 'the survey detection efficiency, and the synthetic planet population.'
 	print 
 	print 'see example.py for a simple demonstration of the class'
+	print 
+	print 'epos(name, RV=False)'
+	print '  Initialize the class'
+	print 'in:'
+	print '  name: identifier, plots will appear in png/name'
+	print '  RV: transit or RV? [T/F]'
+	print 
+	print 'set_observation(xvar, yvar, starID, nstars=1.6862e5)'
+	print '  Observed planet population'
+	print 'in:'
+	print '  xvar: planet orbital period [list]'
+	print '  yvar: planet radius or M sin i [list]'
+	print '  ID: planet ID [list]'
+	print '  nstars: number of stars in the survey'
+	print
+	print 'set_survey(xvar, yvar, eff_2D, Rstar=1.0)'
+	print '  Survey detection efficiency (completeness)'
+	print 'in:'
+	print '  xvar: planet orbital period grid [list]'
+	print '  yvar: planet radius or M sin i grid [list]'
+	print '  eff_2D: 2D matrix of detection efficiency'
+	print '  Rstar: stellar radius for calculating transit probability'
 
 class epos:
 	
-	def __init__(self, name, Radius=True, Debug=False):
+	def __init__(self, name, RV=False, Debug=False):
 		self.name=name
 		self.plotdir='png/{}/'.format(name)
-		self.Radius=Radius
-		
+		self.RV= RV
+
+		# switches to be set later		
 		self.Observation=False
 		self.Range=False
 		self.DetectionEfficiency=False
-		self.Occurrence= False # inverse detection efficiency
+		self.Occurrence= False # inverse detection efficiency (?)
 		self.Prep= False # ready to run? EPOS.run.once()
 		self.RadiusMassConversion= False
+		self.Radius= False
+		self.Isotropic= False
+		self.SNRcorrelated= False # different random SNR draw for multi-planets
 		
 		self.populationtype=None # ['parametric','model']
 				
@@ -56,13 +83,12 @@ class epos:
 			multi.frequency(self.obs_starID, Verbose=True)
 		epos.multi['Pratio']= \
 			multi.periodratio(self.obs_starID, self.obs_xvar, Verbose=True)
-		print 
+		epos.multi['cdf']= multi.cdf(self.obs_starID, Verbose=True)	
 		
-	def set_survey(self, xvar, yvar, eff_2D):
+	def set_survey(self, xvar, yvar, eff_2D, Rstar=1.0):
 		self.eff_xvar=np.asarray(xvar)
 		self.eff_yvar=np.asarray(yvar)
 		self.eff_2D=np.asarray(eff_2D)
-		self.eff_2D_log=np.log10(self.eff_2D)
 		
 		assert self.eff_xvar.ndim == self.eff_yvar.ndim == 1, 'only 1D arrays'
 		assert self.eff_2D.ndim == 2, 'Detection efficiency must by a 2dim array'
@@ -73,11 +99,16 @@ class epos:
 		self.eff_xlim= [min(self.eff_xvar),max(self.eff_xvar)]
 		self.eff_ylim= [min(self.eff_yvar),max(self.eff_yvar)]
 		
-		self.DetectionEfficiency=True
+		if self.RV:
+			self.completeness= self.eff_2D
+		else:
+			self.Rstar=Rstar # Solar radii
+			self.Pindex= -2./3.
+			self.fgeo_prefac= self.Rstar*cgs.Rsun/ (cgs.au /365.24**(2./3.))
+			P, R= np.meshgrid(self.eff_xvar, self.eff_yvar, indexing='ij')
+			self.completeness= self.eff_2D * self.fgeo_prefac*P**self.Pindex
 
-#	def set_occurrence(self):
-#		self.obs_occ= 
-#	from plot.diag: is this generally useful?
+		self.DetectionEfficiency=True
 	
 	def set_ranges(self, xtrim=None, ytrim=None, xzoom=None, yzoom=None):
 		
@@ -126,7 +157,7 @@ class epos:
 	
 		self.MC_xvar= self.eff_xvar[ixmin:ixmax]
 		self.MC_yvar= self.eff_yvar[iymin:iymax]
-		self.eff_trim= self.eff_2D[ixmin:ixmax,iymin:iymax]
+		self.MC_eff= self.eff_2D[ixmin:ixmax,iymin:iymax]
 	
 		self.X, self.Y= np.meshgrid(self.MC_xvar, self.MC_yvar, indexing='ij')
 		
@@ -157,6 +188,8 @@ class epos:
 		self.p0= p0
 		self.pname= ['c{}'.format(i) for i in range(len(p0))] if pname is None else pname
 		
+		self.Isotropic=True
+		
 	def add_population(self, name, sma, mass, 
 					inc=None, tag1=None, Verbose=False, weight=1.):
 		# tag is fit parameter, i.e. metallicity or surface density
@@ -174,7 +207,11 @@ class epos:
 			if len(sma) is not len(mass): raise ValueError('sma ({}) and mass ({}) not same length'.format(sma,mass))
 		except: raise ValueError('sma ({}) and mass ({}) have to be iterable'.format(type(sma), type(mass)))
 		
-		Inc= inc is not None	
+		# model has mutual inclinations?
+		Inc= inc is not None
+		if not Inc: 
+			self.Isotropic=False # isotropic if any subgroup lacks inclinations
+			self.Multi=False
 		
 		sg={}
 		sg['name']= name

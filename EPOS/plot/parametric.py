@@ -42,6 +42,9 @@ def oneD(epos, PlotZoom=False, MCMC=False):
 	else:
 		ax.plot(epos.MC_xvar, pdf0_X*scale_x, marker='',ls='-',color='k')
     
+	if epos.Zoom: 
+		for zoom in epos.xzoom: ax.axvline(zoom, ls='--', color='k')
+    
 	helpers.save(plt, epos.plotdir+fname+'_x')
 
 	''' Planet Radius'''
@@ -63,6 +66,9 @@ def oneD(epos, PlotZoom=False, MCMC=False):
 		ax.plot(epos.MC_yvar, pdf_Y*scale_y, marker='',ls='-',color='k')
 	else:
 		ax.plot(epos.MC_yvar, pdf0_Y*scale_y, marker='',ls='-',color='k')
+
+	if epos.Zoom: 
+		for zoom in epos.yzoom: ax.axvline(zoom, ls='--', color='k')
 
 	helpers.save(plt, epos.plotdir+fname+'_y')
 

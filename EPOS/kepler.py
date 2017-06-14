@@ -1,14 +1,11 @@
-import numpydict as npdict
-import pickle
-import cgs
+import numpy as np
 
 '''
 NOTE: Kepler files from Q16-epos.py
-cp ~/Kepler/pickle/completeness.Q16.epos.*.pickle files/
-cp ~/Kepler/npdict/Q16.occ.Rp-P.npdict files/Q16.occ.Rp-P.all.npdict
-cp ~/Kepler/npdict/Q16.occ.Rp-P.sptype.*.npdict files/
+cp ~/Kepler/npz/completeness.Q16.epos.*.npz files/
+cp ~/Kepler/npz/KOI.Q16.epos.*.npz files/
 
-TODO: switch to better format, rename to DR24 etc.
+#cp ~/Kepler/npdict/Q16.occ.Rp-P.sptype.*.npdict files/
 '''
 
 def readme():
@@ -27,12 +24,9 @@ def readme():
 	print
 
 def obs_Q16(subsample='all'):
-	KOI= npdict.load('files/Q16.occ.Rp-P.sptype.{}.npdict'.format(subsample))
-	return KOI['P']/cgs.day, KOI['Rp']/cgs.Rearth, KOI['KID']
+	KOI= np.load('files/KOI.Q16.epos.{}.npz'.format(subsample))
+	return KOI['P'], KOI['Rp'], KOI['KID']
 
 def eff_Q16(subsample='all'):
-	fname= 'files/completeness.Q16.epos.{}.pickle'.format(subsample)
-	with open(fname,'r') as f: 
-		grid= pickle.load(f)
-	
-	return grid['x'], grid['y'], grid['completeness'] 
+	eff= np.load('files/completeness.Q16.epos.{}.npz'.format(subsample))
+	return eff['x'], eff['y'], eff['fsnr']

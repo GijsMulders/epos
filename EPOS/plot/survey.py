@@ -26,7 +26,7 @@ def observed(epos, PlotBox=True):
 	
 	if PlotBox:
 		fname='.box'
-		if not epos.Range: epos.set_ranges()
+		assert epos.Range
 		ax.add_patch(patches.Rectangle( (epos.xtrim[0],epos.ytrim[0]), 
 			epos.xtrim[1]-epos.xtrim[0], epos.ytrim[1]-epos.ytrim[0],fill=False, zorder=1, ls='--') )
 		if epos.Zoom:
@@ -36,10 +36,10 @@ def observed(epos, PlotBox=True):
 
 	helpers.save(plt, epos.plotdir+'survey/planets'+fname)
 	
-def completeness(epos, PlotBox=False):
+def completeness(epos, PlotBox=False, Transit=False):
 	assert epos.DetectionEfficiency
 	f, ax = plt.subplots()
-	ax.set_title('Completeness [%]')
+	ax.set_title('Detection Efficiency [%]' if Transit else 'Completeness [%]')
 	helpers.set_axes(ax, epos, Trim=False, Eff=True)
 
 	# contour with labels (not straightforward)
@@ -50,14 +50,17 @@ def completeness(epos, PlotBox=False):
 	ticks_log= np.linspace(-n,0,n+1)
 	ticks= np.logspace(-n,0, n+1)
 	
+	toplot= epos.eff_2D if Transit else epos.completeness
+	
 	cmap = plt.cm.get_cmap('PuRd')
-	cs= ax.contourf(epos.eff_xvar, epos.eff_yvar, epos.eff_2D_log.T, cmap=cmap, levels=levels_log) #vmin=-3., vmax=0.)	# vmax keywords don't work on colorbar
+	with np.errstate(divide='ignore'): log_completeness=  np.log10(toplot)
+	cs= ax.contourf(epos.eff_xvar, epos.eff_yvar,log_completeness.T, cmap=cmap, levels=levels_log) #vmin=-3., vmax=0.)	# vmax keywords don't work on colorbar
 	cbar= f.colorbar(cs, ax=ax, shrink=0.95, ticks=ticks_log)
 	cbar.ax.set_yticklabels(labels)
 		
 	if PlotBox:
 		fname='.box'
-		if not epos.Range: epos.set_ranges()
+		assert epos.Range
 		ax.add_patch(patches.Rectangle( (epos.xtrim[0],epos.ytrim[0]), 
 			epos.xtrim[1]-epos.xtrim[0], epos.ytrim[1]-epos.ytrim[0],fill=False, zorder=1, ls='--') )
 		if epos.Zoom:
@@ -66,11 +69,12 @@ def completeness(epos, PlotBox=False):
 	else: 
 		#ax.contour(epos.eff_xvar, epos.eff_yvar, epos.eff_2D.T,levels= ticks, colors = ['k','k','k','k'], linewidths=3.)	
 		for tick, label in zip(ticks,labels):
-			cs= ax.contour(epos.eff_xvar, epos.eff_yvar, epos.eff_2D.T,levels= [tick], colors = ['k'], linewidths=3.)
+			cs= ax.contour(epos.eff_xvar, epos.eff_yvar, toplot.T,levels= [tick], colors = ['k'], linewidths=3.)
 			plt.clabel(cs, inline=1, fmt=label+'%%')
 
 		fname=''
 
-	helpers.save(plt, epos.plotdir+'survey/completeness'+fname)
+	helpers.save(plt, epos.plotdir+'survey/'+('efficiency' if Transit else 'completeness')+ \
+				fname)
 	
 	pass

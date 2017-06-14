@@ -16,9 +16,12 @@ def all(epos):
 
 	survey.observed(epos, PlotBox=False)
 	survey.completeness(epos, PlotBox=False)
+	if not epos.RV: survey.completeness(epos, PlotBox=False, Transit=True)
 	
-	survey.observed(epos, PlotBox=True)
-	survey.completeness(epos, PlotBox=True)
+	if epos.Range:
+		survey.observed(epos, PlotBox=True)
+		survey.completeness(epos, PlotBox=True)
+		if not epos.RV: survey.completeness(epos, PlotBox=True, Transit=True)
 	
 	if epos.populationtype is 'parametric':
 		parametric.oneD(epos)
@@ -26,7 +29,7 @@ def all(epos):
 	elif epos.populationtype is 'model':
 		input(epos, PlotBox=False)
 		input_diag(epos, PlotBox=False)
-		multi.multiplicity(epos, MC=False, Log=True)
+		multi.multiplicity(epos, MC=False)
 		multi.periodratio(epos, MC=False)
 		multi.periodratio_cdf(epos, MC=False)
 		if epos.RadiusMassConversion: 

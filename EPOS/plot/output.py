@@ -16,7 +16,8 @@ def all(epos):
 		periodradius.periodradius(epos, SNR=False)
 		periodradius.periodradius(epos, SNR=True)
 		
-		multi.multiplicity(epos, MC=True, Log=True)
+		multi.multiplicity(epos, MC=True)
+		multi.multiplicity_cdf(epos, MC=True)
 		multi.periodratio(epos, MC=True)
 		multi.periodratio_cdf(epos, MC=True)
 		massradius.massradius(epos, MC=True)

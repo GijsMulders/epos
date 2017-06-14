@@ -3,8 +3,8 @@ import os
 
 def set_axes(ax, epos, Trim=False, Eff=False):
 	ax.set_xlabel('Orbital Period [days]')
-	if epos.Radius:	ax.set_ylabel(r'Planet Radius [R$_\bigoplus$]')
-	else:			ax.set_ylabel(r'Planet Mass [M$_\bigoplus$]')
+	if epos.RV:	ax.set_ylabel(r'Planet M sin i [M$_\bigoplus$]')
+	else:		ax.set_ylabel(r'Planet Radius [R$_\bigoplus$]')
 
 	if Trim:
 		ax.set_xlim(epos.xtrim)

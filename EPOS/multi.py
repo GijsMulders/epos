@@ -9,7 +9,10 @@ def readme():
 	print 'frequency(): returns the frequency of single/double/triple/etc systems'
 	print '  ID:  array of star identifiers'
 	print
-	print 'frequency(): returns the period ratios of adjecent planets'
+	print 'cdf(): returns the cdf of planets in multi-systems'
+	print '  ID:  array of star identifiers'
+	print
+	print 'periodratio(): returns the period ratios of adjacent planets'
 	print '  ID:  array of star identifiers'
 	print '  P:  array of orbital periods'
 	print
@@ -32,6 +35,13 @@ def frequency(ID, Verbose=False):
 			print '  - {}: {}'.format(text, nmulti)
 	
 	return np.arange(1,bincounts.size), bincounts[1:]
+
+def cdf(ID, Verbose=False):
+	bin, count= frequency(ID)
+	xlist=[[bin[k]]*count[k]*bin[k] for k in range(len(bin))]
+	if Verbose:
+		print '  multi cdf planets: {}'.format(len(np.concatenate(xlist)))
+	return np.concatenate(xlist)
 
 def periodratio(ID, P, Verbose=False):
 	IDsys, toplanet, counts= np.unique(ID, return_inverse=True,return_counts=True)
