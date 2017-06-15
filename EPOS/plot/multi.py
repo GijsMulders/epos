@@ -79,8 +79,11 @@ def periodratio(epos, MC=False):
 	ax.set_ylabel('PDF')
 
 	ax.set_xlim(1, 10)
-	
-	bins=np.linspace(1,10, 9*5+1)
+	ax.set_xscale('log')
+	for s in [ax.set_xticks,ax.set_xticklabels]: s([1,2,3,4,5,7,10])
+		
+	#bins=np.linspace(1,10, 9*5+1)
+	bins=np.logspace(0,1, 15)
 	
 	# MC data
 	if MC:
@@ -108,9 +111,9 @@ def periodratio_cdf(epos, MC=False):
 	ax.set_ylabel('CDF')
 
 	ax.set_xlim(1, 10)
-	for f in [ax.set_xticks,ax.set_xticklabels]: f([1,2,3,4,5,7,10])
 	ax.set_xscale('log')
-	
+	for s in [ax.set_xticks,ax.set_xticklabels]: s([1,2,3,4,5,7,10])
+
 	# MC data
 	if MC:
 		ss=epos.synthetic_survey

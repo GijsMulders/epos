@@ -57,7 +57,11 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1):
 	if epos.populationtype is 'parametric':
 		fpara= epos.p0
 	elif epos.populationtype is 'model':
-		fpara= [sg['weight'] for sg in epos.groups]
+		if len(epos.groups) == 1:
+			#fpara= [sg['weight'], 0.5, 0.8, 1.0] # singles, Pratio, inc (+corr SNR?)
+			fpara=epos.p0 # defined where?
+		else:
+			fpara= [sg['weight'] for sg in epos.groups]
 	else: assert False
 	
 	''' Load previous chain?'''
@@ -124,29 +128,30 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1):
 	
 	''' estimate #planets/star '''
 	#print epos.samples.shape # 30000, 7
-	pps= [np.sum(epos.func(epos.X, epos.Y,*para)) for para in epos.samples]
-	eta= np.percentile(pps, [16, 50, 84]) 
-	print '  eta= {:.3g} +{:.3g} -{:.3g}'.format(eta[1], 
-			eta[2]-eta[1], eta[1]-eta[0])
+	if epos.populationtype is 'parametric':
+		pps= [np.sum(epos.func(epos.X, epos.Y,*para)) for para in epos.samples]
+		eta= np.percentile(pps, [16, 50, 84]) 
+		print '  eta= {:.3g} +{:.3g} -{:.3g}'.format(eta[1], 
+				eta[2]-eta[1], eta[1]-eta[0])
 
-	# planets in box (what is the X,Y grid stored?)
-	#pps= [np.sum(epos.func(epos.X, epos.Y,*para)) for para in epos.samples]
-	#eta= np.percentile(pps, [16, 50, 84]) 
-	#print '  eta_box= {:.3g} +{:.3g} -{:.3g}'.format(eta[1], 
-	#		eta[2]-eta[1], eta[1]-eta[0])
+		# planets in box (where is the X,Y grid stored?)
+		#pps= [np.sum(epos.func(epos.X, epos.Y,*para)) for para in epos.samples]
+		#eta= np.percentile(pps, [16, 50, 84]) 
+		#print '  eta_box= {:.3g} +{:.3g} -{:.3g}'.format(eta[1], 
+		#		eta[2]-eta[1], eta[1]-eta[0])
 
 	
-	''' estimate eta_earth'''
-	# eta_earth
-	n_earth= epos.func(365., 1.0, *epos.samples.transpose() )
-	xnorm= epos.MC_xvar.size-1 #  == xrange/dx
-	ynorm= epos.MC_yvar.size-1 #  == yrange/dy
-	xHZ= np.log10((1.67/0.95)**(1.5) )/ np.log10(epos.MC_xvar[-1]/epos.MC_xvar[0])
-	yHZ= np.log10((1.5/0.7))/ np.log10(epos.MC_yvar[-1]/epos.MC_yvar[0])
+		''' estimate eta_earth'''
+		# eta_earth
+		n_earth= epos.func(365., 1.0, *epos.samples.transpose() )
+		xnorm= epos.MC_xvar.size-1 #  == xrange/dx
+		ynorm= epos.MC_yvar.size-1 #  == yrange/dy
+		xHZ= np.log10((1.67/0.95)**(1.5) )/ np.log10(epos.MC_xvar[-1]/epos.MC_xvar[0])
+		yHZ= np.log10((1.5/0.7))/ np.log10(epos.MC_yvar[-1]/epos.MC_yvar[0])
 
-	eta_earth= np.percentile(n_earth, [16, 50, 84]) * (xHZ*xnorm) * (yHZ*ynorm)
-	print '  eta_earth= {:.3g} +{:.3g} -{:.3g}'.format(eta_earth[1], 
-			eta_earth[2]-eta_earth[1], eta_earth[1]-eta_earth[0])
+		eta_earth= np.percentile(n_earth, [16, 50, 84]) * (xHZ*xnorm) * (yHZ*ynorm)
+		print '  eta_earth= {:.3g} +{:.3g} -{:.3g}'.format(eta_earth[1], 
+				eta_earth[2]-eta_earth[1], eta_earth[1]-eta_earth[0])
 
 	''' Best-fit values'''
 	print '\nBest-fit values'
@@ -237,21 +242,42 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 		else:		allR= allY
 				
 	else:
-		# Draw systems from subgroups, array with length survey size
-		assert len(fpara) is len(epos.groups)
+		''' Fit parameters '''
+		if len(fpara) is len(epos.groups):
+			''' Draw systems from subgroups, array with length survey size '''
+			weight= fpara
+			f_iso= 0.6
+			f_dP= 1.0
+			f_inc= 1.0
+		else:
+			try:
+				weight= [fpara[0]]
+				f_iso= fpara[1]
+				f_dP= fpara[2]
+				f_inc= fpara[3]
+			except:
+				raise ValueError('\Wrong number of parameters ({})'.format(len(fpara)))
+			
+			if f_iso<0 or f_dP<=0 or f_inc<0 or not (0 <= weight[0] <= 1):
+				#print 'Oops IV'
+				#print fpara
+				if Store: raise ValueError('parameters out of bounds')
+				return -np.inf
+				
+		
 		L_P, L_M, L_R, L_I= [], [], [], []
 		L_SG=[] # keep track of subgroup
 		L_ID=[] # keep track of multis
 		L_dP=[] # Period ratios (input)
 		IDstart=0
 		for i, sg in enumerate(epos.groups):
-			ndraw= int(round(1.*epos.nstars*sg['weight']/sg['n']))
+			ndraw= int(round(1.*epos.nstars*weight[i]/sg['n']))
 			# note: do a proper calc with // and % for low weights
 			if Verbose: 
 				print '  {} planets in subgroup {} with {} simulations'.format(
 					sg['all_P'].size, sg['name'], sg['n'])
 				print '  {} stars in survey, {} draws from subgroup (w={:.3f})'.format(
-					epos.nstars, ndraw, sg['weight'])
+					epos.nstars, ndraw, weight[i])
 			L_P.append(np.tile(sg['all_P'], ndraw))
 			L_M.append(np.tile(sg['all_mass'], ndraw))
 			L_SG.append(np.full_like(L_M[-1],i))
@@ -290,7 +316,7 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 	else:
 		# draw same numbers for multi-planet systems
 		IDsys, toplanet= np.unique(allID, return_inverse=True) # return_counts=True
-		print '  {}/{} systems'.format(IDsys.size, allID.size)
+		if Verbose: print '  {}/{} systems'.format(IDsys.size, allID.size)
 		
 		# draw system viewing angle proportionate to sin theta
 		inc_sys= np.arcsin(np.random.uniform(0,1,IDsys.size))
@@ -298,20 +324,19 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 		assert inc_pl.size == allP.size
 		
 		R_a= epos.fgeo_prefac *allP**epos.Pindex # == p_trans
-		mutual_inc= allI
+		mutual_inc= allI * f_inc
 		#mutual_inc= 0.0 # planar distribution
-		mutual_inc= 1.0 # fit 
-		print '  Average mutual inc={:.1f} degrees'.format(np.median(allI))
+		#mutual_inc= 1.0 # fit 
+		if Verbose: print '  Average mutual inc={:.1f} degrees'.format(np.median(allI))
 		delta_inc= mutual_inc *np.cos(np.random.uniform(0,np.pi,allP.size)) * np.pi/180.
 		itrans= np.abs(inc_pl+delta_inc) < np.arcsin(R_a)
 
 		# allow for a fraction of isotropic systems
-		frac=0.7 # from fit parameters?		
-		if frac > 0:
+		if f_iso > 0:
 			p_trans= epos.fgeo_prefac *allP**epos.Pindex
 			itrans_iso= p_trans >= np.random.uniform(0,1,allP.size)
 			
-			iso_sys= (np.random.uniform(0,1,IDsys.size) < frac)
+			iso_sys= (np.random.uniform(0,1,IDsys.size) < f_iso)
 			iso_pl= iso_sys[toplanet]
 			itrans = np.where(iso_pl, itrans_iso, itrans)
 
@@ -394,11 +419,14 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 		# chi^2: (np-nobs)/nobs**0.5 -> p: e^-0.5 x^2
 		gof['p n']= np.exp(-0.5*(epos.obs_zoom['x'].size-np.sum(ix&iy))**2. 
 							/ epos.obs_zoom['x'].size )
-		prob= gof['p xvar']* gof['p yvar']*gof['p n']
+		prob= 1.* gof['p n']
+		prob*= gof['p xvar']* gof['p yvar'] # works badly for models
+
 		
 		if not epos.Isotropic:
 			# Period ratio
-			gof['p dP']= 1.
+			gof['D dP'], gof['p dP']= ks_2samp(epos.obs_zoom['multi']['Pratio'], 
+						f_dP*multi.periodratio(det_ID[ix&iy], det_P[ix&iy]))
 			prob*= gof['p dP']
 			
 			# Multi-planets

@@ -39,8 +39,7 @@ def frequency(ID, Verbose=False):
 def cdf(ID, Verbose=False):
 	bin, count= frequency(ID)
 	xlist=[[bin[k]]*count[k]*bin[k] for k in range(len(bin))]
-	if Verbose:
-		print '  multi cdf planets: {}'.format(len(np.concatenate(xlist)))
+	#if Verbose: print '  multi cdf planets: {}'.format(len(np.concatenate(xlist)))
 	return np.concatenate(xlist)
 
 def periodratio(ID, P, Verbose=False):
@@ -64,4 +63,4 @@ def periodratio(ID, P, Verbose=False):
 		#	print ' ID {}, P={}, dP= {}'.format(ID[k], P[ID==ID[k]], _dP)
 		Pratio.extend(dP)
 	
-	return Pratio
+	return np.array(Pratio)

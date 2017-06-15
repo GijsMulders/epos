@@ -8,8 +8,9 @@ def all(epos):
 	if hasattr(epos, 'chain'):
 		chain(epos)
 		corners(epos)
-		parametric.oneD(epos, MCMC=True)
-		parametric.twoD(epos, MCMC=True)
+		if epos.populationtype is 'parametric':
+			parametric.oneD(epos, MCMC=True)
+			parametric.twoD(epos, MCMC=True)
 	else:
 		print '\nNo chain to plot, did you run EPOS.run.mcmc()? \n'
 	
