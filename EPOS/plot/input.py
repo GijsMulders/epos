@@ -199,8 +199,8 @@ def Pratio(epos):
 		ax.set_xscale('log')
 		ax.set_yscale('log')
 
-		ax.axhspan(1.2, 4.0, facecolor='0.5', alpha=0.5)
-		ax.axhline(2.2, color='0.5', ls='-')
+		ax.axhspan(1.3, 3.1, facecolor='0.5', alpha=0.5)
+		ax.axhline(1.9, color='0.5', ls='-')
 		
 		ax.axhline(np.median(sg['all_Pratio']), color=clrs[k % 4], ls='--')
 		#Pratio= np.isfinite()

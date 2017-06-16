@@ -47,7 +47,6 @@ class epos:
 		self.RadiusMassConversion= False
 		self.Radius= False
 		self.Isotropic= False
-		self.SNRcorrelated= False # different random SNR draw for multi-planets
 		
 		self.populationtype=None # ['parametric','model']
 				

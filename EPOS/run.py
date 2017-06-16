@@ -38,6 +38,7 @@ def once(epos, fac=1.0):
 		fpara= epos.p0 
 	elif epos.populationtype is 'model':
 		fpara= [sg['weight'] for sg in epos.groups]
+		#if hasattr(epos,'p0'): fpara=epos.p0
 	else: assert False
 	
 	''' Time the first MC run'''
@@ -202,8 +203,7 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 	dimension equal to sample size * planets_per_star
 	also keeping track off subgroup (SG), inc (I), and period ratio (dP)
 	'''
-	if epos.populationtype is 'parametric':
-		
+	if epos.populationtype == 'parametric':
 		''' Check if parameters make sense'''
 		# normalization can't be zero
 		if fpara[0] <= 0:
@@ -243,22 +243,30 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 				
 	else:
 		''' Fit parameters '''
+		f_SNR= 0.5 # doesn't seem to be well-constrained, light degenracy with f_inc
 		if len(fpara) is len(epos.groups):
 			''' Draw systems from subgroups, array with length survey size '''
 			weight= fpara
-			f_iso= 0.6
+			f_iso= 0.0 # 0.6 is best fit?
 			f_dP= 1.0
 			f_inc= 1.0
+			#f_SNR= 0.5 
+			if hasattr(epos,'p0'): 
+				weight= [epos.p0[0]]
+				#f_iso, f_dP, f_inc, f_SNR= epos.p0[1:]
+				f_iso, f_dP, f_inc= epos.p0[1:]
 		else:
 			try:
 				weight= [fpara[0]]
 				f_iso= fpara[1]
 				f_dP= fpara[2]
 				f_inc= fpara[3]
+				#f_SNR= fpara[4]
 			except:
 				raise ValueError('\Wrong number of parameters ({})'.format(len(fpara)))
 			
-			if f_iso<0 or f_dP<=0 or f_inc<0 or not (0 <= weight[0] <= 1):
+			if f_iso<0 or f_dP<=0 or f_inc<0 or not (0 <= weight[0] <= 1) or \
+				not (0 <= f_SNR <= 1):
 				#print 'Oops IV'
 				#print fpara
 				if Store: raise ValueError('parameters out of bounds')
@@ -381,15 +389,18 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 	p_snr= f_snr(MC_P, MC_Y, grid=False)
 	assert p_snr.ndim == 1
 
-	if epos.Isotropic or (not epos.SNRcorrelated):
-		idet= p_snr >= np.random.uniform(0,1,MC_P.size)
-	else:
-		# draw same random number for S/N calc
-		# correlated noise
-		# makes a big difference for smaller planets?
-		IDsys, toplanet= np.unique(MC_ID, return_inverse=True) 
-		idet= p_snr >= np.random.uniform(0,1,IDsys.size)[toplanet]
+	idet= p_snr >= np.random.uniform(0,1,MC_P.size)
 	
+	# draw same random number for S/N calc, 1=correlated noise
+	if (not epos.Isotropic) and f_SNR >0:
+		IDsys, toplanet= np.unique(MC_ID, return_inverse=True) 
+		idet_cor= p_snr >= np.random.uniform(0,1,IDsys.size)[toplanet]
+
+		cor_sys= (np.random.uniform(0,1,IDsys.size) < f_SNR)
+		cor_pl= cor_sys[toplanet]
+		idet = np.where(cor_pl, idet_cor, idet)
+
+	# arrays with detected planets
 	if not epos.Isotropic:
 		det_ID= MC_ID[idet]		
 	det_P= MC_P[idet]
@@ -420,8 +431,8 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 		gof['p n']= np.exp(-0.5*(epos.obs_zoom['x'].size-np.sum(ix&iy))**2. 
 							/ epos.obs_zoom['x'].size )
 		prob= 1.* gof['p n']
-		prob*= gof['p xvar']* gof['p yvar'] # works badly for models
-
+		if epos.Isotropic:
+			prob*= gof['p xvar']* gof['p yvar'] # increase acceptance fraction for models
 		
 		if not epos.Isotropic:
 			# Period ratio
@@ -437,7 +448,7 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 		
 		if Verbose:
 			print '\nGoodness-of-fit'
-			print '  logp= {:.1f}'.format(np.log(gof['p xvar']* gof['p yvar']*gof['p n']))
+			print '  logp= {:.1f}'.format(np.log(prob))
 			print '  - p(x)={:.2g}'.format(gof['p xvar'])
 			print '  - p(y)={:.2g}'.format(gof['p yvar'])
 			print '  - p(n={})={:.2g}'.format(np.sum(ix&iy), gof['p n'])
@@ -466,7 +477,7 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 			if 'all_Pratio' in sg: ss['dP']= det_dP
 			ss['multi']={}
 			ss['multi']['bin'], ss['multi']['count']= multi.frequency(det_ID[ix&iy])
-			ss['multi']['Pratio']= multi.periodratio(det_ID[ix&iy], det_P[ix&iy])
+			ss['multi']['Pratio']= multi.periodratio(det_ID[ix&iy], det_P[ix&iy]) # *f_dP
 			ss['multi']['cdf']= multi.cdf(det_ID[ix&iy])
 		
 		epos.gof=gof
