@@ -74,7 +74,7 @@ def multiplicity_cdf(epos, MC=False):
 def periodratio(epos, MC=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
-	ax.set_title('period ratio adjecent planets')
+	ax.set_title('period ratio adjacent planets')
 	ax.set_xlabel('period outer/inner')
 	ax.set_ylabel('PDF')
 
@@ -88,13 +88,37 @@ def periodratio(epos, MC=False):
 	# MC data
 	if MC:
 		ss=epos.synthetic_survey
-		ax.hist(ss['multi']['Pratio'], bins=bins, ec='b', histtype='step', label=epos.name)
+		ax.hist(ss['multi']['Pratio'], bins=bins, 
+				ec='b', histtype='step', label=epos.name)
+		ax.axvline(np.median(ss['multi']['Pratio']), color='b', ls='--')
 	
 		# Observed zoom
 		ax.hist(epos.obs_zoom['multi']['Pratio'], bins=bins, ec='k', histtype='step', label='Kepler subset')
+		ax.axvline(np.median(epos.obs_zoom['multi']['Pratio']), color='k', ls='--')
 	else:
 		# observed all
 		ax.hist(epos.multi['Pratio'], bins=bins, color='b', label='Kepler all')
+		ax.axvline(np.median(epos.multi['Pratio']), color='b', ls='--')
+
+		# quick fit to Pratio distributio: what form is this??		
+		from scipy import stats
+		xx= np.logspace(0,1)
+		#yy= 40.* stats.norm.pdf(np.log10(xx-1), np.log10(0.5), 0.1)
+		#yy= 50.* stats.norm.pdf(np.log10(xx-0.3), np.log10(1.5), 0.12)
+		#yy= 50.* stats.rayleigh.pdf(np.log10(xx), scale=np.log10(2.0)) # too wide
+		#yy= 150.* (xx/2)**(-2.5) * stats.norm.cdf(xx, 1.6, 0.2)  #np.exp(1.-1./(xx/2.))
+		
+		# skewed norm is reasonable but can't draw from it.
+		#frozen= stats.norm(loc=np.log10(1.7), scale=0.12)
+		#skewnorm= 2.*frozen.pdf(np.log10(xx))*frozen.cdf(2.0*np.log10(xx))
+		#yy=30. *skewnorm
+		#yy= 150. * stats.skewnorm.pdf(np.log10(xx), 0.0, np.log10(1.5), 0.12)
+		#ax.plot(xx, yy, marker='', ls=':', color='r')
+		
+		if epos.populationtype=='parametric' and not epos.Isotropic:
+			from EPOS.fitfunctions import brokenpowerlaw1D
+			yy= 170.*brokenpowerlaw1D(xx, *epos.p0[epos.np2D+1:epos.np2D+4])
+			ax.plot(xx, yy, marker='', ls=':', color='r')
 	
 	prefix= 'output' if MC else 'survey'
 

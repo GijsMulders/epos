@@ -186,8 +186,16 @@ class epos:
 		self.func=func
 		self.p0= p0
 		self.pname= ['c{}'.format(i) for i in range(len(p0))] if pname is None else pname
+		self.np2D= len(p0)
 		
 		self.Isotropic=True
+
+	def set_multi(self, p0=[], pname=None):
+		if self.populationtype is not 'parametric':
+			raise ValueError('Define a parametric planet population first')
+		self.Isotropic=False
+		self.p0.extend(p0)
+		self.pname+=['m{}'.format(i) for i in range(len(p0))] if pname is None else pname
 		
 	def add_population(self, name, sma, mass, 
 					inc=None, tag1=None, Verbose=False, weight=1.):

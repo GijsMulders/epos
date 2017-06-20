@@ -9,30 +9,30 @@ fmt_symbol= {'ls':'', 'marker':'o', 'mew':2, 'ms':8,'alpha':0.6}
 def all(epos):
 
 	print '\nPlotting output...'
-	if epos.populationtype is 'parametric':
-		periodradius.periodradius(epos, Parametric=True, SNR=False)
-		periodradius.periodradius(epos, Parametric=True, SNR=True)
-	elif epos.populationtype is 'model':
-		periodradius.periodradius(epos, SNR=False)
-		periodradius.periodradius(epos, SNR=True)
-		
+	
+	Parametric= epos.populationtype == 'parametric'
+	
+	periodradius.periodradius(epos, Parametric=Parametric, SNR=False)
+	periodradius.periodradius(epos, Parametric=Parametric, SNR=True)
+	
+	if not epos.Isotropic:
 		multi.multiplicity(epos, MC=True)
 		multi.multiplicity_cdf(epos, MC=True)
 		multi.periodratio(epos, MC=True)
 		multi.periodratio_cdf(epos, MC=True)
-		massradius.massradius(epos, MC=True)
-		massradius.massradius(epos, MC=True, Log=True)
 		periodradius.pdf(epos)
 		periodradius.pdf_3d(epos)
-		
+
+	if epos.RadiusMassConversion:
+		massradius.massradius(epos, MC=True)
+		massradius.massradius(epos, MC=True, Log=True)
+
+	if epos.populationtype is 'model':		
 		# Inclinations and period ratios of observed systems
 		# NOTE: These are not observable parameters
 		if 'all_Pratio' in epos.groups[0]: 
 			out_Pratio(epos)
 			hist_Pratio(epos)
-
-	else:
-		assert False
 	
 	periodradius.cdf(epos)
 		

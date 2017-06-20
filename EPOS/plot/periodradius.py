@@ -84,7 +84,7 @@ def pdf_3d(epos):
 	# PDF, all combined, 2 panels
 	xgrid= np.logspace(*np.log10(epos.xtrim))
 	pdf= regression.sliding_window_log(sim['P'], None, xgrid) #, width=2. )
-	weight= np.sum([sg['weight'] for sg in epos.groups]) if epos.populationtype is 'model' else epos.fac
+	weight= np.sum([sg['weight'] for sg in epos.groups]) if epos.populationtype is 'model' else epos.p0[0]
 	ax.plot(np.log10(xgrid), pdf, zs=yplane,zdir='y', 
 		ls='-', marker='', color='k',label='combined x {:.3f}'.format(weight))
 
@@ -170,7 +170,7 @@ def pdf(epos):
 	# PDF, all combined, 2 panels
 	xgrid= np.logspace(*np.log10(epos.xtrim))
 	pdf= regression.sliding_window_log(sim['P'], None, xgrid) #, width=2. )
-	weight= np.sum([sg['weight'] for sg in epos.groups]) if epos.populationtype is 'model' else epos.fac
+	weight= np.sum([sg['weight'] for sg in epos.groups]) if epos.populationtype is 'model' else epos.p0[0]
 	ax3.plot(xgrid, pdf, ls='-', marker='', color='k',label='combined x {:.3f}'.format(weight))
 
 	ygrid= np.logspace(*np.log10(epos.ytrim))

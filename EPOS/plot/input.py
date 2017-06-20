@@ -29,19 +29,20 @@ def all(epos):
 	elif epos.populationtype is 'model':
 		input(epos, PlotBox=False)
 		input_diag(epos, PlotBox=False)
-		multi.multiplicity(epos, MC=False)
-		multi.periodratio(epos, MC=False)
-		multi.periodratio_cdf(epos, MC=False)
-		if epos.RadiusMassConversion: 
-			massradius.massradius(epos, MC=False)
-			massradius.massradius(epos, MC=False, Log=True)
 		if 'all_Pratio' in epos.groups[0]:
 			Pratio(epos)
 		if 'all_inc' in epos.groups[0]:
 			inclination(epos)
-			
-	else:
-		assert False
+
+	if not epos.Isotropic:
+		multi.multiplicity(epos, MC=False)
+		multi.periodratio(epos, MC=False)
+		multi.periodratio_cdf(epos, MC=False)
+		
+	if epos.RadiusMassConversion: 
+		massradius.massradius(epos, MC=False)
+		massradius.massradius(epos, MC=False, Log=True)
+
 
 def input(epos, PlotBox=True):
 	assert epos.populationtype is 'model'

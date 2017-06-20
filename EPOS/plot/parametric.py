@@ -10,13 +10,13 @@ def oneD(epos, PlotZoom=False, MCMC=False):
 	if not epos.Range: epos.set_ranges()
 	
 	# initial guess
-	pdf0= epos.func(epos.X, epos.Y, *epos.p0)
+	pdf0= epos.func(epos.X, epos.Y, *epos.p0[:epos.np2D])
 	pdf0_X, pdf0_Y= np.sum(pdf0, axis=1), np.sum(pdf0, axis=0)
 	pps_x, pps_y=  np.sum(pdf0_X), np.sum(pdf0_Y)
 	scale_x, scale_y= pdf0_X.size, pdf0_Y.size
 	if MCMC:
 		# best-fit parameters
-		pdf= epos.func(epos.X, epos.Y, *epos.pfit)
+		pdf= epos.func(epos.X, epos.Y, *epos.pfit[:epos.np2D])
 		pdf_X, pdf_Y= np.sum(pdf, axis=1), np.sum(pdf, axis=0)
 		pps_x, pps_y=  np.sum(pdf_X), np.sum(pdf_Y)
 		#scale_x, scale_y= pdf_X.size, pdf_Y.size		
@@ -35,7 +35,7 @@ def oneD(epos, PlotZoom=False, MCMC=False):
 	ax.set_ylim([1e-3,1e1])
 	if MCMC:
 		for para in epos.samples[np.random.randint(len(epos.samples), size=100)]:
-			xpdf= np.sum(epos.func(epos.X, epos.Y,*para), axis=1)
+			xpdf= np.sum(epos.func(epos.X, epos.Y,*para[:epos.np2D]), axis=1)
 			ax.plot(epos.MC_xvar, xpdf*scale_x, color='b', alpha=0.1)
 		ax.plot(epos.MC_xvar, pdf0_X*scale_x, marker='',ls=':',color='k')
 		ax.plot(epos.MC_xvar, pdf_X*scale_x, marker='',ls='-',color='k')
@@ -60,7 +60,7 @@ def oneD(epos, PlotZoom=False, MCMC=False):
 	ax.set_ylim([1e-3,1e1])
 	if MCMC:
 		for para in epos.samples[np.random.randint(len(epos.samples), size=100)]:
-			ypdf= np.sum(epos.func(epos.X, epos.Y,*para), axis=0)
+			ypdf= np.sum(epos.func(epos.X, epos.Y,*para[:epos.np2D]), axis=0)
 			ax.plot(epos.MC_yvar, ypdf*scale_y, color='b', alpha=0.1)
 		ax.plot(epos.MC_yvar, pdf0_Y*scale_y, marker='',ls=':',color='k')
 		ax.plot(epos.MC_yvar, pdf_Y*scale_y, marker='',ls='-',color='k')
@@ -78,7 +78,7 @@ def twoD(epos, PlotZoom=False, MCMC=False):
 	assert epos.populationtype is 'parametric'
 	if not epos.Range: epos.set_ranges()
 	
-	pdf= epos.func(epos.X, epos.Y, *(epos.p0 if not MCMC else epos.pfit))
+	pdf= epos.func(epos.X, epos.Y, *(epos.p0[:epos.np2D] if not MCMC else epos.pfit[:epos.np2D]))
 	scale= pdf.size
 	pdflog= np.log10(pdf*scale) # in %
 		
