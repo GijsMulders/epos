@@ -36,10 +36,10 @@ def once(epos, fac=1.0):
 	
 	''' set weights / parameters '''
 	if epos.populationtype is 'parametric':
-		fpara= epos.p0 
+		fpara= epos.p0[epos.ip_fit]
 	elif epos.populationtype is 'model':
 		fpara= [sg['weight'] for sg in epos.groups]
-		#if hasattr(epos,'p0'): fpara=epos.p0
+		if hasattr(epos,'p0'): fpara=epos.p0
 	else: assert False
 	
 	''' Time the first MC run'''
@@ -57,17 +57,16 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1):
 	
 	''' set starting parameters '''
 	if epos.populationtype is 'parametric':
-		fpara= epos.p0
+		fpara= epos.p0[epos.ip_fit]
 	elif epos.populationtype is 'model':
 		if len(epos.groups) == 1:
-			#fpara= [sg['weight'], 0.5, 0.8, 1.0] # singles, Pratio, inc (+corr SNR?)
-			fpara=epos.p0 # defined where?
+			fpara=epos.p0 # [epos.ipfit] ??
 		else:
 			fpara= [sg['weight'] for sg in epos.groups]
 	else: assert False
 	
 	''' Load previous chain?'''
-	ndim= len(epos.p0)
+	ndim= len(fpara)
 	shape= (nwalkers, nMC, ndim)
 	
 	# store, npy is uncompressed, savez returns as dict instead of array
@@ -100,8 +99,8 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1):
 		sampler = emcee.EnsembleSampler(nwalkers, len(fpara), lnmc, threads=threads)
 	
 		''' run the chain '''
-		# add progress bar?
 		if True:
+			# chop in to pieces for memory optimization?
 			for i, result in enumerate(sampler.sample(p0, iterations=nMC)):
 				amtDone= float(i)/nMC
 				print '\r  [{:50s}] {:5.1f}%'.format('#' * int(amtDone * 50), amtDone * 100),
@@ -128,16 +127,23 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1):
 		np.save(fname, epos.chain) 
 		
 	''' the posterior samples after burn-in '''
-	epos.samples= epos.chain[:, nburn:, :].reshape((-1, len(epos.p0)))
+	epos.samples= epos.chain[:, nburn:, :].reshape((-1, ndim))
 	epos.burnin= nburn
 	fitpars = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
                              zip(*np.percentile(epos.samples, [16, 50, 84],
                                                 axis=0)))
-	epos.pfit=[p[0] for p in fitpars]
+	if epos.populationtype is 'parametric':
+		epos.pfit= np.copy(epos.p0)
+		#print 'before: {}'.format(epos.pfit)
+		epos.pfit[epos.ip_fit]=[p[0] for p in fitpars]
+		#print 'after: {}'.format(epos.pfit)
+	else:
+		epos.pfit=[p[0] for p in fitpars]
 	
 	''' estimate #planets/star '''
 	#print epos.samples.shape # 30000, 7
 	if epos.populationtype is 'parametric' and epos.Isotropic:
+		# reconstruct posterior (from p0 and samples?)
 		pps= [np.sum(epos.func(epos.X, epos.Y,*para)) for para in epos.samples]
 		eta= np.percentile(pps, [16, 50, 84]) 
 		print '  eta= {:.3g} +{:.3g} -{:.3g}'.format(eta[1], 
@@ -168,7 +174,7 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1):
 		print '  {}= {:.3g} +{:.3g} -{:.3g}'.format(pname,*fpar)
 
 	print '\nStarting the best-fit MC run'	
-	MC(epos, Store=True, fpara=epos.pfit)
+	MC(epos, np.array([p[0] for p in fitpars]), Store=True)
 	
 def prep_obs(epos):
 	# occurrence pdf on sma from plot_input_diag?
@@ -193,8 +199,8 @@ def prep_obs(epos):
 	z['multi']={}
 	z['multi']['bin'], z['multi']['count']= multi.frequency(epos.obs_starID[ix&iy])
 	
-	z['multi']['Pratio']= multi.periodratio(epos.obs_starID[ix&iy], 
-							epos.obs_xvar[ix&iy])
+	z['multi']['Pratio'], z['multi']['Pinner']= \
+		multi.periodratio(epos.obs_starID[ix&iy], epos.obs_xvar[ix&iy])
 	z['multi']['cdf']= multi.cdf(epos.obs_starID[ix&iy])
 
 def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
@@ -207,14 +213,19 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 	
 	if Verbose: tstart=time.time()
 	
+	''' Seed the random number generator '''
+	if epos.seed is not None: np.random.seed(epos.seed)
+	
 	''' construct 1D arrays for P, R
 	dimension equal to sample size * planets_per_star
 	also keeping track off subgroup (SG), inc (I), and period ratio (dP)
 	'''
 	if epos.populationtype == 'parametric':
 		
-		''' Draw from distribution '''
-		try: sysX, sysY= draw_from_2D_distribution(epos, fpara[:epos.np2D])
+		''' Draw (inner) planet from distribution '''
+		fpar2d= np.append(fpara[epos.ip2d_fit], epos.p0[epos.ip2d_fixed])
+		
+		try: sysX, sysY= draw_from_2D_distribution(epos, fpar2d)
 		except ValueError:
 			if Store: raise
 			else: return -np.inf
@@ -225,26 +236,32 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 			allY=sysY
 		else:
 			''' retrieve fit parameters for multi-planets (no dR)'''
-			try: npl, dPbreak, dP1, dP2, dInc, f_iso= fpara[epos.np2D:]
+			try: npl, dPbreak, dP1, dP2, dInc, f_iso= fpara[-6:]
 			except: raise ValueError('Incorrect number of parameters?')
 			f_dP, f_inc= 1.0, 1.0 # no need to fudge these
 			f_SNR=0.5
-			dR=0.01
+			dR=0.01 # epos.p0[epos.ip_fixed[-1:]]
 			if npl < 1:
 				if Store: raise ValueError('at least one planet per system')
-				return -np.inf				
+				return -np.inf
+			if npl > 10:
+				if not Store: return -np.inf # out of memory
 			if (dPbreak<1) or (dPbreak > 10):
 				if Store: print ' 1 < Pbreak < 10'
 				else: return -np.inf
 			if (dInc <=0) or (dR <=0) or not (0 <= f_iso <= 1):
 				if Store: raise ValueError('parameters out of bounds')
-				return -np.inf
+				return -np.inf			
 						
 			''' assign ID to each system '''
 			sysID= np.arange(sysX.size)
 			allID= np.repeat(sysID, npl) # array with star ID for each planet
 			#print allID.size, sysID.size
 			#npl_arr= np.random_integers(npl-2,npl+2) # varying number of planets?
+			if allID.size > 1e7:
+				print 'memory leak? {}'.format(fpara)
+				if Store: raise ValueError('Too many planets: {}'.format(allID.size))
+				return -np.inf				
 
 			''' initialize planet parameters'''
 			_, toplanet, sysnpl= np.unique(allID, return_inverse=True,return_counts=True)
@@ -266,6 +283,7 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 			''' Adjust parameter of 2nd, 3rd planet etc.'''
 			Pgrid= np.logspace(0,1)
 			cdf= np.cumsum(brokenpowerlaw1D(Pgrid, dPbreak, dP1, dP2))
+			# loop over planet 2,3... n
 			for i in range(2,len(np.bincount(sysnpl)) ):
 				im= i1[sysnpl>=i] # index to ith planet in each system
 				#print '  planet {} in system, {} systems'.format(i,im.size)
@@ -278,6 +296,15 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 				allY[im+(i-1)]= allY[im+(i-2)]* np.random.normal(1, dR, im.size)
 			#print '+{}={} story checks out?'.format(allID[i1].size, allID.size)
 			#print allX[:3]
+			
+			''' Toss out planets (reduces memory footprint) '''
+			Xinrange= allX<=epos.MC_xvar[-1]
+			#if Xinrange.sum() < 0.5* allX.size: 
+			#	print 'yeah, {}/{}'.format(Xinrange.sum(),allX.size)
+			allX= allX[Xinrange]
+			allY= allY[Xinrange]
+			allI= allI[Xinrange]
+			allID= allID[Xinrange]
 		
 		''' convert to observable parameters '''
 		allP= allX
@@ -308,13 +335,10 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 			except:
 				raise ValueError('\Wrong number of parameters ({})'.format(len(fpara)))
 			
-			if f_iso<0 or f_dP<=0 or f_inc<0 or not (0 <= weight[0] <= 1) or \
-				not (0 <= f_SNR <= 1):
-				#print 'Oops IV'
-				#print fpara
+			if not (0<=f_iso<=1) or not (0 <= weight[0] <= 1) or not (0 <= f_SNR <= 1) \
+				or not (0<=f_dP<=10) or not (0 <= f_inc < 3):
 				if Store: raise ValueError('parameters out of bounds')
-				return -np.inf
-				
+				return -np.inf		
 		
 		L_P, L_M, L_R, L_I= [], [], [], []
 		L_SG=[] # keep track of subgroup
@@ -479,36 +503,49 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 			if Store: raise ValueError('no planets detectable')
 			return -np.inf			
 	
-		gof['D xvar'], gof['p xvar']=  ks_2samp(epos.obs_zoom['x'], det_P[ix&iy])
-		gof['D yvar'], gof['p yvar']=  ks_2samp(epos.obs_zoom['y'], det_Y[ix&iy])
+		_, gof['xvar']=  ks_2samp(epos.obs_zoom['x'], det_P[ix&iy])
+		_, gof['yvar']=  ks_2samp(epos.obs_zoom['y'], det_Y[ix&iy])
 		# chi^2: (np-nobs)/nobs**0.5 -> p: e^-0.5 x^2
-		gof['p n']= np.exp(-0.5*(epos.obs_zoom['x'].size-np.sum(ix&iy))**2. 
+		gof['n']= np.exp(-0.5*(epos.obs_zoom['x'].size-np.sum(ix&iy))**2. 
 							/ epos.obs_zoom['x'].size )
-		prob= 1.* gof['p n']
+		prob= 1.* gof['n']
 		if epos.Isotropic:
-			prob*= gof['p xvar']* gof['p yvar'] # increase acceptance fraction for models
+			prob*= gof['xvar']* gof['yvar'] # increase acceptance fraction for models
+		elif epos.populationtype == 'parametric' and not epos.Isotropic:
+			prob*= gof['xvar']
 		
 		if not epos.Isotropic:
 			# Period ratio
-			gof['D dP'], gof['p dP']= ks_2samp(epos.obs_zoom['multi']['Pratio'], 
-						f_dP*multi.periodratio(det_ID[ix&iy], det_P[ix&iy]))
-			prob*= gof['p dP']
-			
+			sim_dP, sim_Pinner= multi.periodratio(det_ID[ix&iy], det_P[ix&iy])
+			_, gof['dP']= ks_2samp(epos.obs_zoom['multi']['Pratio'], f_dP*sim_dP)
+			prob*= gof['dP']
+
+			# Inner planet
+			_, gof['Pinner']= ks_2samp(epos.obs_zoom['multi']['Pinner'], sim_Pinner)
+			prob*= gof['Pinner']
+
 			# Multi-planets
 			multis= multi.cdf(det_ID[ix&iy], Verbose=False)
-			gof['D multi'], gof['p multi']=  \
-				ks_2samp(epos.obs_zoom['multi']['cdf'], multis)
-			prob*= gof['p multi']
+			if epos.obs_zoom['multi']['Pratio'].size > 50:
+				_, gof['multi']= ks_2samp(epos.obs_zoom['multi']['cdf'], multis)		
+			else:
+				# not enough statistics
+				nobs= epos.obs_zoom['multi']['Pratio'].size
+				nsim= sim_dP.size
+				gof['multi']= np.exp(-0.5*(nobs-nsim)**2. / nobs )
+			
+			prob*= gof['multi']
 		
 		if Verbose:
 			print '\nGoodness-of-fit'
 			print '  logp= {:.1f}'.format(np.log(prob))
-			print '  - p(x)={:.2g}'.format(gof['p xvar'])
-			print '  - p(y)={:.2g}'.format(gof['p yvar'])
-			print '  - p(n={})={:.2g}'.format(np.sum(ix&iy), gof['p n'])
+			print '  - p(x)={:.2g}'.format(gof['xvar'])
+			print '  - p(y)={:.2g}'.format(gof['yvar'])
+			print '  - p(n={})={:.2g}'.format(np.sum(ix&iy), gof['n'])
 			if not epos.Isotropic:
-				print '  - p(multi)={:.2g}'.format(gof['p multi'])
-				print '  - p(P ratio)={:.2g}'.format(gof['p dP'])
+				print '  - p(multi)={:.2g}'.format(gof['multi'])
+				print '  - p(P ratio)={:.2g}'.format(gof['dP'])
+				print '  - p(P inner)={:.2g}'.format(gof['Pinner'])
 			
 
 		tgof= time.time()
@@ -532,7 +569,8 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 		if not epos.Isotropic:
 			ss['multi']={}
 			ss['multi']['bin'], ss['multi']['count']= multi.frequency(det_ID[ix&iy])
-			ss['multi']['Pratio']= multi.periodratio(det_ID[ix&iy], det_P[ix&iy]) # *f_dP
+			ss['multi']['Pratio'], ss['multi']['Pinner']= \
+				multi.periodratio(det_ID[ix&iy], det_P[ix&iy]) # *f_dP
 			ss['multi']['cdf']= multi.cdf(det_ID[ix&iy])
 		
 		epos.gof=gof
@@ -578,7 +616,10 @@ def draw_from_2D_distribution(epos, fpara):
 		if ndraw < 1: 
 			print 'no draws ({}, {}*{})'.format(ndraw, epos.nstars, planets_per_star)
 			raise ValueError('no planets')
-		allX= np.interp(np.random.uniform(0,pps_x,ndraw), cum_X, epos.MC_xvar)
-		allY= np.interp(np.random.uniform(0,pps_y,ndraw), cum_Y, epos.MC_yvar)
+		try:
+			allX= np.interp(np.random.uniform(0,pps_x,ndraw), cum_X, epos.MC_xvar)
+			allY= np.interp(np.random.uniform(0,pps_y,ndraw), cum_Y, epos.MC_yvar)
+		except MemoryError:
+			raise ValueError('Memory error for n={}'.format(ndraw))
 		
 		return allX, allY

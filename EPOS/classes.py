@@ -33,7 +33,7 @@ def readme():
 
 class epos:
 	
-	def __init__(self, name, RV=False, Debug=False):
+	def __init__(self, name, RV=False, Debug=False, seed=None):
 		self.name=name
 		self.plotdir='png/{}/'.format(name)
 		self.RV= RV
@@ -52,6 +52,13 @@ class epos:
 				
 		self.Debug= False
 		set_pyplot_defaults() # nicer plots
+		
+		# Seed for the random number generator
+		if seed is None: self.seed= None
+		else:
+			if type(seed) is int: self.seed= seed
+			else: self.seed= np.random.randint(0, 4294967295)
+			print '\nUsing random seed {}'.format(self.seed)
 		
 	def set_observation(self, xvar, yvar, starID, nstars=1.6862e5):
 		order= np.lexsort((xvar,starID)) # sort by ID, then P
@@ -80,7 +87,7 @@ class epos:
 		epos.multi={}
 		epos.multi['bin'], epos.multi['count']= \
 			multi.frequency(self.obs_starID, Verbose=True)
-		epos.multi['Pratio']= \
+		epos.multi['Pratio'], epos.multi['Pinner']= \
 			multi.periodratio(self.obs_starID, self.obs_xvar, Verbose=True)
 		epos.multi['cdf']= multi.cdf(self.obs_starID, Verbose=True)	
 		
@@ -184,9 +191,15 @@ class epos:
 		except:	raise
 		
 		self.func=func
-		self.p0= p0
-		self.pname= ['c{}'.format(i) for i in range(len(p0))] if pname is None else pname
-		self.np2D= len(p0)
+		self.p0= np.asarray(p0)
+		if pname is None: self.pname= np.array(['c{}'.format(i) for i in range(p0.size)])
+		else: self.pname=np.asarray(pname)
+
+		#indices to fit parameters
+		self.ip_fit= np.arange(self.p0.size) # index to fit parameters (all)
+		self.ip_fixed= np.array([])
+		self.ip2d_fit= np.arange(self.p0.size) # index to 2D R,P distribution parameters
+		self.ip2d_fixed= np.array([])
 		
 		self.Isotropic=True
 
@@ -194,8 +207,18 @@ class epos:
 		if self.populationtype is not 'parametric':
 			raise ValueError('Define a parametric planet population first')
 		self.Isotropic=False
-		self.p0.extend(p0)
-		self.pname+=['m{}'.format(i) for i in range(len(p0))] if pname is None else pname
+		self.p0= np.append(self.p0, p0)
+		if pname is None: pname=['m{}'.format(i) for i in range(self.p0.size)]
+		self.pname= np.append(self.pname,pname)
+		
+		# index to fit parameters?
+		self.ip_fit= np.array([0,1,2,3,7,8,9,10,12,13])
+		self.ip_fixed= np.array([4,5,6,11])
+		self.ip2d_fit= np.array([0,1,2,3])
+		self.ip2d_fixed= np.array([4,5,6])
+		self.ip2d= np.append(self.ip2d_fit,self.ip2d_fixed)
+		self.pname= self.pname[self.ip_fit]
+
 		
 	def add_population(self, name, sma, mass, 
 					inc=None, tag1=None, Verbose=False, weight=1.):

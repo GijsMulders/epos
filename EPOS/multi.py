@@ -54,6 +54,8 @@ def periodratio(ID, P, Verbose=False):
 	i1= np.cumsum(di) # index to first planet
 	assert np.all(IDsys == ID[i1]), ' assumes lexsort( (P,ID) )'
 	
+	Pinner= P[i1[counts>1]] # innerplanet in multi
+	
 	Pratio= []
 	for i in range(2,len(np.bincount(counts)) ):
 		#print '\nmultiplicity: {}'.format(i)
@@ -63,4 +65,4 @@ def periodratio(ID, P, Verbose=False):
 		#	print ' ID {}, P={}, dP= {}'.format(ID[k], P[ID==ID[k]], _dP)
 		Pratio.extend(dP)
 	
-	return np.array(Pratio)
+	return np.array(Pratio), Pinner

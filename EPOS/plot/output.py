@@ -20,6 +20,8 @@ def all(epos):
 		multi.multiplicity_cdf(epos, MC=True)
 		multi.periodratio(epos, MC=True)
 		multi.periodratio_cdf(epos, MC=True)
+		multi.periodinner(epos, MC=True)
+		multi.periodinner_cdf(epos, MC=True)
 		periodradius.pdf(epos)
 		periodradius.pdf_3d(epos)
 

@@ -10,19 +10,25 @@ def oneD(epos, PlotZoom=False, MCMC=False):
 	if not epos.Range: epos.set_ranges()
 	
 	# initial guess
-	pdf0= epos.func(epos.X, epos.Y, *epos.p0[:epos.np2D])
+	pdf0= epos.func(epos.X, epos.Y, *epos.p0[epos.ip2d])
 	pdf0_X, pdf0_Y= np.sum(pdf0, axis=1), np.sum(pdf0, axis=0)
 	pps_x, pps_y=  np.sum(pdf0_X), np.sum(pdf0_Y)
 	scale_x, scale_y= pdf0_X.size, pdf0_Y.size
 	if MCMC:
 		# best-fit parameters
-		pdf= epos.func(epos.X, epos.Y, *epos.pfit[:epos.np2D])
+		pdf= epos.func(epos.X, epos.Y, *epos.pfit[epos.ip2d])
 		pdf_X, pdf_Y= np.sum(pdf, axis=1), np.sum(pdf, axis=0)
 		pps_x, pps_y=  np.sum(pdf_X), np.sum(pdf_Y)
 		#scale_x, scale_y= pdf_X.size, pdf_Y.size		
 
-	
 	fname= 'mcmc/posterior' if MCMC else 'input/parametric_initial'
+	
+	''' construct the posterior parameters (fit+fixed)'''
+	if MCMC:
+		fpar2d_list=[]
+		for fpara in epos.samples[np.random.randint(len(epos.samples), size=100)]:
+			fpar2d= np.append(fpara[epos.ip2d_fit], epos.p0[epos.ip2d_fixed])
+			fpar2d_list.append(fpar2d)
 	
 	''' Orbital Period '''
 	f, ax = plt.subplots()
@@ -34,8 +40,8 @@ def oneD(epos, PlotZoom=False, MCMC=False):
 	ax.set_xlim(epos.xtrim)
 	ax.set_ylim([1e-3,1e1])
 	if MCMC:
-		for para in epos.samples[np.random.randint(len(epos.samples), size=100)]:
-			xpdf= np.sum(epos.func(epos.X, epos.Y,*para[:epos.np2D]), axis=1)
+		for fpar2d in fpar2d_list:
+			xpdf= np.sum(epos.func(epos.X, epos.Y,*fpar2d), axis=1)
 			ax.plot(epos.MC_xvar, xpdf*scale_x, color='b', alpha=0.1)
 		ax.plot(epos.MC_xvar, pdf0_X*scale_x, marker='',ls=':',color='k')
 		ax.plot(epos.MC_xvar, pdf_X*scale_x, marker='',ls='-',color='k')
@@ -59,8 +65,8 @@ def oneD(epos, PlotZoom=False, MCMC=False):
 	ax.set_xlim(epos.ytrim)
 	ax.set_ylim([1e-3,1e1])
 	if MCMC:
-		for para in epos.samples[np.random.randint(len(epos.samples), size=100)]:
-			ypdf= np.sum(epos.func(epos.X, epos.Y,*para[:epos.np2D]), axis=0)
+		for fpar2d in fpar2d_list:
+			ypdf= np.sum(epos.func(epos.X, epos.Y,*fpar2d), axis=0)
 			ax.plot(epos.MC_yvar, ypdf*scale_y, color='b', alpha=0.1)
 		ax.plot(epos.MC_yvar, pdf0_Y*scale_y, marker='',ls=':',color='k')
 		ax.plot(epos.MC_yvar, pdf_Y*scale_y, marker='',ls='-',color='k')
@@ -78,7 +84,8 @@ def twoD(epos, PlotZoom=False, MCMC=False):
 	assert epos.populationtype is 'parametric'
 	if not epos.Range: epos.set_ranges()
 	
-	pdf= epos.func(epos.X, epos.Y, *(epos.p0[:epos.np2D] if not MCMC else epos.pfit[:epos.np2D]))
+	pplot= epos.p0 if not MCMC else epos.pfit # best fit or p0
+	pdf= epos.func(epos.X, epos.Y, *pplot[epos.ip2d])
 	scale= pdf.size
 	pdflog= np.log10(pdf*scale) # in %
 		

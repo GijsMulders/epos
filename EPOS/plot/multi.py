@@ -117,7 +117,7 @@ def periodratio(epos, MC=False):
 		
 		if epos.populationtype=='parametric' and not epos.Isotropic:
 			from EPOS.fitfunctions import brokenpowerlaw1D
-			yy= 170.*brokenpowerlaw1D(xx, *epos.p0[epos.np2D+1:epos.np2D+4])
+			yy= 170.*brokenpowerlaw1D(xx, *epos.p0[epos.ip2d[1:4]])
 			ax.plot(xx, yy, marker='', ls=':', color='r')
 	
 	prefix= 'output' if MC else 'survey'
@@ -163,3 +163,78 @@ def periodratio_cdf(epos, MC=False):
 	if MC: ax.legend(loc='lower right', shadow=False, prop={'size':14}, numpoints=1)
 		
 	helpers.save(plt, '{}{}/periodratio.cdf'.format(epos.plotdir,prefix))	
+
+''' these are practically identical to periodratio -> merge?'''
+
+def periodinner(epos, MC=False):
+	# plot multiplicity
+	f, ax = plt.subplots()
+	ax.set_title('period innermost planet')
+	ax.set_xlabel('Orbital Period [days]')
+	ax.set_ylabel('PDF')
+
+	ax.set_xscale('log')
+	ax.set_xlim(epos.xtrim)
+		
+	bins= np.logspace(*np.log10(epos.xtrim))
+
+	#pdf= regression.sliding_window_log(P, None, xgrid) #, width=2. )
+	#ax3.plot(xgrid, pdf, ls='-', marker='', color=clrs[k % 4],label='{} x{:.3f}'.format(sg['name'], sg['weight']))
+				
+	# MC data
+	if MC:
+		ss=epos.synthetic_survey
+		ax.hist(ss['multi']['Pinner'], bins=bins, 
+				ec='b', histtype='step', label=epos.name)
+	
+		# Observed zoom
+		ax.hist(epos.obs_zoom['multi']['Pinner'], bins=bins, ec='k', histtype='step', label='Kepler subset')
+	else:
+		# observed all
+		ax.hist(epos.multi['Pinner'], bins=bins, color='b', label='Kepler all')
+	
+	prefix= 'output' if MC else 'survey'
+
+	if MC: ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
+		
+	helpers.save(plt, '{}{}/innerperiod'.format(epos.plotdir, prefix))	
+
+def periodinner_cdf(epos, MC=False):
+	# plot multiplicity
+	f, ax = plt.subplots()
+	ax.set_title('period innermost planet')
+	ax.set_xlabel('Orbital Period [days]')
+	ax.set_ylabel('CDF')
+
+	ax.set_xscale('log')
+	ax.set_xlim(epos.xtrim)
+
+	ax.set_ylim(-0.05, 1.05)
+		
+	bins= np.logspace(*np.log10(epos.xtrim))
+
+	#pdf= regression.sliding_window_log(P, None, xgrid) #, width=2. )
+	#ax3.plot(xgrid, pdf, ls='-', marker='', color=clrs[k % 4],label='{} x{:.3f}'.format(sg['name'], sg['weight']))
+				
+	# MC data
+	if MC:
+		ss=epos.synthetic_survey
+		Psort= np.sort(ss['multi']['Pinner'])
+		cdf= np.arange(Psort.size, dtype=float)/Psort.size
+		ax.plot(Psort, cdf, color='b', label=epos.name)
+	
+		# Observed zoom
+		Psort= np.sort(epos.obs_zoom['multi']['Pinner'])
+		cdf= np.arange(Psort.size, dtype=float)/Psort.size
+		ax.plot(Psort, cdf, color='k', label='Kepler subset')
+	else:
+		# observed all
+		Psort= np.sort(epos.multi['Pinner'])
+		cdf= cdf= np.arange(Psort.size, dtype=float)/Psort.size
+		ax.plot(Psort, cdf ,color='gray' if MC else 'k', label='Kepler all')	
+	
+	prefix= 'output' if MC else 'survey'
+
+	if MC: ax.legend(loc='lower right', shadow=False, prop={'size':14}, numpoints=1)
+		
+	helpers.save(plt, '{}{}/innerperiod.cdf'.format(epos.plotdir, prefix))	

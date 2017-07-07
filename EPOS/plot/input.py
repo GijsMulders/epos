@@ -38,6 +38,8 @@ def all(epos):
 		multi.multiplicity(epos, MC=False)
 		multi.periodratio(epos, MC=False)
 		multi.periodratio_cdf(epos, MC=False)
+		multi.periodinner(epos, MC=False)
+		multi.periodinner_cdf(epos, MC=False)
 		
 	if epos.RadiusMassConversion: 
 		massradius.massradius(epos, MC=False)
