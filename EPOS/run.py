@@ -2,11 +2,13 @@ import numpy as np
 import time
 from scipy import interpolate
 from scipy.stats import ks_2samp
-import os
+import os, logging
 import cgs
 import multi
 from functools import partial
 from EPOS.fitfunctions import brokenpowerlaw1D
+
+#reload(logging)
 
 def once(epos, fac=1.0):
 	'''
@@ -90,6 +92,14 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1):
 			print '\nPredicted runtime {:.1f} minutes for {} runs at {:.3f} sec'.format(
 					runtime*60., nsims, epos.tMC)
 	
+		''' Set up a log file '''
+		# Note: if logging.debug is called before this, the log file is never created
+		fdir= 'log/{}'.format(epos.name)
+		if not os.path.exists(fdir): os.makedirs(fdir)
+		flog='{}/{}.log'.format(fdir,time.strftime('%Y-%m-%d_%H.%M.%S'))
+		logging.basicConfig(filename=flog,level=logging.DEBUG,filemode='w')
+		logging.info('MCMC with random seed {}'.format(epos.seed))
+		
 		''' Wrap function '''
 		lnmc= partial(MC, epos, Verbose=False, LogProb= True)
 	
@@ -100,7 +110,7 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1):
 	
 		''' run the chain '''
 		if True:
-			# chop in to pieces for memory optimization?
+			# chop to pieces for progress bar?
 			for i, result in enumerate(sampler.sample(p0, iterations=nMC)):
 				amtDone= float(i)/nMC
 				print '\r  [{:50s}] {:5.1f}%'.format('#' * int(amtDone * 50), amtDone * 100),
@@ -109,6 +119,7 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1):
 			sampler.run_mcmc(p0, nMC)
 		
 		print '\nDone running\n'
+		logging.info('Made it to the end')
 		print 'Mean acceptance fraction: {0:.3f}'.format(
 					np.mean(sampler.acceptance_fraction))
 
@@ -213,6 +224,8 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 	
 	if Verbose: tstart=time.time()
 	
+	#if not Store: logging.debug(' '.join(['{:.3g}'.format(fpar) for fpar in fpara]))
+	
 	''' Seed the random number generator '''
 	if epos.seed is not None: np.random.seed(epos.seed)
 	
@@ -241,25 +254,41 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 			f_dP, f_inc= 1.0, 1.0 # no need to fudge these
 			f_SNR=0.5
 			dR=0.01 # epos.p0[epos.ip_fixed[-1:]]
+			
+			''' Parameter bounds '''
 			if npl < 1:
+				logging.debug('npl = {:.3g} < 1'.format(npl))
 				if Store: raise ValueError('at least one planet per system')
 				return -np.inf
 			if npl > 10:
+				logging.debug('npl = {:.1f} > 10'.format(npl))
 				if not Store: return -np.inf # out of memory
 			if (dPbreak<1) or (dPbreak > 10):
+				logging.debug('dP break = {:.3g} not between 1 and 10'.format(dPbreak))
 				if Store: print ' 1 < Pbreak < 10'
 				else: return -np.inf
 			if (dInc <=0) or (dR <=0) or not (0 <= f_iso <= 1):
 				if Store: raise ValueError('parameters out of bounds')
-				return -np.inf			
-						
+				return -np.inf
+			
+			# 
+			if len(fpara[:-6]) is 7:
+				# P2 > 1
+				if (fpara[3]> 1):
+					logging.debug('{} = {} > 1'.format(epos.pname[3], fpara[3]))
+					if Store: raise ValueError('P2 < 1 for multis')
+					return -np.inf
+					
 			''' assign ID to each system '''
 			sysID= np.arange(sysX.size)
-			allID= np.repeat(sysID, npl) # array with star ID for each planet
+			#allID= np.repeat(sysID, npl) # array with star ID for each planet
+			npl_arr= np.random.uniform(npl, npl+1, sysID.size) # rounds down
+			allID= np.repeat(sysID, npl_arr.astype(int))
 			#print allID.size, sysID.size
-			#npl_arr= np.random_integers(npl-2,npl+2) # varying number of planets?
 			if allID.size > 1e7:
-				print 'memory leak? {}'.format(fpara)
+				logging.debug('Too many planets: {} > 1e7'.format(allID.size))
+				for pname, fpar in zip(epos.pname, fpara):
+					logging.debug('  {}= {:.3g}'.format(pname,fpar))
 				if Store: raise ValueError('Too many planets: {}'.format(allID.size))
 				return -np.inf				
 
@@ -272,7 +301,7 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 
 			# get index of first planet in each system
 			if len(sysnpl) < 1:
-				print 'no planets'
+				logger.debug('no planets')
 				if Store: raise ValueError('no planets')
 				return -np.inf
 			di= np.roll(sysnpl,1)
@@ -611,11 +640,17 @@ def draw_from_2D_distribution(epos, fpara):
 		cum_X, cum_Y= np.cumsum(pdf_X), np.cumsum(pdf_Y)
 		pps_x, pps_y=  cum_X[-1], cum_Y[-1]
 		planets_per_star= 0.5*(pps_x+pps_y) # should be equal
-		
+					
 		ndraw= int(round(planets_per_star*epos.nstars))
 		if ndraw < 1: 
-			print 'no draws ({}, {}*{})'.format(ndraw, epos.nstars, planets_per_star)
+			logging.debug('no draws ({}, {}*{})'.format(ndraw, epos.nstars, planets_per_star))
 			raise ValueError('no planets')
+		elif ndraw > 1e8:
+			logging.debug('>1e8 planets ({})'.format(ndraw))
+			raise ValueError('too many planets')
+		elif planets_per_star > 100:
+			logging.debug('>100 planets per star ({})'.format(planets_per_star))
+			raise ValueError('too many planets per star')
 		try:
 			allX= np.interp(np.random.uniform(0,pps_x,ndraw), cum_X, epos.MC_xvar)
 			allY= np.interp(np.random.uniform(0,pps_y,ndraw), cum_Y, epos.MC_yvar)
