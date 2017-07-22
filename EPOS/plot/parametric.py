@@ -38,7 +38,7 @@ def oneD(epos, PlotZoom=False, MCMC=False):
 	ax.set_xscale('log')
 	ax.set_yscale('log')
 	ax.set_xlim(epos.xtrim)
-	ax.set_ylim([1e-3,1e1])
+	ax.set_ylim([1e-2,1e2])
 	if MCMC:
 		for fpar2d in fpar2d_list:
 			xpdf= np.sum(epos.func(epos.X, epos.Y,*fpar2d), axis=1)
@@ -50,6 +50,11 @@ def oneD(epos, PlotZoom=False, MCMC=False):
     
 	if epos.Zoom: 
 		for zoom in epos.xzoom: ax.axvline(zoom, ls='--', color='k')
+
+	# lognormal inner disk edge?
+	#from scipy.stats import norm
+	#gauss= 2.*norm(loc=1., scale=0.4).pdf(np.log10(epos.MC_xvar))
+	#ax.plot(epos.MC_xvar, gauss, ls='-', marker='', color='r')
     
 	helpers.save(plt, epos.plotdir+fname+'_x')
 
@@ -63,7 +68,7 @@ def oneD(epos, PlotZoom=False, MCMC=False):
 	ax.set_xscale('log')
 	ax.set_yscale('log')
 	ax.set_xlim(epos.ytrim)
-	ax.set_ylim([1e-3,1e1])
+	ax.set_ylim([1e-2,1e2])
 	if MCMC:
 		for fpar2d in fpar2d_list:
 			ypdf= np.sum(epos.func(epos.X, epos.Y,*fpar2d), axis=0)

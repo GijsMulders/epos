@@ -555,7 +555,7 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 
 			# Multi-planets
 			multis= multi.cdf(det_ID[ix&iy], Verbose=False)
-			if epos.obs_zoom['multi']['Pratio'].size > 50:
+			if epos.obs_zoom['multi']['Pratio'].size > 20:
 				_, gof['multi']= ks_2samp(epos.obs_zoom['multi']['cdf'], multis)		
 			else:
 				# not enough statistics
@@ -640,8 +640,15 @@ def draw_from_2D_distribution(epos, fpara):
 		cum_X, cum_Y= np.cumsum(pdf_X), np.cumsum(pdf_Y)
 		pps_x, pps_y=  cum_X[-1], cum_Y[-1]
 		planets_per_star= 0.5*(pps_x+pps_y) # should be equal
-					
-		ndraw= int(round(planets_per_star*epos.nstars))
+		
+		try:
+			ndraw= int(round(planets_per_star*epos.nstars))
+		except OverflowError:
+			logging.debug('infinity encountered, pps= {},{}'.format(pps_x, pps_y))
+			for pname, fpar in zip(epos.pname, fpara):
+				logging.debug('  {}= {:.3g}'.format(pname,fpar))
+			raise ValueError('Infinity encountered')
+		
 		if ndraw < 1: 
 			logging.debug('no draws ({}, {}*{})'.format(ndraw, epos.nstars, planets_per_star))
 			raise ValueError('no planets')

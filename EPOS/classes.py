@@ -83,7 +83,7 @@ class epos:
 		self.Observation=True
 		
 		# print some stuff
-		print '\nObservations:\n  {:.0f} stars'.format(nstars)
+		print '\nObservations:\n  {} stars'.format(int(nstars))
 		print '  {} planets'.format(self.obs_starID.size)
 		multi.indices(self.obs_starID, Verbose=True)
 		epos.multi={}
@@ -93,7 +93,7 @@ class epos:
 			multi.periodratio(self.obs_starID, self.obs_xvar, Verbose=True)
 		epos.multi['cdf']= multi.cdf(self.obs_starID, Verbose=True)	
 		
-	def set_survey(self, xvar, yvar, eff_2D, Rstar=1.0):
+	def set_survey(self, xvar, yvar, eff_2D, Rstar=1.0, Mstar=1.0):
 		self.eff_xvar=np.asarray(xvar)
 		self.eff_yvar=np.asarray(yvar)
 		self.eff_2D=np.asarray(eff_2D)
@@ -107,12 +107,14 @@ class epos:
 		self.eff_xlim= [min(self.eff_xvar),max(self.eff_xvar)]
 		self.eff_ylim= [min(self.eff_yvar),max(self.eff_yvar)]
 		
+		self.Mstar= Mstar
 		if self.RV:
 			self.completeness= self.eff_2D
 		else:
 			self.Rstar=Rstar # Solar radii
 			self.Pindex= -2./3.
-			self.fgeo_prefac= self.Rstar*cgs.Rsun/ (cgs.au /365.24**(2./3.))
+			fourpi2_GM= 4.*np.pi**2. / (cgs.G*self.Mstar*cgs.Msun)
+			self.fgeo_prefac= self.Rstar*cgs.Rsun * fourpi2_GM**(1./3.) / cgs.day**(2./3.)
 			P, R= np.meshgrid(self.eff_xvar, self.eff_yvar, indexing='ij')
 			self.completeness= self.eff_2D * self.fgeo_prefac*P**self.Pindex
 
@@ -199,9 +201,10 @@ class epos:
 
 		#indices to fit parameters
 		self.ip_fit= np.arange(self.p0.size) # index to fit parameters (all)
-		self.ip_fixed= np.array([])
+		self.ip_fixed= np.array([], dtype=int)
 		self.ip2d_fit= np.arange(self.p0.size) # index to 2D R,P distribution parameters
-		self.ip2d_fixed= np.array([])
+		self.ip2d_fixed= np.array([], dtype=int)
+		self.ip2d= np.append(self.ip2d_fit,self.ip2d_fixed)
 		
 		self.Isotropic=True
 

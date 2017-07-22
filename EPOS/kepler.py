@@ -30,3 +30,34 @@ def obs_Q16(subsample='all'):
 def eff_Q16(subsample='all'):
 	eff= np.load('files/completeness.Q16.epos.{}.npz'.format(subsample))
 	return eff['x'], eff['y'], eff['fsnr']
+
+def dr25(subsample='all'):
+
+	from astropy.table import Table
+	print 'Reading planets from IPAC file' 
+	ipac=Table.read('files/q1_q17_dr25_koi.tbl',format='ipac')
+	isdwarf= ipac['koi_slogg']>4.2
+	iscandidate= ipac['koi_pdisposition']=='CANDIDATE'
+	# koi_score?
+	isreliable= ipac['koi_score']>0.9 # removes rolling band, ~ 500 planets
+	print isreliable.size
+
+#	isall= isdwarf & iscandidate
+	isall= isdwarf & iscandidate & isreliable
+
+	slice={'all':isall}
+	for spT, Tmin, Tmax in zip(['M','K','G','F'],
+		[2400, 3865, 5310, 5980], [3865, 5310, 5980, 7320]):
+		slice[spT]= isall & (Tmin<ipac['koi_steff']) & (ipac['koi_steff']<=Tmax)
+	
+	obs= {'xvar':ipac['koi_period'][slice[subsample]],
+		'yvar':ipac['koi_prad'][slice[subsample]], 
+		'starID':ipac['kepid'][slice[subsample]]}
+	
+	# from dr25_epos.py in 
+	eff= np.load('files/det_eff.dr25.{}.npz'.format(subsample))
+	survey= {'xvar':eff['P'], 'yvar':eff['Rp'], 'eff_2D':eff['fsnr'], 
+			'Mstar': eff['Mst'], 'Rstar':eff['Rst']}
+	obs['nstars']= eff['n']
+	
+	return obs, survey
