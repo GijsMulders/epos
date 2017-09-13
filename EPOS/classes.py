@@ -45,7 +45,7 @@ class epos:
 		self.Occurrence= False # inverse detection efficiency (?)
 		self.Prep= False # ready to run? EPOS.run.once()
 		self.RadiusMassConversion= False
-		self.Radius= False
+		self.Radius= False # is this used?
 		self.Isotropic= False
 		
 		self.populationtype=None # ['parametric','model']
@@ -115,6 +115,7 @@ class epos:
 			self.Pindex= -2./3.
 			fourpi2_GM= 4.*np.pi**2. / (cgs.G*self.Mstar*cgs.Msun)
 			self.fgeo_prefac= self.Rstar*cgs.Rsun * fourpi2_GM**(1./3.) / cgs.day**(2./3.)
+			print self.fgeo_prefac
 			P, R= np.meshgrid(self.eff_xvar, self.eff_yvar, indexing='ij')
 			self.completeness= self.eff_2D * self.fgeo_prefac*P**self.Pindex
 
@@ -223,8 +224,7 @@ class epos:
 		self.ip2d_fixed= np.array([4,5,6])
 		self.ip2d= np.append(self.ip2d_fit,self.ip2d_fixed)
 		self.pname= self.pname[self.ip_fit]
-
-		
+	
 	def add_population(self, name, sma, mass, 
 					inc=None, tag1=None, Verbose=False, weight=1.):
 		# tag is fit parameter, i.e. metallicity or surface density
@@ -255,9 +255,11 @@ class epos:
 		sg['weight']= weight
 
 		# list of lists or 1-dim list?
-		if type(sma[0]) is list:
+		#print type(sma[0]) 
+		if type(sma[0]) is list or type(sma[0]) is np.ndarray:
 			# loop over systems
 			for k, (L_sma, L_mass) in enumerate(zip(sma, mass)):
+				#assert type(L_sma) is list
 				sg['system'].append({})
 				order= np.argsort(L_sma)
 				_sma=	sg['system'][-1]['sma']= np.array(L_sma)[order]
@@ -294,11 +296,12 @@ class epos:
 		if Verbose:
 			# print '\nLoaded subgroup {} with {} planetary systems'.format(sg['name'], sg['n'])
 			for system in sg['system']:
-				print 'system has {} planets:'.format(system['np'])
+				print 'system has {} planets, {:.1f} Mearth:'.format(
+					system['np'],np.sum(system['mass']))
 				for a,m in zip(system['sma'], system['mass']):
 					print '  {:.2f} au, {:.1f} Mearth'.format(a,m)
-				print sg['all_Pratio']
-				print
+				#print sg['all_Pratio']
+				#print
 		
 		# set plot limits in model 5% wider than data
 		xmin,xmax= min(sg['all_sma']), max(sg['all_sma'])

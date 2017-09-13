@@ -42,7 +42,7 @@ def cdf(ID, Verbose=False):
 	#if Verbose: print '  multi cdf planets: {}'.format(len(np.concatenate(xlist)))
 	return np.concatenate(xlist)
 
-def periodratio(ID, P, Verbose=False):
+def periodratio(ID, P, N=None, Verbose=False):
 	IDsys, toplanet, counts= np.unique(ID, return_inverse=True,return_counts=True)
 	ismulti= (counts>1) # systems that are multi
 	Pmulti= P[ismulti[toplanet]] # Periods of _all_ planets in multis
@@ -63,6 +63,34 @@ def periodratio(ID, P, Verbose=False):
 		dP= P[im+(i-1)]/P[im+(i-2)]
 		#for k, _dP in zip(im,Pratio):
 		#	print ' ID {}, P={}, dP= {}'.format(ID[k], P[ID==ID[k]], _dP)
+		#print 'i={}: {}'.format(i,dP.size)
 		Pratio.extend(dP)
+	#print 'n dP= {}'.format(len(Pratio))
 	
-	return np.array(Pratio), Pinner
+	if N is None:
+		return np.array(Pratio), Pinner
+	else:
+		''' Innermost observed planet is nth planet'''
+		PN, dPN= [], []
+		for m in range(1,10):
+			PN.append(Pinner[N[i1[counts>1]]==m])
+			#print m, np.sum(N[i1[counts>1]]==m) # mostly 1 or 2, never 3+
+			#print N[i1[counts>1]]
+			
+			# Period ratio of adjacent planets?
+			#print 'm={}'.format(m)
+			PratioN= []
+			for i in range(2,len(np.bincount(counts)) ):
+				im= i1[counts>=i] # multis with 
+				idx= N[im+(i-1)]-N[im+(i-2)] == m # adjacent, 1,2,3... inbetween
+				#print N[im+(i-1)]- N[im+(i-2)]
+				#print i, im.size, 
+				#print m, idx.sum()
+				dP= P[im[idx]+(i-1)]/P[im[idx]+(i-2)]
+				PratioN.extend(dP)
+			#print 'm={}, n dPN={}'.format(m, len(PratioN))
+			dPN.append(PratioN)
+
+		#return np.array(Pratio), Pinner, PN, dPN
+		return PN, dPN
+		

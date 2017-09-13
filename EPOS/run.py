@@ -8,8 +8,6 @@ import multi
 from functools import partial
 from EPOS.fitfunctions import brokenpowerlaw1D
 
-#reload(logging)
-
 def once(epos, fac=1.0):
 	'''
 	A test run with equal weights
@@ -297,6 +295,8 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 			allX= sysX[toplanet]
 			allY= sysY[toplanet]
 			allI= np.random.rayleigh(dInc, allID.size)
+			#allN= np.ones_like(allID) # index to planet in system
+			allN= np.where(allX>=epos.xzoom[0],1,0)
 			#print allX[:3]
 
 			# get index of first planet in each system
@@ -323,6 +323,12 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 				#print allX[:3]
 				#np.random.norm()
 				allY[im+(i-1)]= allY[im+(i-2)]* np.random.normal(1, dR, im.size)
+				
+				# nth planet in system (zoom range)
+				#allN[im+(i-1)]= i
+				#allN[im+(i-1)]+= np.where(allX[im+(i-2)]>=epos.xzoom[0],1,0) # init 1
+				#allN[im+(i-1)]= allN[im+(i-2)]+np.where(allX[im+(i-2)]>=epos.xzoom[0],1,0)
+				allN[im+(i-1)]= allN[im+(i-2)]+1
 			#print '+{}={} story checks out?'.format(allID[i1].size, allID.size)
 			#print allX[:3]
 			
@@ -333,6 +339,7 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 			allX= allX[Xinrange]
 			allY= allY[Xinrange]
 			allI= allI[Xinrange]
+			allN= allN[Xinrange]
 			allID= allID[Xinrange]
 		
 		''' convert to observable parameters '''
@@ -451,6 +458,7 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 			MC_R= allR[itrans]
 		
 		MC_ID= allID[itrans]
+		MC_N= allN[itrans]
 		if epos.populationtype == 'parametric':
 			MC_P= allP[itrans]
 		else:
@@ -506,7 +514,8 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 
 	# arrays with detected planets
 	if not epos.Isotropic:
-		det_ID= MC_ID[idet]		
+		det_ID= MC_ID[idet]
+		if not epos.RV: det_N= MC_N[idet]
 	det_P= MC_P[idet]
 	det_Y= MC_Y[idet]
 
@@ -601,6 +610,9 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 			ss['multi']['Pratio'], ss['multi']['Pinner']= \
 				multi.periodratio(det_ID[ix&iy], det_P[ix&iy]) # *f_dP
 			ss['multi']['cdf']= multi.cdf(det_ID[ix&iy])
+			if not epos.RV:
+				ss['multi']['PN'],ss['multi']['dPN']= multi.periodratio(
+						det_ID[ix&iy], det_P[ix&iy], N=det_N[ix&iy]) 
 		
 		epos.gof=gof
 		ss['P zoom']= det_P[ix&iy]

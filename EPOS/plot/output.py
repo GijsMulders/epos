@@ -24,6 +24,9 @@ def all(epos):
 		multi.periodinner_cdf(epos, MC=True)
 		periodradius.pdf(epos)
 		periodradius.pdf_3d(epos)
+		
+		multi.periodratio(epos, MC=True, N=True)
+		multi.periodinner(epos, MC=True, N=True)
 
 	if epos.RadiusMassConversion:
 		massradius.massradius(epos, MC=True)

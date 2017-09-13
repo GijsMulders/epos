@@ -76,5 +76,3 @@ def completeness(epos, PlotBox=False, Transit=False):
 
 	helpers.save(plt, epos.plotdir+'survey/'+('efficiency' if Transit else 'completeness')+ \
 				fname)
-	
-	pass

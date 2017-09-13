@@ -71,7 +71,7 @@ def multiplicity_cdf(epos, MC=False):
 	
 	helpers.save(plt, '{}{}/cdf'.format(epos.plotdir,prefix))
 	
-def periodratio(epos, MC=False):
+def periodratio(epos, MC=False, N=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
 	ax.set_title('period ratio adjacent planets')
@@ -90,11 +90,30 @@ def periodratio(epos, MC=False):
 		ss=epos.synthetic_survey
 		ax.hist(ss['multi']['Pratio'], bins=bins, 
 				ec='b', histtype='step', label=epos.name)
-		ax.axvline(np.median(ss['multi']['Pratio']), color='b', ls='--')
 	
-		# Observed zoom
-		ax.hist(epos.obs_zoom['multi']['Pratio'], bins=bins, ec='k', histtype='step', label='Kepler subset')
-		ax.axvline(np.median(epos.obs_zoom['multi']['Pratio']), color='k', ls='--')
+		if not N:
+			ax.axvline(np.median(ss['multi']['Pratio']), color='b', ls='--')
+
+			# Observed zoom
+			ax.hist(epos.obs_zoom['multi']['Pratio'], \
+				bins=bins, ec='k', histtype='step', label='Kepler subset')
+			ax.axvline(np.median(epos.obs_zoom['multi']['Pratio']), color='k', ls='--')
+		else:
+			# planets inbetween?
+			#ax.hist(ss['multi']['dPN'][0], \
+			#	bins=bins, ec='k', histtype='step', label='Adjacent planet')
+			ax.hist(np.concatenate(ss['multi']['dPN'][1:]), \
+				bins=bins, ec='k', histtype='stepfilled', label='Planet inbetween')
+			
+			if epos.populationtype=='parametric' and not epos.Isotropic:
+				from EPOS.fitfunctions import brokenpowerlaw1D
+				xx= np.logspace(0,1)
+				try:
+					yy= 150.*brokenpowerlaw1D(xx, *epos.pfit[-6:-3])
+				except AttributeError:
+					yy= 150.*brokenpowerlaw1D(xx, *epos.p0[-6:-3])
+				ax.plot(xx, yy, marker='', ls=':', color='r',label='input')
+		
 	else:
 		# observed all
 		ax.hist(epos.multi['Pratio'], bins=bins, color='b', label='Kepler all')
@@ -121,10 +140,11 @@ def periodratio(epos, MC=False):
 			ax.plot(xx, yy, marker='', ls=':', color='r')
 	
 	prefix= 'output' if MC else 'survey'
+	suffix= '.index' if N else '' 
 
 	if MC: ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
 		
-	helpers.save(plt, '{}{}/periodratio'.format(epos.plotdir, prefix))	
+	helpers.save(plt, '{}{}/periodratio{}'.format(epos.plotdir, prefix, suffix))	
 
 def periodratio_cdf(epos, MC=False):
 
@@ -166,7 +186,7 @@ def periodratio_cdf(epos, MC=False):
 
 ''' these are practically identical to periodratio -> merge?'''
 
-def periodinner(epos, MC=False):
+def periodinner(epos, MC=False, N=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
 	ax.set_title('period innermost planet')
@@ -187,17 +207,38 @@ def periodinner(epos, MC=False):
 		ax.hist(ss['multi']['Pinner'], bins=bins, 
 				ec='b', histtype='step', label=epos.name)
 	
-		# Observed zoom
-		ax.hist(epos.obs_zoom['multi']['Pinner'], bins=bins, ec='k', histtype='step', label='Kepler subset')
+		if not N:
+			# Observed zoom
+			ax.hist(epos.obs_zoom['multi']['Pinner'], bins=bins, 
+				ec='k', histtype='step', label='Kepler subset')
+		else:
+			# Innermost is nth planet
+			ax.hist(ss['multi']['PN'][0], bins=bins, 
+					ec='k', histtype='step', label='actual inner planet')
+			# Not actual inner planet
+			ax.hist(np.concatenate(ss['multi']['PN'][1:]), bins=bins, 
+					ec='k', histtype='stepfilled', label='not inner planet')
+			
 	else:
 		# observed all
 		ax.hist(epos.multi['Pinner'], bins=bins, color='b', label='Kepler all')
 	
+	# Input distribution (not very useful)
+# 	if epos.populationtype=='parametric' and not epos.Isotropic:
+# 		try:
+# 			pdf= epos.func(epos.X, epos.Y, *epos.pfit[epos.ip2d])
+# 		except:
+# 			raise
+# 			pdf= epos.func(epos.X, epos.Y, *epos.p0[epos.ip2d])
+# 		pdf_X, pdf_Y= np.sum(pdf, axis=1), np.sum(pdf, axis=0)
+# 		ax.plot(epos.MC_xvar, 500.*pdf_X, marker='', ls=':', color='r',label='input')
+	
 	prefix= 'output' if MC else 'survey'
+	suffix= '.index' if N else '' 
 
 	if MC: ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
 		
-	helpers.save(plt, '{}{}/innerperiod'.format(epos.plotdir, prefix))	
+	helpers.save(plt, '{}{}/innerperiod{}'.format(epos.plotdir, prefix,suffix))	
 
 def periodinner_cdf(epos, MC=False):
 	# plot multiplicity

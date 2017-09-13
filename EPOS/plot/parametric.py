@@ -40,9 +40,23 @@ def oneD(epos, PlotZoom=False, MCMC=False):
 	ax.set_xlim(epos.xtrim)
 	ax.set_ylim([1e-2,1e2])
 	if MCMC:
+		fMercury=[]
+		fVenus=[]
 		for fpar2d in fpar2d_list:
 			xpdf= np.sum(epos.func(epos.X, epos.Y,*fpar2d), axis=1)
+			fMercury.append(np.sum(xpdf[epos.MC_xvar>88.])/np.sum(xpdf))
+			fVenus.append(np.sum(xpdf[epos.MC_xvar>225.])/np.sum(xpdf))
 			ax.plot(epos.MC_xvar, xpdf*scale_x, color='b', alpha=0.1)
+		
+		if not epos.Isotropic:
+			print
+			for name, posterior in zip(['Mercury','Venus'],[fMercury, fVenus]):
+				eta= np.percentile(posterior, [16, 50, 84]) 
+				print '{} analogues < {:.1%} +{:.1%} -{:.1%}'.format(name, eta[1], 
+						eta[2]-eta[1], eta[1]-eta[0])
+				UL= np.percentile(posterior, [68.2, 95.4, 99.7]) 
+				print '{} 1 sigma UL {:.1%}, 3 sigma UL {:.1%}'.format(name, UL[0], UL[2])
+				
 		ax.plot(epos.MC_xvar, pdf0_X*scale_x, marker='',ls=':',color='k')
 		ax.plot(epos.MC_xvar, pdf_X*scale_x, marker='',ls='-',color='k')
 	else:
@@ -62,8 +76,8 @@ def oneD(epos, PlotZoom=False, MCMC=False):
 	# TODO: zip into previous block
 	f, ax = plt.subplots()
 	ax.set_title('Marginalized Distribution ({:.2f})'.format(pps_y))
-	if epos.Radius:	ax.set_xlabel(r'Planet Radius [R$_\bigoplus$]')
-	else:			ax.set_xlabel(r'Planet Mass [M$_\bigoplus$]')
+	if epos.RV:	ax.set_xlabel(r'Planet Mass [M$_\bigoplus$]')
+	else:		ax.set_xlabel(r'Planet Radius [R$_\bigoplus$]')
 	ax.set_ylabel('Occurrence')
 	ax.set_xscale('log')
 	ax.set_yscale('log')

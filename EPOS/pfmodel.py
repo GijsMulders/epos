@@ -90,6 +90,43 @@ def symba(fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False):
 	return sma, mass, inc
 	#return {'sma':sma, 'mass':mass, 'inc':inc}
 	
+def mercury(fname, istep=None, Verbose=False):
+	print '\nProcessing Mercury file'
+	flist= glob.glob(fname)
+	if len(flist)==0: raise ValueError('file not found: {}'.format(fname))
+	sma, mass, inc= [], [], []
+	
+	for i,fname in enumerate(flist):
+
+		if Verbose: 
+			print '  {}: Using planetary system at final step'.format(fname)
+		else:
+			amtDone= float(i)/len(flist)
+			print '\r  [{:50s}] {:5.1f}%'.format('#' * int(amtDone * 50), amtDone * 100),
+			sys.stdout.flush() 
+		
+		a= np.loadtxt(fname, unpack=True,ndmin=2) # ndmin to guarantee lists
+		L_sma= a[1]
+		L_mass= a[7] * cgs.Msun/cgs.Mearth
+		L_inc= a[3]
+# 			Time of completion (1.e7 yrs in all)
+# 			Semi-Major axis (AU)
+# 			Eccentricity
+# 			Inclination (degrees)
+# 			Argument of Perihelion
+# 			Longitude of Ascending Node
+# 			True Anomaly at Epoch
+# 			Mass (in Solar Masses)
+		
+		# story copy(?) in list of planetary systems
+		sma.append(L_sma)
+		mass.append(L_mass)
+		inc.append(L_inc)
+			#sma0.append(L_sma0)
+			#mass0.append(L_mass0)
+		if not Verbose: print '\r  [{:50s}] {:.1f}%'.format('#' * int(1 * 50), 1 * 100),
+	
+	return sma, mass, inc
 
 def pa_bert(name='1Dlin', dir='PA_Bert/', Verbose=False):
 	fname= '{}/Data{}.out'.format(dir,name)

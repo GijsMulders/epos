@@ -22,6 +22,11 @@ def readme():
 	print '  Rp:  Planet radius in earth radii'
 	print '  eff: 2D matrix of detection efficiency [0-1]'
 	print
+	print 'dr25(): returns the DR25 planet list and '
+	print '        survey detection efficiency as a 2D matrix'
+	print '  P:   Orbital period in days'
+	print '  Rp:  Planet radius in earth radii'
+	print '  eff: 2D matrix of detection efficiency [0-1]'
 
 def obs_Q16(subsample='all'):
 	KOI= np.load('files/KOI.Q16.epos.{}.npz'.format(subsample))
@@ -55,7 +60,8 @@ def dr25(subsample='all'):
 		'starID':ipac['kepid'][slice[subsample]]}
 	
 	# from dr25_epos.py in 
-	eff= np.load('files/det_eff.dr25.{}.npz'.format(subsample))
+	eff= np.load('files/completeness.dr25.{}.npz'.format(subsample))
+	#eff= np.load('files/det_eff.dr25.{}.npz'.format(subsample))
 	survey= {'xvar':eff['P'], 'yvar':eff['Rp'], 'eff_2D':eff['fsnr'], 
 			'Mstar': eff['Mst'], 'Rstar':eff['Rst']}
 	obs['nstars']= eff['n']
