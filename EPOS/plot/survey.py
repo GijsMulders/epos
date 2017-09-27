@@ -67,10 +67,17 @@ def completeness(epos, PlotBox=False, Transit=False):
 			ax.add_patch(patches.Rectangle( (epos.xzoom[0],epos.yzoom[0]), 
 				epos.xzoom[1]-epos.xzoom[0], epos.yzoom[1]-epos.yzoom[0],fill=False, zorder=1) )
 	else: 
-		#ax.contour(epos.eff_xvar, epos.eff_yvar, epos.eff_2D.T,levels= ticks, colors = ['k','k','k','k'], linewidths=3.)	
-		for tick, label in zip(ticks,labels):
-			cs= ax.contour(epos.eff_xvar, epos.eff_yvar, toplot.T,levels= [tick], colors = ['k'], linewidths=3.)
-			plt.clabel(cs, inline=1, fmt=label+'%%')
+		#ax.contour(epos.eff_xvar, epos.eff_yvar, epos.eff_2D.T,levels= ticks, colors = ['k','k','k','k'], linewidths=3.)
+		if epos.RV:
+			levels= [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
+			labels= ['10','20','30','40','50','60','70','80','90']
+			cs= ax.contour(epos.eff_xvar, epos.eff_yvar, toplot.T,\
+					levels= levels, colors = 'k', linewidths=2.)
+		else:
+			for tick, label in zip(levels,labels):
+				cs= ax.contour(epos.eff_xvar, epos.eff_yvar, toplot.T,\
+					levels= [tick], colors = ['k'], linewidths=3.)
+				plt.clabel(cs, inline=1, fmt=label+'%%')
 
 		fname=''
 

@@ -18,6 +18,11 @@ def multiplicity(epos, MC=False):
 		ss=epos.synthetic_survey
 		ax.plot(ss['multi']['bin'], ss['multi']['count'], 
 			ls='', marker='+', mew=2, ms=10, color='k',label=epos.name)
+		
+		if hasattr(epos, 'ss_extra'):
+			for ss in epos.ss_extra:
+				ax.plot(ss['multi']['bin'], ss['multi']['count'], 
+					ls='', marker='+', mew=2, ms=10, color='g',label='as is')
 	
 		# observations in same region 
 		ax.plot(epos.obs_zoom['multi']['bin'], epos.obs_zoom['multi']['count'], 

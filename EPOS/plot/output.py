@@ -24,20 +24,22 @@ def all(epos):
 		multi.periodinner_cdf(epos, MC=True)
 		periodradius.pdf(epos)
 		periodradius.pdf_3d(epos)
-		
-		multi.periodratio(epos, MC=True, N=True)
-		multi.periodinner(epos, MC=True, N=True)
 
 	if epos.RadiusMassConversion:
 		massradius.massradius(epos, MC=True)
 		massradius.massradius(epos, MC=True, Log=True)
 
-	if epos.populationtype is 'model':		
+	if epos.populationtype is 'model':			
 		# Inclinations and period ratios of observed systems
 		# NOTE: These are not observable parameters
 		if 'all_Pratio' in epos.groups[0]: 
 			out_Pratio(epos)
 			hist_Pratio(epos)
+	else:
+		if not epos.RV:
+			multi.periodratio(epos, MC=True, N=True)
+			multi.periodinner(epos, MC=True, N=True)
+
 	
 	periodradius.cdf(epos)
 		

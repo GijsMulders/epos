@@ -33,7 +33,7 @@ def readme():
 
 class epos:
 	
-	def __init__(self, name, RV=False, Debug=False, seed=None):
+	def __init__(self, name, RV=False, Debug=False, seed=True):
 		self.name=name
 		self.plotdir='png/{}/'.format(name)
 		self.RV= RV
@@ -54,8 +54,6 @@ class epos:
 		set_pyplot_defaults() # nicer plots
 		
 		# Seed for the random number generator
-		#self.seed= seed if (seed is None) or (type(seed) is int) else \
-		#	np.random.randint(0, 4294967295)
 		if seed is None: self.seed= None
 		else:
 			if type(seed) is int: self.seed= seed

@@ -8,7 +8,7 @@ import multi
 from functools import partial
 from EPOS.fitfunctions import brokenpowerlaw1D
 
-def once(epos, fac=1.0):
+def once(epos, fac=1.0, Extra=False):
 	'''
 	A test run with equal weights
 	TODO: throw in a bunch of assertions
@@ -45,7 +45,7 @@ def once(epos, fac=1.0):
 	''' Time the first MC run'''
 	print '\nStarting the first MC run'
 	tstart=time.time()
-	MC(epos, fpara, Store=True)
+	MC(epos, fpara, Store=True, Extra=Extra)
 	tMC= time.time()
 	print 'Finished one MC in {:.3f} sec'.format(tMC-tstart)
 	epos.tMC= tMC-tstart
@@ -71,11 +71,17 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1):
 	
 	# store, npy is uncompressed, savez returns as dict instead of array
 	dir= 'chain/{}'.format(epos.name)
-	fname= '{}/{}x{}x{}.npy'.format(dir, nwalkers, nMC, ndim)
+	#fname= '{}/{}x{}x{}.npy'.format(dir, nwalkers, nMC, ndim)
+	fname= '{}/{}x{}x{}.npz'.format(dir, nwalkers, nMC, ndim)
 	if not os.path.exists(dir): os.makedirs(dir)
 	if os.path.isfile(fname):
 		print '\nLoading saved status from {}'.format(fname)
-		epos.chain= np.load(fname) 
+		#epos.chain= np.load(fname)
+		npz= np.load(fname)
+		epos.chain=npz['chain']
+		if epos.seed!=npz['seed']: 
+			print '\nNOTE: Random seed changed: {} to {}'.format(npz['seed'],epos.seed)
+		epos.seed= npz['seed']
 		assert epos.chain.shape == (nwalkers, nMC, ndim)
 	else:
 		
@@ -102,7 +108,10 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1):
 		lnmc= partial(MC, epos, Verbose=False, LogProb= True)
 	
 		''' Set up the MCMC walkers '''
-		p0 = [np.array(fpara)*np.random.uniform(1.-dx,1+dx,len(fpara)) 
+		#p0 = [np.array(fpara)*np.random.uniform(1.-dx,1+dx,len(fpara)) 
+		#		for i in range(nwalkers)]
+		p0 = [np.array(fpara)+dx*np.where(fpara==0,1,fpara)*
+				np.random.uniform(-1,1,len(fpara)) 
 				for i in range(nwalkers)]
 		sampler = emcee.EnsembleSampler(nwalkers, len(fpara), lnmc, threads=threads)
 	
@@ -133,7 +142,9 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1):
 	
 		epos.chain= sampler.chain
 		print 'Saving status in {}'.format(fname)
-		np.save(fname, epos.chain) 
+		#np.save(fname, epos.chain)
+		# compression slow on loading?
+		np.savez_compressed(fname, chain=epos.chain, seed=epos.seed)
 		
 	''' the posterior samples after burn-in '''
 	epos.samples= epos.chain[:, nburn:, :].reshape((-1, ndim))
@@ -212,7 +223,7 @@ def prep_obs(epos):
 		multi.periodratio(epos.obs_starID[ix&iy], epos.obs_xvar[ix&iy])
 	z['multi']['cdf']= multi.cdf(epos.obs_starID[ix&iy])
 
-def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
+def MC(epos, fpara, Store=False, Extra=False, Verbose=True, KS=True, LogProb=False):
 	''' 
 	Do the Monte Carlo Simulations
 	Note:
@@ -429,7 +440,7 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 		IDsys, toplanet= np.unique(allID, return_inverse=True) # return_counts=True
 		if Verbose: print '  {}/{} systems'.format(IDsys.size, allID.size)
 		
-		# draw system viewing angle proportionate to sin theta
+		# draw system viewing angle proportionate to sin theta (i=0: edge-on)
 		inc_sys= np.arcsin(np.random.uniform(0,1,IDsys.size))
 		inc_pl= inc_sys[toplanet]
 		assert inc_pl.size == allP.size
@@ -458,9 +469,9 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 			MC_R= allR[itrans]
 		
 		MC_ID= allID[itrans]
-		MC_N= allN[itrans]
 		if epos.populationtype == 'parametric':
 			MC_P= allP[itrans]
+			MC_N= allN[itrans] # also for PFM?
 		else:
 			MC_P= allP[itrans] * (1.+0.1*np.random.normal(size=MC_M.size) )
 			MC_SG= allSG[itrans]
@@ -476,8 +487,10 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 	Set the observable MC_Y (R or Msin i) 
 	'''
 	if epos.RV:
-		''' M sin i '''
-		MC_Y= MC_Msini= MC_M* np.random.uniform(0,1,MC_P.size) # sin of arcsin?
+		''' M sin i.'''
+		# Note different conventions for i in Msini (i=0 is pole-on)
+		# sin(arccos(chi)) == cos(arcsin(chi)) == sqrt(1-chi^2)
+		MC_Y= MC_Msini= MC_M* np.sqrt(1.-np.random.uniform(0,1,MC_P.size)**2.)
 	else:
 		''' Convert Mass to Radius '''
 		if epos.RadiusMassConversion:
@@ -486,6 +499,7 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 		MC_Y=MC_R
 	
 	''' Store transiting planet sample for verification plot'''
+	#if Store and not epos.RV:
 	if Store:
 		tr= epos.transit={}
 
@@ -515,7 +529,7 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 	# arrays with detected planets
 	if not epos.Isotropic:
 		det_ID= MC_ID[idet]
-		if not epos.RV: det_N= MC_N[idet]
+		if not epos.RV and not epos.populationtype == 'model': det_N= MC_N[idet]
 	det_P= MC_P[idet]
 	det_Y= MC_Y[idet]
 
@@ -590,8 +604,8 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 		if Verbose: print '  observation comparison in {:.3f} sec'.format(tgof-tstart)
 
 
-	if Store:	
-		ss= epos.synthetic_survey= {}
+	if Store:
+		ss={}
 		ss['P']= det_P # MC_P[idet]
 		ss['Y']= det_Y
 		if epos.populationtype is 'model':
@@ -610,13 +624,21 @@ def MC(epos, fpara, Store=False, Verbose=True, KS=True, LogProb=False):
 			ss['multi']['Pratio'], ss['multi']['Pinner']= \
 				multi.periodratio(det_ID[ix&iy], det_P[ix&iy]) # *f_dP
 			ss['multi']['cdf']= multi.cdf(det_ID[ix&iy])
-			if not epos.RV:
+			if not epos.RV and not epos.populationtype is 'model':
 				ss['multi']['PN'],ss['multi']['dPN']= multi.periodratio(
 						det_ID[ix&iy], det_P[ix&iy], N=det_N[ix&iy]) 
 		
 		epos.gof=gof
 		ss['P zoom']= det_P[ix&iy]
 		ss['Y zoom']= det_Y[ix&iy]
+		
+		# Store as an extra model 
+		if Extra:
+			if ~hasattr(epos,'ss_extra'):
+				epos.ss_extra=[]
+			epos.ss_extra.append(ss)
+		else:
+			epos.synthetic_survey= ss
 	else:
 		# return probability
 		with np.errstate(divide='ignore'): 

@@ -20,7 +20,7 @@ def periodradius(epos, SNR=True, Parametric=False):
 	
 	# plot R(P)
 	f, ax = plt.subplots()
-	ax.set_title('transiting planet sample'+suffix)
+	ax.set_title('detectable planet sample'+suffix)
 	helpers.set_axes(ax, epos, Trim=True)
 	if Parametric or len(epos.groups)==1:
 		ax.plot(sim['P'], sim['Y'], ls='', marker='.', mew=0, ms=5.0, color='k')
@@ -251,8 +251,8 @@ def cdf(epos):
 	''' 
 	CDF planet radius
 	'''
-	ax4.set_title('Radius, p={:.3g}'.format(epos.gof['yvar']))
-	if epos.RV:	ax4.set_xlabel(r'Planet Mass [M$_\bigoplus$]')
+	ax4.set_title('{}, p={:.3g}'.format('M sin i' if epos.RV else 'Radius', epos.gof['yvar']))
+	if epos.RV:	ax4.set_xlabel(r'Planet M sin i [M$_\bigoplus$]')
 	else:		ax4.set_xlabel(r'Planet Radius [R$_\bigoplus$]')
 	ax4.set_ylabel('CDF')
 	ax4.set_xscale('log')
