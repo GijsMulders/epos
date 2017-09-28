@@ -36,10 +36,9 @@ def all(epos):
 			out_Pratio(epos)
 			hist_Pratio(epos)
 	else:
-		if not epos.RV:
+		if not epos.RV and not epos.Isotropic:
 			multi.periodratio(epos, MC=True, N=True)
 			multi.periodinner(epos, MC=True, N=True)
-
 	
 	periodradius.cdf(epos)
 		

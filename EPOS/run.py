@@ -638,7 +638,7 @@ def MC(epos, fpara, Store=False, Extra=False, Verbose=True, KS=True, LogProb=Fal
 				epos.ss_extra=[]
 			epos.ss_extra.append(ss)
 		else:
-			epos.synthetic_survey= ss
+			epos.synthetic_survey= ss 
 	else:
 		# return probability
 		with np.errstate(divide='ignore'): 

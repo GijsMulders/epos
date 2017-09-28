@@ -74,7 +74,7 @@ def completeness(epos, PlotBox=False, Transit=False):
 			cs= ax.contour(epos.eff_xvar, epos.eff_yvar, toplot.T,\
 					levels= levels, colors = 'k', linewidths=2.)
 		else:
-			for tick, label in zip(levels,labels):
+			for tick, label in zip(ticks,labels):
 				cs= ax.contour(epos.eff_xvar, epos.eff_yvar, toplot.T,\
 					levels= [tick], colors = ['k'], linewidths=3.)
 				plt.clabel(cs, inline=1, fmt=label+'%%')

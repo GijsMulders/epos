@@ -54,8 +54,8 @@ def oneD(epos, PlotZoom=False, MCMC=False):
 				eta= np.percentile(posterior, [16, 50, 84]) 
 				print '{} analogues < {:.1%} +{:.1%} -{:.1%}'.format(name, eta[1], 
 						eta[2]-eta[1], eta[1]-eta[0])
-				UL= np.percentile(posterior, [68.2, 95.4, 99.7]) 
-				print '{} 1 sigma UL {:.1%}, 3 sigma UL {:.1%}'.format(name, UL[0], UL[2])
+				UL= np.percentile(posterior, [68.2, 95.4, 99.7])
+				for i in range(3): print '  {} sigma UL {:.1%}'.format(i+1,UL[i])
 				
 		ax.plot(epos.MC_xvar, pdf0_X*scale_x, marker='',ls=':',color='k')
 		ax.plot(epos.MC_xvar, pdf_X*scale_x, marker='',ls='-',color='k')
