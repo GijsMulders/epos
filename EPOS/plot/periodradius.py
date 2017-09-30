@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as tck
 import matplotlib.patches as patches
 import helpers
 from EPOS import regression
@@ -258,6 +259,9 @@ def cdf(epos):
 	ax4.set_xscale('log')
 	ax4.set_ylim([-0.05,1.05])
 	ax4.set_xlim(*epos.yzoom)
+	
+	ax4.set_xticks(epos.yticks)
+	ax4.get_xaxis().set_major_formatter(tck.ScalarFormatter())
 
 	#model histogram x
 	R= sim['Y zoom']

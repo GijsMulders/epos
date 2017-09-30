@@ -17,6 +17,7 @@ def all(epos):
 	
 	if not epos.Isotropic:
 		multi.multiplicity(epos, MC=True)
+		multi.multiplicity(epos, MC=True, Planets=True)
 		multi.multiplicity_cdf(epos, MC=True)
 		multi.periodratio(epos, MC=True)
 		multi.periodratio_cdf(epos, MC=True)

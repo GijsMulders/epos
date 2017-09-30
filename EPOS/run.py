@@ -218,6 +218,7 @@ def prep_obs(epos):
 	# multis
 	z['multi']={}
 	z['multi']['bin'], z['multi']['count']= multi.frequency(epos.obs_starID[ix&iy])
+	z['multi']['pl cnt']= z['multi']['bin']*z['multi']['count']
 	
 	z['multi']['Pratio'], z['multi']['Pinner']= \
 		multi.periodratio(epos.obs_starID[ix&iy], epos.obs_xvar[ix&iy])
@@ -621,6 +622,7 @@ def MC(epos, fpara, Store=False, Extra=False, Verbose=True, KS=True, LogProb=Fal
 		if not epos.Isotropic:
 			ss['multi']={}
 			ss['multi']['bin'], ss['multi']['count']= multi.frequency(det_ID[ix&iy])
+			ss['multi']['pl cnt']=ss['multi']['bin']* ss['multi']['count']
 			ss['multi']['Pratio'], ss['multi']['Pinner']= \
 				multi.periodratio(det_ID[ix&iy], det_P[ix&iy]) # *f_dP
 			ss['multi']['cdf']= multi.cdf(det_ID[ix&iy])

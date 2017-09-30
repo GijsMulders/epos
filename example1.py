@@ -10,16 +10,16 @@ epos= EPOS.classes.epos(name='example1')
 
 # load the observed exoplanets and survey efficiency
 EPOS.kepler.readme()
-obs_P, obs_R, star_ID= EPOS.kepler.obs_Q16()
-eff_P, eff_R, eff_2D= EPOS.kepler.eff_Q16()
 
-epos.set_observation(obs_P, obs_R, star_ID, nstars=1.6862e5)
-epos.set_survey(eff_P, eff_R, eff_2D) #) 
+obs, survey= EPOS.kepler.dr25()
+
+epos.set_observation(**obs)
+epos.set_survey(**survey)
 
 # define the simulated range (trim) and the range compared to observations (zoom)
 epos.set_ranges(xtrim=[10,300],ytrim=[0.5,12.],xzoom=[50,200],yzoom=[0.7,3])
 
-# define the type of planet population to fit
+# define the parameteric distribution 
 epos.set_parametric(func=EPOS.fitfunctions.powerlaw2D, 
 					pname=['norm','P1','P2'],
 					p0=[0.002, 0.3,-0.2]) # 

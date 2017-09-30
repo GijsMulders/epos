@@ -1,4 +1,5 @@
 png/
 chain/
+log/
 *.pyc
 .sync

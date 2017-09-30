@@ -1,43 +1,50 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as tck
 import helpers
 
-def multiplicity(epos, MC=False):
+def multiplicity(epos, MC=False, Planets=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
 	ax.set_title('planet multiplicity')
 	ax.set_xlabel('planets per system')
-	ax.set_ylabel('number of systems')
+	ax.set_ylabel('number of planets' if Planets else 'number of systems')
 
 	ax.set_xlim(0, 9)
-	ax.set_ylim(0.5, 1e4) # 7.	
-	ax.set_yscale('log')
+	if not Planets:
+		ax.set_ylim(0.5, 1e4) # 7.	
+		ax.set_yscale('log')
+
+	key = 'pl cnt' if Planets else 'count'
 
 	# MC data
 	if MC:
 		ss=epos.synthetic_survey
-		ax.plot(ss['multi']['bin'], ss['multi']['count'], 
+		ax.plot(ss['multi']['bin'], ss['multi'][key], 
 			ls='', marker='+', mew=2, ms=10, color='k',label=epos.name)
 		
 		if hasattr(epos, 'ss_extra'):
 			for ss in epos.ss_extra:
-				ax.plot(ss['multi']['bin'], ss['multi']['count'], 
-					ls='', marker='+', mew=2, ms=10, color='g',label='as is')
+				ax.plot(ss['multi']['bin'], ss['multi'][key], 
+					ls='', marker='+', mew=2, ms=10, color='g',label='no dichotomy')
 	
 		# observations in same region 
-		ax.plot(epos.obs_zoom['multi']['bin'], epos.obs_zoom['multi']['count'], 
+		ax.plot(epos.obs_zoom['multi']['bin'], epos.obs_zoom['multi'][key], 
 			drawstyle='steps-mid', 
 			ls='-', marker='', color='k', label='Kepler subset')
 
 	# observations
-	ax.plot(epos.multi['bin'], epos.multi['count'], drawstyle='steps-mid', 
+	ax.plot(epos.multi['bin'], epos.multi[key], drawstyle='steps-mid', 
 		ls='--', marker='', color='gray', label='Kepler all')
-		
+
+	ax.get_yaxis().set_major_formatter(tck.ScalarFormatter())
+
 	ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
 	
 	prefix= 'output' if MC else 'survey'
+	suffix='.planets' if Planets else ''
 	
-	helpers.save(plt, '{}{}/multiplicity'.format(epos.plotdir,prefix))
+	helpers.save(plt, '{}{}/multiplicity{}'.format(epos.plotdir,prefix,suffix))
 
 def multiplicity_cdf(epos, MC=False):
 	# plot multiplicity cdf

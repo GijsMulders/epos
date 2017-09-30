@@ -87,6 +87,7 @@ class epos:
 		epos.multi={}
 		epos.multi['bin'], epos.multi['count']= \
 			multi.frequency(self.obs_starID, Verbose=True)
+		epos.multi['pl cnt']= epos.multi['bin']* epos.multi['count']
 		epos.multi['Pratio'], epos.multi['Pinner']= \
 			multi.periodratio(self.obs_starID, self.obs_xvar, Verbose=True)
 		epos.multi['cdf']= multi.cdf(self.obs_starID, Verbose=True)	
@@ -169,6 +170,13 @@ class epos:
 		self.MC_eff= self.eff_2D[ixmin:ixmax,iymin:iymax]
 	
 		self.X, self.Y= np.meshgrid(self.MC_xvar, self.MC_yvar, indexing='ij')
+		
+		if self.RV:
+			self.xticks= [1,10,100]
+			self.yticks= [1,10,100,1000]
+		else:
+			self.xticks= [1,10,100,1000]
+			self.yticks= [0.5,1,4,10]
 		
 		#print '\nTrimming {} to {}'.format(self.eff_2D.shape,self.eff_trim.shape) 
 		#print 'xlim: {}-{}'.format(*self.xtrim)
