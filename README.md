@@ -22,14 +22,13 @@ python 2.7
 * matplotlib
 * [emcee](http://dan.iel.fm/emcee) for the MCMC fitting
 * [corner.py](http://corner.readthedocs.io/) for the MCMC plots
-* hdf5 (maybe?)
-* csv (maybe? to be removed)
 
 ### How to run tests ###
-./example_parametric.py
+./example1.py
+./example2.py
 
 ### Where can I find documentation? ###
-An incomplete draft paper describing the code can be [dowloaded here](https://www.dropbox.com/s/964mwknjdcueyj9/EPOS-draft.pdf?dl=0)
+A draft paper describing the code can be [dowloaded here](https://www.dropbox.com/s/964mwknjdcueyj9/EPOS-draft.pdf?dl=1)
 
 ### Who do I talk to? ###
 
