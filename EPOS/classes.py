@@ -31,9 +31,101 @@ def readme():
 	print '  eff_2D: 2D matrix of detection efficiency'
 	print '  Rstar: stellar radius for calculating transit probability'
 
+class fitparameters:
+	def __init__(self):
+		self.fitpars={} # not in order
+		self.keysall=[]
+		self.keysfit=[]
+		self.keys2d=[]
+	
+	def add(self, key, value, fixed=False, min=-np.inf, max=np.inf, 
+				dx=None, text=None, is2D=False):
+		fp=self.fitpars[key]= {}
+		
+		# list of keys
+		self.keysall.append(key)
+		if is2D: self.keys2d.append(key)
+		if not fixed: self.keysfit.append(key)
+		
+		fp['key']= key
+		fp['value_init']= value
+
+		# T/F
+		fp['fixed']=fixed
+		
+		# parameters for fitting
+		if not fixed:
+			fp['min']=min
+			fp['max']=max
+			# initial walker positions, can't be zero, default 10% or 0.1 dex
+			dx=0.1*value if dx is None else dx
+			fp['dx']=abs(dx) if (dx!=0) else 0.1
+
+	def default(self, key, value, Verbose=True):
+		if not key in self.keysall: 
+			if Verbose: print '  Set {} to default {}'.format(key, value)
+			self.add(key, value, fixed=True)
+	
+	def set(self, key, value):
+		self.fitpars[key]['value_fit']=value
+
+	def setfit(self, mclist):
+		for i,key in enumerate(self.keysfit):
+			#self.fitpars[key]['value_fit']=mclist[self.keysfit.index(key)]
+			self.fitpars[key]['value_fit']=mclist[i]
+	
+	def get(self, key, Init=False, attr=None):
+		if attr is None:
+			# return initial or fit value
+			if Init or not 'value_fit' in self.fitpars[key]:
+				return self.fitpars[key]['value_init']
+			else:
+				return self.fitpars[key]['value_fit']
+		else:
+			# list of attribute
+			return self.fitpars[key][attr]
+	
+	def get2d(self, Init=False):
+		# returns the values for the 2D distribution
+		return [self.get(key, Init=Init) for key in self.keys2d]
+	
+	def getfit(self, Init=True, attr=None): 
+		return [self.get(key, Init=Init, attr=attr) for key in self.keysfit]
+
+	def getmc(self, key, parlist):
+		# returns value for an mc run
+		if self.fitpars[key]['fixed']:
+			return self.fitpars[key]['value_init']
+		else:
+			return parlist[self.keysfit.index(key)]
+			#try:				
+			#except ValueError:
+			#	raise ValueError('Parameter {} not defined'.format(key))
+
+	def get2d_fromlist(self, parlist):
+		# returns 2d from fit/fixed, fit supplied in list
+		l2d= []
+		for key in self.keys2d:
+			if self.fitpars[key]['fixed']:
+				l2d.append(self.fitpars[key]['value_init'])
+				#pps= self.fitpars['pps']['value_init']
+			else:
+				l2d.append(parlist[self.keysfit.index(key)])
+				#pps= parlist[self.keysfit.index('pps')]
+		return l2d
+	
+	def checkbounds(self, parlist):
+		for i, key in enumerate(self.keysfit):
+			if parlist[i]<self.fitpars[key]['min']:
+				raise ValueError('{} out of bounds, {} < {}'.format(
+					key,parlist[i],self.fitpars[key]['min']))
+			if parlist[i]>self.fitpars[key]['max']:
+				raise ValueError('{} out of bounds, {} > {}'.format(
+					key,parlist[i],self.fitpars[key]['max']))
+
 class epos:
 	
-	def __init__(self, name, RV=False, Debug=False, seed=True):
+	def __init__(self, name, RV=False, Debug=False, seed=True, Norm=False):
 		self.name=name
 		self.plotdir='png/{}/'.format(name)
 		self.RV= RV
@@ -46,9 +138,14 @@ class epos:
 		self.Prep= False # ready to run? EPOS.run.once()
 		self.RadiusMassConversion= False
 		self.Radius= False # is this used?
-		self.Isotropic= False
+		
+		self.Multi=False
+		self.Isotropic= False # phase out?
+		self.RandomPairing= False
 		
 		self.populationtype=None # ['parametric','model']
+		
+		self.Norm=Norm # renormalize pdf
 				
 		self.Debug= False
 		set_pyplot_defaults() # nicer plots
@@ -114,7 +211,7 @@ class epos:
 			self.Pindex= -2./3.
 			fourpi2_GM= 4.*np.pi**2. / (cgs.G*self.Mstar*cgs.Msun)
 			self.fgeo_prefac= self.Rstar*cgs.Rsun * fourpi2_GM**(1./3.) / cgs.day**(2./3.)
-			print self.fgeo_prefac
+			#print self.fgeo_prefac
 			P, R= np.meshgrid(self.eff_xvar, self.eff_yvar, indexing='ij')
 			self.completeness= self.eff_2D * self.fgeo_prefac*P**self.Pindex
 
@@ -168,7 +265,12 @@ class epos:
 		self.MC_xvar= self.eff_xvar[ixmin:ixmax]
 		self.MC_yvar= self.eff_yvar[iymin:iymax]
 		self.MC_eff= self.eff_2D[ixmin:ixmax,iymin:iymax]
-	
+		
+		# scale factor to mutuply pdf such that occurrence in units of dlnR dlnP
+		self.scale_x= self.MC_xvar.size/np.log(self.MC_xvar[-1]/self.MC_xvar[0])
+		self.scale_y= self.MC_yvar.size/np.log(self.MC_yvar[-1]/self.MC_yvar[0])	
+		self.scale= self.scale_x * self.scale_y
+		
 		self.X, self.Y= np.meshgrid(self.MC_xvar, self.MC_yvar, indexing='ij')
 		
 		if self.RV:
@@ -185,51 +287,54 @@ class epos:
 		#print 'To  : {}'.format(self.MC_xvar)
 		#print '\nTrim: {}'.format(self.eff_yvar)
 		#print 'To  : {}'.format(self.MC_yvar)
-
+		
+		''' Habitable zone? '''
+		# generalize this to bins?
+		P1, P2= (0.95**1.5)*365, (1.67**1.5)*365
+		R1, R2= 0.7, 1.5
+		iHZ= (P1<=self.X) & (self.X<=P2) & (R1<=self.Y) & (self.Y<=R2)
+		self.HZ= iHZ.sum()>0
+		if self.HZ:
+			print '{} cells in HZ ({}x{})'.format(iHZ.sum(),
+					((P1<=self.MC_xvar) & (self.MC_xvar<=P2)).sum(),
+					((R1<=self.MC_yvar) & (self.MC_yvar<=R2)).sum())
+			self.hz_cells= iHZ
+			self.hz_area= np.log(P2/P1)*np.log(R2/R1)
+			#print self.hz_area
+			
 		self.Range=True
 	
-	def set_parametric(self, func=None, p0=[], pname=None):
+	def set_bins(self, xbins=[[1,10]], ybins=[[1,10]], Sparse=False):
+		focc= self.occurrence={}
+		assert Sparse==False
+		if not (np.ndim(xbins) == np.ndim(ybins) == 2):
+			raise ValueError('wrong bin dimensions')
+		assert len(xbins) == len(ybins)
+		assert np.shape(xbins) == np.shape(ybins) 
+		
+		focc['bin']={}
+		focc['bin']['x']= np.array(xbins)
+		focc['bin']['y']= np.array(ybins)
+
+
+	def set_parametric(self, func):
 		if self.populationtype is None:
 			self.populationtype='parametric'
 		elif self.populationtype is not 'parametric':
 			raise ValueError('You have already defined a planet population ({})'.format(self.populationtype))
 		
 		if not callable(func): raise ValueError('func is not a callable function')
-		if not len(p0)>0: raise ValueError('nonzero list of starting params')
-		
-		# Call function once to see if it works, P=1, R=1
-		try: 	func(np.asarray([1.]), np.asarray([1.]), *p0)
-		except:	raise
 		
 		self.func=func
-		self.p0= np.asarray(p0)
-		if pname is None: self.pname= np.array(['c{}'.format(i) for i in range(p0.size)])
-		else: self.pname=np.asarray(pname)
-
-		#indices to fit parameters
-		self.ip_fit= np.arange(self.p0.size) # index to fit parameters (all)
-		self.ip_fixed= np.array([], dtype=int)
-		self.ip2d_fit= np.arange(self.p0.size) # index to 2D R,P distribution parameters
-		self.ip2d_fixed= np.array([], dtype=int)
-		self.ip2d= np.append(self.ip2d_fit,self.ip2d_fixed)
+		self.fitpars= fitparameters()
 		
-		self.Isotropic=True
-
-	def set_multi(self, p0=[], pname=None):
+	def set_multi(self, spacing=None):
 		if self.populationtype is not 'parametric':
 			raise ValueError('Define a parametric planet population first')
-		self.Isotropic=False
-		self.p0= np.append(self.p0, p0)
-		if pname is None: pname=['m{}'.format(i) for i in range(self.p0.size)]
-		self.pname= np.append(self.pname,pname)
+		self.Multi=True
 		
-		# index to fit parameters?
-		self.ip_fit= np.array([0,1,2,3,7,8,9,10,12,13])
-		self.ip_fixed= np.array([4,5,6,11])
-		self.ip2d_fit= np.array([0,1,2,3])
-		self.ip2d_fixed= np.array([4,5,6])
-		self.ip2d= np.append(self.ip2d_fit,self.ip2d_fixed)
-		self.pname= self.pname[self.ip_fit]
+		self.RandomPairing= (spacing==None)
+		self.spacing= spacing # None, brokenpowerlaw, dimensionless
 	
 	def add_population(self, name, sma, mass, 
 					inc=None, tag1=None, Verbose=False, weight=1.):
@@ -250,9 +355,10 @@ class epos:
 		
 		# model has mutual inclinations?
 		Inc= inc is not None
-		if not Inc: 
-			self.Isotropic=False # isotropic if any subgroup lacks inclinations
+		if not Inc:
 			self.Multi=False
+		else:
+			self.Multi=True # no mix of T/F
 		
 		sg={}
 		sg['name']= name

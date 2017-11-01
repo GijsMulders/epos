@@ -27,7 +27,7 @@ def chain(epos):
 		axl.set_xlabel('Step number')
 	
 	# loop over existing axes only
-	for k, (xlabel, ax) in enumerate(zip(epos.pname,axlist.flatten())):
+	for k, (xlabel, ax) in enumerate(zip(epos.fitpars.keysfit,axlist.flatten())):
 		ax.set_ylabel(xlabel)
 	
 		#ax.set_xlim(1, 10)
@@ -43,8 +43,8 @@ def chain(epos):
 	helpers.save(plt, '{}mcmc/chain'.format(epos.plotdir))	
 
 def corners(epos):
-	fig = corner.corner(epos.samples, labels=epos.pname,
-                      truths=epos.p0, 
+	fig = corner.corner(epos.samples, labels=epos.fitpars.keysfit,
+                      truths=epos.fitpars.getfit(Init=True), 
                       quantiles=[0.16, 0.5, 0.84], show_titles=True)
 	fig.savefig('{}mcmc/triangle.png'.format(epos.plotdir))
 		

@@ -6,18 +6,23 @@ def readme():
 	print
 	print 'These functions work on numpy arrays ONLY'
 
-def powerlaw2D(x, y, p0, p1, p2):
-	return p0 * x**p1 * y**p2
+def uniform(x,y): 
+	return np.ones_like(x)
 
-def powerlaw2D_yonly(x, y, p0, p1):
-	return p0 * y**p1
+def powerlaw2D(x, y, p1, p2):
+	return x**p1 * y**p2
 
-def brokenpowerlaw2D(x, y, p0, xp, p1, p2, yp, p3, p4):
-	return p0 * brokenpowerlaw1D(x, xp, p1, p2) * brokenpowerlaw1D(y, yp, p3, p4)
+def powerlaw2D_yonly(x, y, p1):
+	return y**p1
 
-def brokenpowerlaw2D_yonly(x, y, p0, p1, yp, p3, p4):
-	return p0 * x**p1 * brokenpowerlaw1D(y, yp, p3, p4)
+def brokenpowerlaw2D(x, y, xp, p1, p2, yp, p3, p4):
+	return brokenpowerlaw1D(x, xp, p1, p2) * brokenpowerlaw1D(y, yp, p3, p4)
 
+def brokenpowerlaw2D_yonly(x, y, p1, yp, p3, p4):
+	return x**p1 * brokenpowerlaw1D(y, yp, p3, p4)
+
+def brokenpowerlaw2D_symmetric(x, y, xp, p1, yp, p3, p4):
+	return brokenpowerlaw2D(x, y, xp, p1, -p1, yp, p3, p4)
 	
 def brokenpowerlaw1D(x, xp, p1, p2):
 	# normalized to 1 at x=xp

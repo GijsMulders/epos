@@ -171,7 +171,7 @@ def inclination(epos):
 		ax.set_ylabel('Inclination [degree]')
 
 		ax.set_xlim(epos.mod_xlim)
-		ax.set_ylim(0.1,90)
+		ax.set_ylim(0.01,90)
 
 		ax.set_xscale('log')
 		ax.set_yscale('log')

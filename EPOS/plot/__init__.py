@@ -1,2 +1,2 @@
-__all__ = ['input','output','architecture','mcmc'] 
-import input, output, architecture, mcmc
+__all__ = ['input','output','architecture','mcmc','occurrence'] 
+import input, output, architecture, mcmc, occurrence

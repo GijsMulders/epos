@@ -36,19 +36,23 @@ def eff_Q16(subsample='all'):
 	eff= np.load('files/completeness.Q16.epos.{}.npz'.format(subsample))
 	return eff['x'], eff['y'], eff['fsnr']
 
-def dr25(subsample='all'):
+def dr25(subsample='all', score=0.9):
 
 	from astropy.table import Table
-	print 'Reading planets from IPAC file' 
+	print '\nReading planets from IPAC file' 
 	ipac=Table.read('files/q1_q17_dr25_koi.tbl',format='ipac')
 	isdwarf= ipac['koi_slogg']>4.2
 	iscandidate= ipac['koi_pdisposition']=='CANDIDATE'
-	# koi_score?
-	isreliable= ipac['koi_score']>0.9 # removes rolling band, ~ 500 planets
-	print isreliable.size
+	# koi_score
+	isreliable= ipac['koi_score']>score # removes rolling band, ~ 500 planets
+	print '  {}/{} dwarfs'.format(isdwarf.sum(), isdwarf.size)
+	print '  {} candidates, {} false positives'.format((isdwarf&iscandidate).sum(), 
+				(isdwarf&~iscandidate).sum() )
+	print '  {}+{} with score > {:.2f}'.format((isdwarf&iscandidate&isreliable).sum(), 
+				(isdwarf&~iscandidate&isreliable).sum(),score )
 
-#	isall= isdwarf & iscandidate
-	isall= isdwarf & iscandidate & isreliable
+	isall= isdwarf & isreliable # reliability score cuts out false positives
+#	isall= isdwarf & iscandidate & isreliable
 
 	slice={'all':isall}
 	for spT, Tmin, Tmax in zip(['M','K','G','F'],

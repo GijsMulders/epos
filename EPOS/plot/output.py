@@ -15,7 +15,7 @@ def all(epos):
 	periodradius.periodradius(epos, Parametric=Parametric, SNR=False)
 	periodradius.periodradius(epos, Parametric=Parametric, SNR=True)
 	
-	if not epos.Isotropic:
+	if epos.Multi:
 		multi.multiplicity(epos, MC=True)
 		multi.multiplicity(epos, MC=True, Planets=True)
 		multi.multiplicity_cdf(epos, MC=True)
@@ -37,7 +37,7 @@ def all(epos):
 			out_Pratio(epos)
 			hist_Pratio(epos)
 	else:
-		if not epos.RV and not epos.Isotropic:
+		if epos.Multi and not epos.RV:
 			multi.periodratio(epos, MC=True, N=True)
 			multi.periodinner(epos, MC=True, N=True)
 	

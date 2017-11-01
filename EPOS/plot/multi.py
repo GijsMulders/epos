@@ -14,6 +14,7 @@ def multiplicity(epos, MC=False, Planets=False):
 	if not Planets:
 		ax.set_ylim(0.5, 1e4) # 7.	
 		ax.set_yscale('log')
+		#ax.get_yaxis().set_major_formatter(tck.ScalarFormatter())
 
 	key = 'pl cnt' if Planets else 'count'
 
@@ -36,8 +37,6 @@ def multiplicity(epos, MC=False, Planets=False):
 	# observations
 	ax.plot(epos.multi['bin'], epos.multi[key], drawstyle='steps-mid', 
 		ls='--', marker='', color='gray', label='Kepler all')
-
-	ax.get_yaxis().set_major_formatter(tck.ScalarFormatter())
 
 	ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
 	
@@ -117,13 +116,17 @@ def periodratio(epos, MC=False, N=False):
 			ax.hist(np.concatenate(ss['multi']['dPN'][1:]), \
 				bins=bins, ec='k', histtype='stepfilled', label='Planet inbetween')
 			
-			if epos.populationtype=='parametric' and not epos.Isotropic:
+			if epos.populationtype=='parametric' and epos.Multi and \
+				'dP break' in epos.fitpars.keysall:
+				
 				from EPOS.fitfunctions import brokenpowerlaw1D
+				pbreak= epos.fitpars.get('dP break')
+				p1= epos.fitpars.get('dP 1')
+				p2= epos.fitpars.get('dP 2')
+			
 				xx= np.logspace(0,1)
-				try:
-					yy= 150.*brokenpowerlaw1D(xx, *epos.pfit[-6:-3])
-				except AttributeError:
-					yy= 150.*brokenpowerlaw1D(xx, *epos.p0[-6:-3])
+				yy= 150.*brokenpowerlaw1D(xx, pbreak, p1, p2)
+
 				ax.plot(xx, yy, marker='', ls=':', color='r',label='input')
 		
 	else:
@@ -146,9 +149,13 @@ def periodratio(epos, MC=False, N=False):
 		#yy= 150. * stats.skewnorm.pdf(np.log10(xx), 0.0, np.log10(1.5), 0.12)
 		#ax.plot(xx, yy, marker='', ls=':', color='r')
 		
-		if epos.populationtype=='parametric' and not epos.Isotropic:
+		if epos.populationtype=='parametric' and epos.Multi and \
+				'dP break' in epos.fitpars.keysall:
 			from EPOS.fitfunctions import brokenpowerlaw1D
-			yy= 170.*brokenpowerlaw1D(xx, *epos.p0[epos.ip2d[1:4]])
+			pbreak= epos.fitpars.get('dP break',Init=True)
+			p1= epos.fitpars.get('dP 1',Init=True)
+			p2= epos.fitpars.get('dP 2',Init=True)
+			yy= 170.*brokenpowerlaw1D(xx, pbreak, p1, p2)
 			ax.plot(xx, yy, marker='', ls=':', color='r')
 	
 	prefix= 'output' if MC else 'survey'
@@ -236,7 +243,7 @@ def periodinner(epos, MC=False, N=False):
 		ax.hist(epos.multi['Pinner'], bins=bins, color='b', label='Kepler all')
 	
 	# Input distribution (not very useful)
-# 	if epos.populationtype=='parametric' and not epos.Isotropic:
+# 	if epos.populationtype=='parametric' and epos.Multi:
 # 		try:
 # 			pdf= epos.func(epos.X, epos.Y, *epos.pfit[epos.ip2d])
 # 		except:
