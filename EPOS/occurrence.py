@@ -22,7 +22,9 @@ def planets(epos, Log=False):
 		pl_comp= interpolate.RectBivariateSpline(epos.eff_xvar, 
 			epos.eff_yvar, epos.completeness)
 		completeness= pl_comp(epos.obs_xvar, epos.obs_yvar, grid=False)
-	focc['planet']= 1./completeness/epos.nstars
+	focc['planet']={}
+	focc['planet']['completeness']= completeness
+	focc['planet']['occ']= 1./completeness/epos.nstars
 	#print epos.planet_occurrence
 	
 	''' Occurrence per bin '''
@@ -34,7 +36,7 @@ def planets(epos, Log=False):
 		
 		_inbin.append(inbin)
 		_n.append(inbin.sum())
-		_occ.append(focc['planet'][inbin].sum())
+		_occ.append(focc['planet']['occ'][inbin].sum())
 		
 		print 'x: {}, y: {}, n={}, occ={:.2g}'.format(xbin, ybin, _n[-1], _occ[-1])
 	

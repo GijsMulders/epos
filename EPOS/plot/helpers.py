@@ -1,5 +1,7 @@
 ''' helpers '''
 import os
+from matplotlib.colors import Normalize
+from matplotlib import cm
 
 def set_axes(ax, epos, Trim=False, Eff=False):
 	ax.set_xlabel('Orbital Period [days]')
@@ -57,3 +59,11 @@ def save(plt, name, dpi=150):
 	
 	plt.savefig(name+'.png',bbox_inches='tight', dpi=dpi)
 	plt.close()
+
+def color_array(vals, vmin=None, vmax=None, cmap='jet'):
+	# creates colors usable by matplotlib colorbar
+	norm = Normalize(vmin=vmin, vmax=vmax)
+	# plt.cm.get_cmap
+	#Can put any colormap you like here.
+	colours = cm.ScalarMappable(norm=norm, cmap=cmap).to_rgba(vals)
+	return colours, norm
