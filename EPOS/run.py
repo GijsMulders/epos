@@ -799,17 +799,35 @@ def draw_from_2D_distribution(epos, pps, fpara, npl=1):
 	
 	return allX, allY
 
-def _pdf(epos, Init=False, fpara=None):
+def _pdf(epos, Init=False, fpara=None, xbin=None, ybin=None):
 	if fpara is None:
 		pps= epos.fitpars.get('pps',Init=Init)
 		fpar2d= epos.fitpars.get2d(Init=Init)
 	else:
 		pps= epos.fitpars.getmc('pps',fpara)
 		fpar2d= epos.fitpars.get2d_fromlist(fpara)
+		#print fpara
 		
-	pdf= epos.func(epos.X, epos.Y, *fpar2d)
-	pdf_X, pdf_Y= np.sum(pdf, axis=1), np.sum(pdf, axis=0)
-	pdf_X= pps* pdf_X/np.sum(pdf_X)
-	pdf_Y= pps* pdf_Y/np.sum(pdf_Y)
-	pdf= pps* pdf/np.sum(pdf)
+	_pdf= epos.func(epos.X, epos.Y, *fpar2d)
+	_pdf_X, _pdf_Y= np.sum(_pdf, axis=1), np.sum(_pdf, axis=0)
+	
+	# calculate pdf on different grid?
+	if (xbin is None) or (ybin is None):
+		pdf=_pdf
+		pdf_X=_pdf_X
+		pdf_Y=_pdf_Y
+	else:
+		xgrid= np.logspace(*np.log10(xbin))
+		ygrid= np.logspace(*np.log10(ybin))
+		X,Y=np.meshgrid(xgrid, ygrid)
+		pdf= epos.func(X,Y, *fpar2d)
+		pdf_X, pdf_Y= np.sum(pdf, axis=1), np.sum(pdf, axis=0)
+
+	# normalized to total area
+	pdf_X= pps* pdf_X/np.sum(_pdf_X)
+	pdf_Y= pps* pdf_Y/np.sum(_pdf_Y)
+	pdf= pps* pdf/np.sum(_pdf)
+	
 	return pps, pdf, pdf_X, pdf_Y
+
+		

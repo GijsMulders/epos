@@ -266,7 +266,7 @@ class epos:
 		self.MC_yvar= self.eff_yvar[iymin:iymax]
 		self.MC_eff= self.eff_2D[ixmin:ixmax,iymin:iymax]
 		
-		# scale factor to mutuply pdf such that occurrence in units of dlnR dlnP
+		# scale factor to multiply pdf such that occurrence in units of dlnR dlnP
 		self.scale_x= self.MC_xvar.size/np.log(self.MC_xvar[-1]/self.MC_xvar[0])
 		self.scale_y= self.MC_yvar.size/np.log(self.MC_yvar[-1]/self.MC_yvar[0])	
 		self.scale= self.scale_x * self.scale_y
@@ -315,7 +315,6 @@ class epos:
 		focc['bin']={}
 		focc['bin']['x']= np.array(xbins)
 		focc['bin']['y']= np.array(ybins)
-
 
 	def set_parametric(self, func):
 		if self.populationtype is None:

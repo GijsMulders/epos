@@ -82,7 +82,7 @@ def twoD(epos, PlotZoom=False, MCMC=False):
 	if not epos.Range: epos.set_ranges()
 
 	# pdf
-	pps, pdf, _, _= _pdf(epos, Init=~MCMC)
+	pps, pdf, _, _= _pdf(epos, Init= not MCMC)
 	pdflog= np.log10(pdf*epos.scale) # in %
 		
 	f, ax = plt.subplots()
