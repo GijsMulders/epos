@@ -3,9 +3,12 @@ from scipy import interpolate
 from run import _pdf
 
 def all(epos):
-	planets(epos)
-	if epos.Prep and epos.populationtype is 'parametric' and (not epos.Multi) :
-		parametric(epos)
+	if hasattr(epos,'occurrence'):
+		planets(epos)
+		if epos.Prep and epos.populationtype is 'parametric' and (not epos.Multi) :
+			parametric(epos)
+	else:
+		print 'No bins for calculating occurrence rate, did you use epos.set_bins() ?'
 
 def planets(epos, Log=False):
 	if not epos.Range: epos.set_ranges()

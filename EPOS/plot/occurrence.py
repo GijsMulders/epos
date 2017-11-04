@@ -12,15 +12,17 @@ clrs= ['r','g','b','m'] # in epos.prep
 
 def all(epos):
 	assert epos.Observation
-	assert hasattr(epos, 'occurrence')
-	colored(epos)
-	colored(epos, Bins=True)
-	#binned(epos)
+	if hasattr(epos, 'occurrence'):
+		colored(epos)
+		colored(epos, Bins=True)
+		#binned(epos)
 	
-	if 'eta0' in epos.occurrence['bin']:
-		integrated(epos)
-		if 'eta' in epos.occurrence['bin']:
-			integrated(epos, MCMC=True)
+		if 'eta0' in epos.occurrence['bin']:
+			integrated(epos)
+			if 'eta' in epos.occurrence['bin']:
+				integrated(epos, MCMC=True)
+	else:
+		print '\nNo occurrence to plot, did you run EPOS.occurrence.all()? \n'
 
 def colored(epos, Bins=False):
 	
