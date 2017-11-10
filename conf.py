@@ -50,14 +50,14 @@ master_doc = 'index'
 # General information about the project.
 project = u'EPOS'
 copyright = u'2017, EPOS'
-author = u'EPOS'
+author = u'Gijs Mulders'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-version = u'Gijs Mulders'
+version = u'0.1'
 # The full version, including alpha/beta/rc tags.
 release = u'0.1'
 

@@ -1,0 +1,226 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>EPOS introduction &#8212; EPOS 0.1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Welcome to EPOS’s documentation!" href="index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="epos-introduction">
+<h1>EPOS introduction<a class="headerlink" href="#epos-introduction" title="Permalink to this headline">¶</a></h1>
+<p>This generates the API, showing only documented functions</p>
+<p>(this is a link to <a class="reference internal" href="#EPOS.epos" title="EPOS.epos"><code class="xref py py-class docutils literal"><span class="pre">EPOS.epos</span></code></a>)</p>
+<div class="section" id="module-EPOS">
+<span id="the-epos-class"></span><h2>The epos class<a class="headerlink" href="#module-EPOS" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="EPOS.epos">
+<em class="property">class </em><code class="descclassname">EPOS.</code><code class="descname">epos</code><span class="sig-paren">(</span><em>name</em>, <em>RV=False</em>, <em>Debug=False</em>, <em>seed=True</em>, <em>Norm=False</em><span class="sig-paren">)</span><a class="headerlink" href="#EPOS.epos" title="Permalink to this definition">¶</a></dt>
+<dd><p>The epos class</p>
+<dl class="docutils">
+<dt>Description:</dt>
+<dd>Initialize</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) – name to use for directories</li>
+<li><strong>RV</strong> (<em>bool</em>) – Compare to radial velocity instead of transits</li>
+<li><strong>Debug</strong> (<em>bool</em>) – Log more output for debugging</li>
+<li><strong>seed</strong> (<em>int</em>) – Same random number for each simulation? True, None, or int</li>
+<li><strong>Norm</strong> (<em>bool</em>) – normalize pdf (deprecated?)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="EPOS.epos.set_observation">
+<code class="descname">set_observation</code><span class="sig-paren">(</span><em>xvar</em>, <em>yvar</em>, <em>starID</em>, <em>nstars=168620.0</em><span class="sig-paren">)</span><a class="headerlink" href="#EPOS.epos.set_observation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Observed planet population</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>xvar</strong> – planet orbital period [list]</li>
+<li><strong>yvar</strong> – planet radius or M sin i [list]</li>
+<li><strong>ID</strong> – planet ID [list]</li>
+<li><strong>nstars</strong> – number of stars surveyed</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="EPOS.epos.set_survey">
+<code class="descname">set_survey</code><span class="sig-paren">(</span><em>xvar</em>, <em>yvar</em>, <em>eff_2D</em>, <em>Rstar=1.0</em>, <em>Mstar=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#EPOS.epos.set_survey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Survey detection efficiency (completeness)
+:param xvar: planet orbital period grid [list]’
+:param yvar: planet radius or M sin i grid [list]
+:param eff_2D: 2D matrix of detection efficiency
+:param Rstar: stellar radius, for calculating transit probability
+:param Mstar: stellar mass, for period-semimajor axis conversion</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="EPOS.fitparameters">
+<em class="property">class </em><code class="descclassname">EPOS.</code><code class="descname">fitparameters</code><a class="headerlink" href="#EPOS.fitparameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Holds the fit parameters</p>
+<dl class="method">
+<dt id="EPOS.fitparameters.add">
+<code class="descname">add</code><span class="sig-paren">(</span><em>key</em>, <em>value</em>, <em>fixed=False</em>, <em>min=-inf</em>, <em>max=inf</em>, <em>dx=None</em>, <em>text=None</em>, <em>is2D=False</em><span class="sig-paren">)</span><a class="headerlink" href="#EPOS.fitparameters.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a fit parameter</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>key</strong> (<em>str</em>) – fit parameter dictionary key</li>
+<li><strong>value</strong> (<em>float</em>) – starting guess</li>
+<li><strong>fixed</strong> (<em>bool</em>) – keep this parameter fixed</li>
+<li><strong>min</strong> (<em>float</em>) – lower bound</li>
+<li><strong>max</strong> (<em>float</em>) – upper bound</li>
+<li><strong>dx</strong> (<em>float</em>) – initial dispersion for MCMC</li>
+<li><strong>text</strong> (<em>str</em>) – plot safe name?</li>
+<li><strong>is2D</strong> (<em>bool</em>) – use this parameter in the 2D parametric <a class="reference internal" href="_docs/EPOS.html#module-EPOS.fitfunctions" title="EPOS.fitfunctions"><code class="xref py py-meth docutils literal"><span class="pre">EPOS.fitfunctions()</span></code></a></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="fit-parameters">
+<h2>Fit parameters<a class="headerlink" href="#fit-parameters" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt>
+<em class="property">class </em><code class="descclassname">EPOS.</code><code class="descname">fitparameters</code></dt>
+<dd><p>Holds the fit parameters</p>
+<dl class="method">
+<dt>
+<code class="descname">add</code><span class="sig-paren">(</span><em>key</em>, <em>value</em>, <em>fixed=False</em>, <em>min=-inf</em>, <em>max=inf</em>, <em>dx=None</em>, <em>text=None</em>, <em>is2D=False</em><span class="sig-paren">)</span></dt>
+<dd><p>Add a fit parameter</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>key</strong> (<em>str</em>) – fit parameter dictionary key</li>
+<li><strong>value</strong> (<em>float</em>) – starting guess</li>
+<li><strong>fixed</strong> (<em>bool</em>) – keep this parameter fixed</li>
+<li><strong>min</strong> (<em>float</em>) – lower bound</li>
+<li><strong>max</strong> (<em>float</em>) – upper bound</li>
+<li><strong>dx</strong> (<em>float</em>) – initial dispersion for MCMC</li>
+<li><strong>text</strong> (<em>str</em>) – plot safe name?</li>
+<li><strong>is2D</strong> (<em>bool</em>) – use this parameter in the 2D parametric <a class="reference internal" href="_docs/EPOS.html#module-EPOS.fitfunctions" title="EPOS.fitfunctions"><code class="xref py py-meth docutils literal"><span class="pre">EPOS.fitfunctions()</span></code></a></li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">EPOS introduction</a><ul>
+<li><a class="reference internal" href="#module-EPOS">The epos class</a></li>
+<li><a class="reference internal" href="#fit-parameters">Fit parameters</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to EPOS’s documentation!</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/intro.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, EPOS.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+      |
+      <a href="_sources/intro.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -91,6 +91,14 @@ EPOS\.pfmodel module
     :undoc-members:
     :show-inheritance:
 
+EPOS\.readme module
+-------------------
+
+.. automodule:: EPOS.readme
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EPOS\.regression module
 -----------------------
 
