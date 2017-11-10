@@ -3,10 +3,8 @@ import EPOS
 
 ''' This example demonstrates the MCMC fitting of EPOS '''
 
-EPOS.readme.all()
-
 # initialize the EPOS class
-epos= EPOS.classes.epos(name='example2')
+epos= EPOS.epos(name='example2')
 
 # load the observed exoplanets and survey efficiency
 EPOS.kepler.readme()

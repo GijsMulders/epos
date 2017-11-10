@@ -47,7 +47,7 @@ def colored(epos, Bins=False):
 	cb1 = clrbar.ColorbarBase(axb, cmap=cmap, norm=norm, ticks=ticks,
                                 orientation='vertical') # horizontal
 	axb.set_yticklabels(100*10.**ticks)
-	axb.tick_params(axis='y', direction='both')
+	axb.tick_params(axis='y', direction='out')
 	
 	''' bins?'''
 	if Bins:
@@ -75,7 +75,7 @@ def colored(epos, Bins=False):
 	else:
 		helpers.save(plt, epos.plotdir+'occurrence/colored')
 	
-def	binned(epos):
+def	OLDbinned(epos):
 	f, ax = plt.subplots()
 	ax.set_title('Occurrence per Planet')
 	occbin= epos.occurrence['bin']
@@ -125,7 +125,7 @@ def integrated(epos, MCMC=False):
 	cs= ax.contourf(epos.X, epos.Y, pdflog, cmap=cmap, levels=levels)
 	cbar= f.colorbar(cs, cax=axb, ticks=ticks)
 	axb.set_yticklabels(100*10.**ticks)
-	axb.tick_params(axis='y', direction='both')
+	axb.tick_params(axis='y', direction='out')
 	axb.set_title('%')
 	
 	''' integrated occurrence per bin'''

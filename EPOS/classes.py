@@ -1,37 +1,18 @@
+"""
+EPOS classes docstring
+
+This module defines the EPOS class, that contains the observed exoplanets,
+the survey detection efficiency, and the synthetic planet population.
+see example.py for a simple demonstration of the class
+"""
+
 import numpy as np
 import cgs
 from EPOS import multi
 from EPOS.plot.helpers import set_pyplot_defaults
 
-def readme():
-	print '\nThis module defines the EPOS class, that contains the observed exoplanets,'
-	print 'the survey detection efficiency, and the synthetic planet population.'
-	print 
-	print 'see example.py for a simple demonstration of the class'
-	print 
-	print 'epos(name, RV=False)'
-	print '  Initialize the class'
-	print 'in:'
-	print '  name: identifier, plots will appear in png/name'
-	print '  RV: transit or RV? [T/F]'
-	print 
-	print 'set_observation(xvar, yvar, starID, nstars=1.6862e5)'
-	print '  Observed planet population'
-	print 'in:'
-	print '  xvar: planet orbital period [list]'
-	print '  yvar: planet radius or M sin i [list]'
-	print '  ID: planet ID [list]'
-	print '  nstars: number of stars in the survey'
-	print
-	print 'set_survey(xvar, yvar, eff_2D, Rstar=1.0)'
-	print '  Survey detection efficiency (completeness)'
-	print 'in:'
-	print '  xvar: planet orbital period grid [list]'
-	print '  yvar: planet radius or M sin i grid [list]'
-	print '  eff_2D: 2D matrix of detection efficiency'
-	print '  Rstar: stellar radius for calculating transit probability'
-
 class fitparameters:
+	''' Holds the fit parameters '''
 	def __init__(self):
 		self.fitpars={} # not in order
 		self.keysall=[]
@@ -40,6 +21,18 @@ class fitparameters:
 	
 	def add(self, key, value, fixed=False, min=-np.inf, max=np.inf, 
 				dx=None, text=None, is2D=False):
+		'''Add a fit parameter
+		
+		Args:
+			key(str): fit parameter dictionary key
+			value(float): starting guess
+			fixed(bool): keep this parameter fixed
+			min(float): lower bound
+			max(float): upper bound
+			dx(float): initial dispersion for MCMC
+			text(str): plot safe name?
+			is2D(bool): use this parameter in the 2D parametric :meth:`EPOS.fitfunctions`
+		'''
 		fp=self.fitpars[key]= {}
 		
 		# list of keys
@@ -124,8 +117,23 @@ class fitparameters:
 					key,parlist[i],self.fitpars[key]['max']))
 
 class epos:
-	
+	"""The epos class
+    
+    Description:
+    	Initialize
+
+    Args:
+    	name (str): name to use for directories
+        RV(bool): Compare to radial velocity instead of transits
+        Debug(bool): Log more output for debugging
+        seed(int): Same random number for each simulation? True, None, or int
+        Norm(bool): normalize pdf (deprecated?)
+        
+    """
 	def __init__(self, name, RV=False, Debug=False, seed=True, Norm=False):
+		"""
+		Initialize the class
+		"""
 		self.name=name
 		self.plotdir='png/{}/'.format(name)
 		self.RV= RV
@@ -158,6 +166,14 @@ class epos:
 			print '\nUsing random seed {}'.format(self.seed)
 		
 	def set_observation(self, xvar, yvar, starID, nstars=1.6862e5):
+		''' Observed planet population
+		
+		Args:
+			xvar: planet orbital period [list]
+			yvar: planet radius or M sin i [list]
+			ID: planet ID [list]
+			nstars: number of stars surveyed
+		'''
 		order= np.lexsort((xvar,starID)) # sort by ID, then P
 		self.obs_xvar=np.asarray(xvar)[order]
 		self.obs_yvar=np.asarray(yvar)[order]
@@ -190,6 +206,14 @@ class epos:
 		epos.multi['cdf']= multi.cdf(self.obs_starID, Verbose=True)	
 		
 	def set_survey(self, xvar, yvar, eff_2D, Rstar=1.0, Mstar=1.0):
+		'''Survey detection efficiency (completeness)
+		Args:
+			xvar: planet orbital period grid [list]'
+			yvar: planet radius or M sin i grid [list]
+			eff_2D: 2D matrix of detection efficiency
+			Rstar: stellar radius, for calculating transit probability
+			Mstar: stellar mass, for period-semimajor axis conversion
+		'''
 		self.eff_xvar=np.asarray(xvar)
 		self.eff_yvar=np.asarray(yvar)
 		self.eff_2D=np.asarray(eff_2D)

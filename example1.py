@@ -3,10 +3,8 @@ import EPOS
 
 ''' This example demonstrates the core functionality of EPOS '''
 
-EPOS.readme.all()
-
 # initialize the EPOS class
-epos= EPOS.classes.epos(name='example1')
+epos= EPOS.epos(name='example1')
 
 # load the observed exoplanets and survey efficiency
 EPOS.kepler.readme()
