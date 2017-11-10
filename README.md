@@ -15,8 +15,7 @@ Download the source, preferably using git
 None. Optionally add the EPOS dir to your python path
 
 ### Dependencies ###
-python 2.7
-
+* python 2.7
 * numpy
 * scipy
 * matplotlib
@@ -24,11 +23,17 @@ python 2.7
 * [corner.py](http://corner.readthedocs.io/) for the MCMC plots
 
 ### How to run tests ###
+There are some examples that test basic functionality
+
 ./example1.py
+
 ./example2.py
 
 ### Where can I find documentation? ###
+
 A draft paper describing the code can be [dowloaded here](https://www.dropbox.com/s/964mwknjdcueyj9/EPOS-draft.pdf?dl=1)
+
+Different modules are described [here](epos/toc.md)
 
 ### Who do I talk to? ###
 
