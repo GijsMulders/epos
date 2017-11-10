@@ -33,7 +33,7 @@ There are some examples that test basic functionality
 
 A draft paper describing the code can be [dowloaded here](https://www.dropbox.com/s/964mwknjdcueyj9/EPOS-draft.pdf?dl=1)
 
-Different modules are described [here](epos/toc.md)
+Different modules are described in _build/html/index.html
 
 ### Who do I talk to? ###
 
