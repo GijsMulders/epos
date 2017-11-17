@@ -37,11 +37,12 @@ def colored(epos, Bins=False):
 
 	''' color scale? '''
 	cmap='magma' # viridis, plasma, inferno, magma, spring, cool
+	cmap='viridis'
 	vmin, vmax= -4, 0
 	ticks=np.linspace(vmin, vmax, (vmax-vmin)+1)
 	clrs, norm= helpers.color_array(np.log10(epos.occurrence['planet']['completeness']),
 		vmin=vmin,vmax=vmax, cmap=cmap)
-	ax.scatter(epos.obs_xvar, epos.obs_yvar, color=clrs)
+	ax.scatter(epos.obs_xvar, epos.obs_yvar, color=clrs, s=4)
 	
 	# colorbar?
 	cb1 = clrbar.ColorbarBase(axb, cmap=cmap, norm=norm, ticks=ticks,

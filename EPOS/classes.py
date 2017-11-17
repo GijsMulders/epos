@@ -12,7 +12,7 @@ from EPOS import multi
 from EPOS.plot.helpers import set_pyplot_defaults
 
 class fitparameters:
-	''' Holds the fit parameters '''
+	''' Holds the fit parameters. Usually initialized in epos.fitpars '''
 	def __init__(self):
 		self.fitpars={} # not in order
 		self.keysall=[]
@@ -128,7 +128,17 @@ class epos:
         Debug(bool): Log more output for debugging
         seed(int): Same random number for each simulation? True, None, or int
         Norm(bool): normalize pdf (deprecated?)
-        
+    
+    Attributes:
+		name(str): name
+		plotdir(str): plot directory
+		RV(bool): Compare to Radial Velocity instead of transit data
+		Multi(bool): Do multi-planet statistics
+		RandomPairing(bool): multis are randomly paired
+		Isotropic(bool): Assume isotropic mutual inclinations
+		populationtype(str): type of planet population. 'parametric' or 'model'
+		Debug(bool): Verbose logging
+		seed(int): Random seed, int or None
     """
 	def __init__(self, name, RV=False, Debug=False, seed=True, Norm=False):
 		"""
@@ -138,7 +148,23 @@ class epos:
 		self.plotdir='png/{}/'.format(name)
 		self.RV= RV
 
-		# switches to be set later		
+		self.Multi=False
+		self.RandomPairing= False
+		self.Isotropic= False # phase out?
+		
+		self.populationtype=None # ['parametric','model']
+
+		# Seed for the random number generator
+		if seed is None: self.seed= None
+		else:
+			if type(seed) is int: self.seed= seed
+			else: self.seed= np.random.randint(0, 4294967295)
+			print '\nUsing random seed {}'.format(self.seed)
+		
+		self.Debug= False
+		set_pyplot_defaults() # nicer plots
+
+		# switches to be set later (undocumented)	
 		self.Observation=False
 		self.Range=False
 		self.DetectionEfficiency=False
@@ -146,24 +172,7 @@ class epos:
 		self.Prep= False # ready to run? EPOS.run.once()
 		self.RadiusMassConversion= False
 		self.Radius= False # is this used?
-		
-		self.Multi=False
-		self.Isotropic= False # phase out?
-		self.RandomPairing= False
-		
-		self.populationtype=None # ['parametric','model']
-		
-		self.Norm=Norm # renormalize pdf
-				
-		self.Debug= False
-		set_pyplot_defaults() # nicer plots
-		
-		# Seed for the random number generator
-		if seed is None: self.seed= None
-		else:
-			if type(seed) is int: self.seed= seed
-			else: self.seed= np.random.randint(0, 4294967295)
-			print '\nUsing random seed {}'.format(self.seed)
+
 		
 	def set_observation(self, xvar, yvar, starID, nstars=1.6862e5):
 		''' Observed planet population
@@ -341,6 +350,22 @@ class epos:
 		focc['bin']['y']= np.array(ybins)
 
 	def set_parametric(self, func):
+		'''Define a parametric function to generate the planet size-period distribution
+		
+		Description:
+			Function should be callable as func(X, Y, \*fitpars2d) with
+			X(np.array): period
+			Y(np.array): size (radius or mass)
+			The list of fit parameters fitpars2d will be constructed from parameters 
+			added using :func:`EPOS.fitparameters.add` with is2D=True
+			
+		Note:
+			Some pre-defined functions can be found in :mod:`EPOS.fitfunctions`
+		
+		Args:
+			func (function): callable function
+		
+		'''
 		if self.populationtype is None:
 			self.populationtype='parametric'
 		elif self.populationtype is not 'parametric':

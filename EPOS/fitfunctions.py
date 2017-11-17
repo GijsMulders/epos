@@ -1,21 +1,37 @@
+'''This module contains some fitting functions for parametric fits to Kepler data
+These functions work on numpy arrays ONLY, 
+all functions return a non-normalized probability density distribution, 
+assuming x and y are numpy arrays of equal length (i.e. coordinates)
+'''
+
 import numpy as np
 from scipy.stats import norm
 
-def readme():
-	print '\nThis module contains fitting functions for parametric fits to Kepler data'
-	print
-	print 'These functions work on numpy arrays ONLY'
-
 def uniform(x,y): 
+	''' Uniform distribution'''
 	return np.ones_like(x)
 
 def powerlaw2D(x, y, p1, p2):
+	''' Power law in x and y'''
 	return x**p1 * y**p2
 
 def powerlaw2D_yonly(x, y, p1):
+	''' Power law in y, uniform distribution in x'''
 	return y**p1
 
 def brokenpowerlaw2D(x, y, xp, p1, p2, yp, p3, p4):
+	''' Broken powerlaw in x and y
+	
+	Args:
+		x(np.array): x
+		y(np.array): y
+		xp(float): break in x
+		p1(float): power law index at x<xp
+		p2(float): power law index at x>xp
+		yp(float): break in y
+		p3(float): power law index at y<yp
+		p4(float): power law index at y>yp
+	'''
 	return brokenpowerlaw1D(x, xp, p1, p2) * brokenpowerlaw1D(y, yp, p3, p4)
 
 def brokenpowerlaw2D_yonly(x, y, p1, yp, p3, p4):
@@ -28,9 +44,24 @@ def brokenpowerlaw1D(x, xp, p1, p2):
 	# normalized to 1 at x=xp
 	return (x/xp)**np.where(x<xp,p1,p2)
 
-def bimodal2D(x, y, rp0, rxp, rp1, rp2, ry, ryw, gp0, gxp, gp1, gp2, gy, gyw):
+def bimodal2D(x, y, rp0, rxp, rp1, rp2, ry, ryw, gxp, gp1, gp2, gy, gyw):
+	''' Bimodal distribution where each component (r,g) is a broken power law in `x` 
+	and a lognormal in `y`
+	
+	Args:
+		x(np.array): x
+		y(np.array): y
+		rp0(float): normalisation of r component
+		rxp(float): break in x
+		rp1(float): power law index at x<xp
+		rp2(float): power law index at x>xp
+		ry(float): mean of y
+		ryw(flat): dispersion of y, in dex	
+	Note:		
+		Only works with support for a non-separable function in x and y
+	'''
 	rocky= rp0 * brokenpowerlaw1D(x, rxp, rp1, rp2) * \
 			norm.pdf(np.log10(y), loc=np.log10(ry), scale=ryw)
-	gas=   gp0 * brokenpowerlaw1D(x, gxp, gp1, gp2) * \
+	gas=   brokenpowerlaw1D(x, gxp, gp1, gp2) * \
 			norm.pdf(np.log10(y), loc=np.log10(gy), scale=gyw)
 	return rocky+gas
