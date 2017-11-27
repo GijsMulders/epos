@@ -29,7 +29,9 @@ def colored(epos, Bins=False):
 	f, (ax, axb) = plt.subplots(1,2, gridspec_kw = {'width_ratios':[20, 1]})
 	f.subplots_adjust(wspace=0)
 	
-	ax.set_title('Survey Completeness') # if Bins
+	name= 'Survey Completeness'
+	if epos.name in ['dr25_F','dr25_G','dr25_K','dr25_M','dr25_GK']: name+= ' ('+epos.name[5:]+')'
+	ax.set_title(name)
 	
 	helpers.set_axes(ax, epos, Trim=True)
 	
