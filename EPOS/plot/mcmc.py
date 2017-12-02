@@ -1,8 +1,17 @@
+import warnings
 import numpy as np
 import matplotlib.pyplot as plt
+
 import helpers
-import corner
 import parametric
+
+try:
+	import corner
+except ImportError:
+	print '\nWarning: corner.py not imported'
+	warnings.warn('corner.py not imported',ImportWarning)
+except:
+	print '??'
 
 def all(epos):
 	if hasattr(epos, 'chain'):
