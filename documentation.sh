@@ -1,5 +1,5 @@
 #!/bin/sh
-# creates the documentation using sphinx from the docstrings
+# This script creates the documentation using autosphinx from the docstrings
+# You can access the documentation in _build/html/index.html
 sphinx-apidoc -f -o _docs EPOS/
 make html
-# documentation in _build/html/index.html'

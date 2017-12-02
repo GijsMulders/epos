@@ -10,12 +10,15 @@ This repository hosts the EPOS source code
 
 ### Summary of set up ###
 Download the source, preferably using git
+```
+git clone https://GijsMulders@bitbucket.org/GijsMulders/epos.git
+```
 
 ### Configuration ###
-None. Optionally add the EPOS dir to your python path
+None. Optionally add the epos/EPOS dir to your python path
 
 ### Dependencies ###
-* python 2.7
+* (i)python 2.7
 * numpy
 * scipy
 * matplotlib
@@ -23,11 +26,14 @@ None. Optionally add the EPOS dir to your python path
 * [corner.py](http://corner.readthedocs.io/) for the MCMC plots
 
 ### How to run tests ###
-There are some examples that test basic functionality
+Run the examples that test basic functionality
 
+```
 ./example1.py
-
 ./example2.py
+```
+
+if you don't have ipython installed, you can also run `python example1.py`
 
 ### Where can I find documentation? ###
 

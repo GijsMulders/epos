@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import helpers, cgs
+import helpers, ..cgs
 from EPOS.run import _pdf
 
 def oneD(epos, PlotZoom=False, MCMC=False):
