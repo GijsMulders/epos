@@ -1,12 +1,17 @@
 import numpy as np
-import time
 from scipy import interpolate
 from scipy.stats import ks_2samp, norm
-import os, logging
+import os, sys, logging, time
+from functools import partial
+
 import cgs
 import multi
-from functools import partial
 from EPOS.fitfunctions import brokenpowerlaw1D
+
+try:
+	import emcee
+except ImportError:
+	print '#WARNING# emcee could not be imported'
 
 def once(epos, fac=1.0, Extra=False):
 	'''
@@ -77,8 +82,9 @@ def once(epos, fac=1.0, Extra=False):
 	epos.tMC= tMC-tstart
 	
 def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1):
+	if not 'emcee' in sys.modules:
+		raise ImportError('You need to install emcee')
 	assert epos.Prep
-	import emcee
 	
 	''' set starting parameters '''
 	if epos.populationtype is 'parametric':

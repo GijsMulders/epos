@@ -15,9 +15,12 @@ except:
 
 def all(epos):
 	if hasattr(epos, 'chain'):
-		print '\nPlotting input...'
+		print '\nPlotting chain...'
 		chain(epos)
-		corners(epos)
+		try:
+			corners(epos)
+		except NameError:
+			print '  (skipping corner plot)'
 		if epos.populationtype is 'parametric':
 			parametric.oneD(epos, MCMC=True)
 			parametric.twoD(epos, MCMC=True)
