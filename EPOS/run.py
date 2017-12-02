@@ -52,7 +52,7 @@ def once(epos, fac=1.0, Extra=False):
 				sg['weight']*= fac/summedweight
 				print 'set weight {} to {}'.format(sg['name'],sg['weight']) 
 			#epos.weights= [fac/len(epos.groups)]* len(epos.groups) # equal weights
-			assert epos.RadiusMassConversion, 'set mass-to-radius function'
+			assert epos.MassRadius, 'set mass-to-radius function'
 		else: assert False
 		
 		# prep the detection efficiency / observations
@@ -200,22 +200,6 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1):
 		# set weight instead?
 		epos.pfit=[p[0] for p in fitpars]
 	
-	''' estimate eta_earth '''
-	if epos.populationtype is 'parametric' and (not epos.Multi) and epos.HZ:
-	
-		posterior= []
-		for sample in epos.samples:
-			_, pdf, _, _= _pdf(epos, fpara=sample)
-			posterior.append(np.average(pdf[epos.hz_cells])*epos.scale )
-			#print posterior[-1]
-
-		gamma_earth= np.percentile(posterior, [16, 50, 84])
-		eta_earth= gamma_earth* epos.hz_area
-		print '  gamma_earth= {:.1%} +{:.1%} -{:.1%}'.format(gamma_earth[1], 
-				gamma_earth[2]-gamma_earth[1], gamma_earth[1]-gamma_earth[0])
-		print '  eta_earth= {:.1%} +{:.1%} -{:.1%}'.format(eta_earth[1], 
-				eta_earth[2]-eta_earth[1], eta_earth[1]-eta_earth[0])
-
 	''' Estimate Solar System Analogs'''
 	if epos.populationtype is 'parametric' and epos.Multi:
 		fMercury=[]
@@ -270,12 +254,14 @@ def prep_obs(epos):
 		multi.periodratio(epos.obs_starID[ix&iy], epos.obs_xvar[ix&iy])
 	z['multi']['cdf']= multi.cdf(epos.obs_starID[ix&iy])
 
-def MC(epos, fpara, Store=False, Extra=False, Verbose=True, KS=True, LogProb=False):
+def MC(epos, fpara, Store=False, StorePopulation=False, Extra=False, 
+		Verbose=True, KS=True, LogProb=False):
 	''' 
 	Do the Monte Carlo Simulations
 	Note:
 	variable x/X is P
 	variable y/Y is R/M
+	TODO: split into multiple functions
 	'''	
 	if Verbose: tstart=time.time()
 	#if not Store: logging.debug(' '.join(['{:.3g}'.format(fpar) for fpar in fpara]))
@@ -341,22 +327,6 @@ def MC(epos, fpara, Store=False, Extra=False, Verbose=True, KS=True, LogProb=Fal
 			f_iso= epos.fitpars.getmc('f_iso', fpara)
 			f_cor= epos.fitpars.getmc('f_cor', fpara)
 			
-			if epos.spacing == 'brokenpowerlaw':
-				dPbreak= epos.fitpars.getmc('dP break', fpara)
-				dP1= epos.fitpars.getmc('dP 1', fpara)
-				dP2= epos.fitpars.getmc('dP 2', fpara)
-				if (dPbreak<=0):
-					if Store: raise ValueError('parameters out of bounds')
-					return -np.inf
-			elif epos.spacing == 'dimensionless':
-				logD=  epos.fitpars.getmc('log D', fpara)
-				sigma= epos.fitpars.getmc('sigma', fpara)
-				if (sigma<=0):
-					if Store: raise ValueError('parameters out of bounds')
-					return -np.inf			
-			# etc. etc.
-			#try: npl, dPbreak, dP1, dP2, dInc, f_iso= fpara[-6:]
-			#except: raise ValueError('Incorrect number of parameters?')
 			f_dP, f_inc= 1.0, 1.0 # no need to fudge these
 
 			
@@ -368,83 +338,14 @@ def MC(epos, fpara, Store=False, Extra=False, Verbose=True, KS=True, LogProb=Fal
 			if (dInc <=0) or (dR <=0) or not (0 <= f_iso <= 1):
 				if Store: raise ValueError('parameters out of bounds')
 				return -np.inf
+			
+			''' Draw multiplanet distributions '''
+			allX, allY, allI, allN, allID= \
+				draw_multi(epos, sysX, sysY, npl, dInc, dR, fpara, Store)
 					
-			''' assign ID to each system '''
-			sysID= np.arange(sysX.size)
-			#allID= np.repeat(sysID, npl) # array with star ID for each planet
-			npl_arr= np.random.uniform(npl, npl+1, sysID.size) # rounds down
-			allID= np.repeat(sysID, npl_arr.astype(int))
-			#print allID.size, sysID.size
-			if allID.size > 1e7:
-				logging.debug('Too many planets: {} > 1e7'.format(allID.size))
-				for pname, fpar in zip(epos.pname, fpara):
-					logging.debug('  {}= {:.3g}'.format(pname,fpar))
-				if Store: raise ValueError('Too many planets: {}'.format(allID.size))
-				return -np.inf				
-
-			''' initialize planet parameters'''
-			_, toplanet, sysnpl= np.unique(allID, return_inverse=True,return_counts=True)
-			allX= sysX[toplanet]
-			allY= sysY[toplanet]
-			allI= np.random.rayleigh(dInc, allID.size)
-			#allN= np.ones_like(allID) # index to planet in system
-			allN= np.where(allX>=epos.xzoom[0],1,0) # also yzoom?
-			#print allX[:3]
-
-			# get index of first planet in each system
-			if len(sysnpl) < 1:
-				logger.debug('no planets')
-				if Store: raise ValueError('no planets')
-				return -np.inf
-			di= np.roll(sysnpl,1)
-			di[0]=0
-			i1= np.cumsum(di) # index to first planet
-			assert np.all(sysID == allID[i1])
-			
-			''' Adjust parameter of 2nd, 3rd planet etc.'''
-			Pgrid= np.logspace(0,1)
-			if epos.spacing == 'powerlaw':
-				cdf= np.cumsum(brokenpowerlaw1D(Pgrid, dPbreak, dP1, dP2))
-			elif epos.spacing=='dimensionless':
-				with np.errstate(divide='ignore'): 
-					Dgrid= np.log10(2.*(Pgrid**(2./3.)-1.)/(Pgrid**(2./3.)+1.))
-				Dgrid[0]= -2
-				#print Dgrid
-				cdf= norm(logD,sigma).cdf(Dgrid)
-			
-			# loop over planet 2,3... n
-			for i in range(2,len(np.bincount(sysnpl)) ):
-				im= i1[sysnpl>=i] # index to ith planet in each system
-				#print '  planet {} in system, {} systems'.format(i,im.size)
-				#dP= draw_from_function(brokenpowerlaw1D,xgrid,im.size, dPbreak, dP1, dP2)
-				dP= np.interp(np.random.uniform(cdf[0],cdf[-1],im.size), cdf, Pgrid)
-				allX[im+(i-1)]= allX[im+(i-2)]* dP
-				#np.random.uniform(dP-0.7, dP+0.7, im.size)
-				#print allX[:3]
-				#np.random.norm()
-				allY[im+(i-1)]= allY[im+(i-2)]* np.random.normal(1, dR, im.size)
-				
-				# nth planet in system (zoom range)
-				#allN[im+(i-1)]= i
-				#allN[im+(i-1)]+= np.where(allX[im+(i-2)]>=epos.xzoom[0],1,0) # init 1
-				#allN[im+(i-1)]= allN[im+(i-2)]+np.where(allX[im+(i-2)]>=epos.xzoom[0],1,0)
-				allN[im+(i-1)]= allN[im+(i-2)]+1
-			#print '+{}={} story checks out?'.format(allID[i1].size, allID.size)
-			#print allX[:3]
-			
-			''' Toss out planets (reduces memory footprint) '''
-			Xinrange= allX<=epos.MC_xvar[-1]
-			#if Xinrange.sum() < 0.5* allX.size: 
-			#	print 'yeah, {}/{}'.format(Xinrange.sum(),allX.size)
-			allX= allX[Xinrange]
-			allY= allY[Xinrange]
-			allI= allI[Xinrange]
-			allN= allN[Xinrange]
-			allID= allID[Xinrange]
-		
 		''' convert to observable parameters '''
 		allP= allX
-		if epos.RV:	allM= allY
+		if epos.RV or epos.MassRadius: allM= allY
 		else:		allR= allY
 				
 	else:
@@ -513,25 +414,24 @@ def MC(epos, fpara, Store=False, Extra=False, Verbose=True, KS=True, LogProb=Fal
 		if 'all_R' in sg: allR=np.concatenate(L_R)
 		#print len(np.unique(L_allID))/ndraw # == sg['n']
 	#if Verbose: print '{:.3f} sec'.format(time.time()-tstart)
-	
-	'''
-	Mass-Radius conversion
-	'''
-	
-		
+			
 	''' 
 	remove planets according to geometric transit probability 
+	TODO: convert into function that returns itrans
 	'''
 	if epos.RV:
-		#itrans= np.full(allP.size, True, np.bool) # keep all
+		itrans= np.full(allP.size, True, np.bool) # keep all
 		MC_P= allP
 		MC_M= allM
 	elif (not epos.Multi) or dInc is None:
 		p_trans= epos.fgeo_prefac *allP**epos.Pindex
 		itrans= p_trans >= np.random.uniform(0,1,allP.size)
 
-		MC_P= allP[itrans] 
-		MC_R= allR[itrans]
+		MC_P= allP[itrans]
+		if epos.MassRadius:
+			MC_M= allM[itrans]
+		else:
+			MC_R= allR[itrans]
 		if epos.Multi and dInc is None:
 			MC_ID= allID[itrans]
 			MC_N= allN[itrans]
@@ -562,7 +462,7 @@ def MC(epos, fpara, Store=False, Extra=False, Verbose=True, KS=True, LogProb=Fal
 			iso_pl= iso_sys[toplanet]
 			itrans = np.where(iso_pl, itrans_iso, itrans)
 
-		if epos.RadiusMassConversion:
+		if epos.MassRadius:
 			MC_M= allM[itrans]
 		else:
 			# parametric + not isotropic
@@ -593,8 +493,8 @@ def MC(epos, fpara, Store=False, Extra=False, Verbose=True, KS=True, LogProb=Fal
 		MC_Y= MC_Msini= MC_M* np.sqrt(1.-np.random.uniform(0,1,MC_P.size)**2.)
 	else:
 		''' Convert Mass to Radius '''
-		if epos.RadiusMassConversion:
-			mean, dispersion= epos.RM(MC_M)
+		if epos.MassRadius:
+			mean, dispersion= epos.MR(MC_M)
 			MC_R= mean+ dispersion*np.random.normal(size=MC_M.size)
 		MC_Y=MC_R
 	
@@ -703,7 +603,13 @@ def MC(epos, fpara, Store=False, Extra=False, Verbose=True, KS=True, LogProb=Fal
 		tgof= time.time()
 		if Verbose: print '  observation comparison in {:.3f} sec'.format(tgof-tstart)
 
-
+	if StorePopulation and not epos.RV:
+		# save R, P, ID, itrans[idet], 
+		# calc observed multi, observed single
+		# calc observed systems (including non-detections)
+		# include/exclude singles w/ iso_pl
+		pass
+		
 	if Store:
 		ss={}
 		ss['P']= det_P # MC_P[idet]
@@ -712,7 +618,7 @@ def MC(epos, fpara, Store=False, Extra=False, Verbose=True, KS=True, LogProb=Fal
 			ss['i sg']= MC_SG[idet]
 			if 'all_Pratio' in sg:
 				ss['dP']= det_dP
-		if epos.RadiusMassConversion:
+		if epos.MassRadius:
 			# or if has mass and radius
 			ss['M']= MC_M[idet]
 			ss['R']= MC_R[idet]
@@ -761,9 +667,9 @@ def MC(epos, fpara, Store=False, Extra=False, Verbose=True, KS=True, LogProb=Fal
 def draw_from_2D_distribution(epos, pps, fpara, npl=1):
 	
 	''' create PDF, CDF'''
-	
-	# assumes a seperable function of mass and radius
-	pdf= epos.func(epos.X, epos.Y, *fpara)
+	# assumes a separable function of mass and radius
+	pdf= epos.func(epos.X_in, epos.Y_in, *fpara)
+
 	pdf_X, pdf_Y= np.sum(pdf, axis=1), np.sum(pdf, axis=0)
 	cum_X, cum_Y= np.cumsum(pdf_X), np.cumsum(pdf_Y)
 	#pps_x, pps_y=  cum_X[-1], cum_Y[-1]
@@ -788,7 +694,7 @@ def draw_from_2D_distribution(epos, pps, fpara, npl=1):
 # 		raise ValueError('too many planets per star')
 	try:
 		allX= np.interp(np.random.uniform(cum_X[0],cum_X[-1],ndraw), cum_X, epos.MC_xvar)
-		allY= np.interp(np.random.uniform(cum_Y[0],cum_Y[-1],ndraw), cum_Y, epos.MC_yvar)
+		allY= np.interp(np.random.uniform(cum_Y[0],cum_Y[-1],ndraw), cum_Y, epos.in_yvar)
 	except MemoryError:
 		raise ValueError('Memory error for n={}'.format(ndraw))
 	except OverflowError:
@@ -799,6 +705,95 @@ def draw_from_2D_distribution(epos, pps, fpara, npl=1):
 	
 	return allX, allY
 
+def draw_multi(epos, sysX, sysY, npl, dInc, dR, fpara, Store):
+	''' assign ID to each system '''
+	sysID= np.arange(sysX.size)
+	#allID= np.repeat(sysID, npl) # array with star ID for each planet
+	npl_arr= np.random.uniform(npl, npl+1, sysID.size) # rounds down
+	allID= np.repeat(sysID, npl_arr.astype(int))
+	#print allID.size, sysID.size
+	if allID.size > 1e7:
+		logging.debug('Too many planets: {} > 1e7'.format(allID.size))
+		for pname, fpar in zip(epos.pname, fpara):
+			logging.debug('  {}= {:.3g}'.format(pname,fpar))
+		if Store: raise ValueError('Too many planets: {}'.format(allID.size))
+		return -np.inf				
+
+	''' initialize planet parameters'''
+	_, toplanet, sysnpl= np.unique(allID, return_inverse=True,return_counts=True)
+	allX= sysX[toplanet]
+	allY= sysY[toplanet]
+	allI= np.random.rayleigh(dInc, allID.size)
+	#allN= np.ones_like(allID) # index to planet in system
+	allN= np.where(allX>=epos.xzoom[0],1,0) # also yzoom?
+	#print allX[:3]
+
+	# get index of first planet in each system
+	if len(sysnpl) < 1:
+		logger.debug('no planets')
+		if Store: raise ValueError('no planets')
+		return -np.inf
+	di= np.roll(sysnpl,1)
+	di[0]=0
+	i1= np.cumsum(di) # index to first planet
+	assert np.all(sysID == allID[i1])
+	
+	''' Draw period of 2nd, 3rd planet etc.'''
+	Pgrid= np.logspace(0,1)
+	if epos.spacing == 'powerlaw':
+		dPbreak= epos.fitpars.getmc('dP break', fpara)
+		dP1= epos.fitpars.getmc('dP 1', fpara)
+		dP2= epos.fitpars.getmc('dP 2', fpara)
+		if (dPbreak<=0):
+			if Store: raise ValueError('parameters out of bounds')
+			return -np.inf
+		cdf= np.cumsum(brokenpowerlaw1D(Pgrid, dPbreak, dP1, dP2))
+	elif epos.spacing=='dimensionless':
+		logD=  epos.fitpars.getmc('log D', fpara)
+		sigma= epos.fitpars.getmc('sigma', fpara)
+		if (sigma<=0):
+			if Store: raise ValueError('parameters out of bounds')
+			return -np.inf			
+
+		with np.errstate(divide='ignore'): 
+			Dgrid= np.log10(2.*(Pgrid**(2./3.)-1.)/(Pgrid**(2./3.)+1.))
+		Dgrid[0]= -2
+		#print Dgrid
+		cdf= norm(logD,sigma).cdf(Dgrid)
+	
+	# loop over planet 2,3... n
+	for i in range(2,len(np.bincount(sysnpl)) ):
+		im= i1[sysnpl>=i] # index to ith planet in each system
+		#print '  planet {} in system, {} systems'.format(i,im.size)
+		#dP= draw_from_function(brokenpowerlaw1D,xgrid,im.size, dPbreak, dP1, dP2)
+		dP= np.interp(np.random.uniform(cdf[0],cdf[-1],im.size), cdf, Pgrid)
+		allX[im+(i-1)]= allX[im+(i-2)]* dP
+		#np.random.uniform(dP-0.7, dP+0.7, im.size)
+		#print allX[:3]
+		#np.random.norm()
+		allY[im+(i-1)]= allY[im+(i-2)]* np.random.normal(1, dR, im.size)
+		
+		# nth planet in system (zoom range)
+		#allN[im+(i-1)]= i
+		#allN[im+(i-1)]+= np.where(allX[im+(i-2)]>=epos.xzoom[0],1,0) # init 1
+		#allN[im+(i-1)]= allN[im+(i-2)]+np.where(allX[im+(i-2)]>=epos.xzoom[0],1,0)
+		allN[im+(i-1)]= allN[im+(i-2)]+1
+	#print '+{}={} story checks out?'.format(allID[i1].size, allID.size)
+	#print allX[:3]
+	
+	''' Toss out planets (reduces memory footprint) '''
+	Xinrange= allX<=epos.MC_xvar[-1]
+	#if Xinrange.sum() < 0.5* allX.size: 
+	#	print 'yeah, {}/{}'.format(Xinrange.sum(),allX.size)
+	allX= allX[Xinrange]
+	allY= allY[Xinrange]
+	allI= allI[Xinrange]
+	allN= allN[Xinrange]
+	allID= allID[Xinrange]
+	
+	return allX, allY, allI, allN, allID
+
+
 def _pdf(epos, Init=False, fpara=None, xbin=None, ybin=None):
 	if fpara is None:
 		pps= epos.fitpars.get('pps',Init=Init)
@@ -807,8 +802,8 @@ def _pdf(epos, Init=False, fpara=None, xbin=None, ybin=None):
 		pps= epos.fitpars.getmc('pps',fpara)
 		fpar2d= epos.fitpars.get2d_fromlist(fpara)
 		#print fpara
-		
-	_pdf= epos.func(epos.X, epos.Y, *fpar2d)
+	
+	_pdf= epos.func(epos.X_in, epos.Y_in, *fpar2d)
 	_pdf_X, _pdf_Y= np.sum(_pdf, axis=1), np.sum(_pdf, axis=0)
 	
 	# calculate pdf on different grid?
@@ -817,8 +812,8 @@ def _pdf(epos, Init=False, fpara=None, xbin=None, ybin=None):
 		pdf_X=_pdf_X
 		pdf_Y=_pdf_Y
 	else:
-		xgrid= np.logspace(*np.log10(xbin))
-		ygrid= np.logspace(*np.log10(ybin))
+		xgrid= np.logspace(np.log10(xbin[0]),np.log10(xbin[-1]),5)
+		ygrid= np.logspace(np.log10(ybin[0]),np.log10(ybin[-1]),5)
 		X,Y=np.meshgrid(xgrid, ygrid)
 		pdf= epos.func(X,Y, *fpar2d)
 		pdf_X, pdf_Y= np.sum(pdf, axis=1), np.sum(pdf, axis=0)
@@ -830,4 +825,4 @@ def _pdf(epos, Init=False, fpara=None, xbin=None, ybin=None):
 	
 	return pps, pdf, pdf_X, pdf_Y
 
-		
+

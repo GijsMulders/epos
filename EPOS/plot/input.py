@@ -41,7 +41,7 @@ def all(epos):
 		multi.periodinner(epos, MC=False)
 		multi.periodinner_cdf(epos, MC=False)
 		
-	if epos.RadiusMassConversion: 
+	if epos.MassRadius: 
 		massradius.massradius(epos, MC=False)
 		massradius.massradius(epos, MC=False, Log=True)
 

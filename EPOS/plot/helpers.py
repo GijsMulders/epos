@@ -3,14 +3,15 @@ import os
 from matplotlib.colors import Normalize
 from matplotlib import cm
 
-def set_axes(ax, epos, Trim=False, Eff=False):
+def set_axes(ax, epos, Trim=False, Eff=False, In=False):
 	ax.set_xlabel('Orbital Period [days]')
-	if epos.RV:	ax.set_ylabel(r'M sin i [M$_\bigoplus$]')
-	else:		ax.set_ylabel(r'Planet Radius [R$_\bigoplus$]')
+	if In:			ax.set_ylabel(r'M [M$_\bigoplus$]')
+	elif epos.RV:	ax.set_ylabel(r'M sin i [M$_\bigoplus$]')
+	else:			ax.set_ylabel(r'Planet Radius [R$_\bigoplus$]')
 
 	if Trim:
 		ax.set_xlim(epos.xtrim)
-		ax.set_ylim(epos.ytrim)
+		ax.set_ylim(epos.in_ytrim if In else epos.ytrim)
 	elif Eff:
 		ax.set_xlim(epos.eff_xlim)
 		ax.set_ylim(epos.eff_ylim)

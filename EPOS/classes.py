@@ -162,6 +162,7 @@ class epos:
 			print '\nUsing random seed {}'.format(self.seed)
 		
 		self.Debug= False
+		self.Parallel= True # speed up a few calculations 
 		set_pyplot_defaults() # nicer plots
 
 		# switches to be set later (undocumented)	
@@ -170,9 +171,10 @@ class epos:
 		self.DetectionEfficiency=False
 		self.Occurrence= False # inverse detection efficiency (?)
 		self.Prep= False # ready to run? EPOS.run.once()
-		self.RadiusMassConversion= False
+		self.MassRadius= False
 		self.Radius= False # is this used?
-
+		
+		self.plotpars={} # dictionary to hold some customization keywords
 		
 	def set_observation(self, xvar, yvar, starID, nstars=1.6862e5):
 		''' Observed planet population
@@ -182,6 +184,10 @@ class epos:
 			yvar: planet radius or M sin i [list]
 			ID: planet ID [list]
 			nstars: number of stars surveyed
+		
+		Note:
+			Some pre-defined planet populations from Kepler can be generated from 
+			:mod:`EPOS.kepler`
 		'''
 		order= np.lexsort((xvar,starID)) # sort by ID, then P
 		self.obs_xvar=np.asarray(xvar)[order]
@@ -222,6 +228,10 @@ class epos:
 			eff_2D: 2D matrix of detection efficiency
 			Rstar: stellar radius, for calculating transit probability
 			Mstar: stellar mass, for period-semimajor axis conversion
+		
+		Note:
+			Some pre-defined detection efficiencies from Kepler can be generated from 
+			:mod:`EPOS.kepler`
 		'''
 		self.eff_xvar=np.asarray(xvar)
 		self.eff_yvar=np.asarray(yvar)
@@ -290,7 +300,7 @@ class epos:
 		else:
 			self.Zoom=True
 		
-		''' Prep the grid '''
+		''' Prep the grid for the observable'''
 		# make sure range _encompasses_ trim
 		ixmin,ixmax= _trimarray(self.eff_xvar, self.xtrim)
 		iymin,iymax= _trimarray(self.eff_yvar, self.ytrim)
@@ -306,34 +316,29 @@ class epos:
 		
 		self.X, self.Y= np.meshgrid(self.MC_xvar, self.MC_yvar, indexing='ij')
 		
+		''' Prep the grid for the PDF, if using a mass-radius conversion'''
+		if self.populationtype is 'parametric':
+			if self.MassRadius:
+				self.in_ytrim= self.masslimits
+				self.in_yvar= np.logspace(*np.log10(self.in_ytrim))
+				self.scale_in_y= \
+					self.in_yvar.size/np.log(self.in_yvar[-1]/self.in_yvar[0])	
+				self.scale_in= self.scale_x * self.scale_in_y
+				self.X_in,self.Y_in= np.meshgrid(self.MC_xvar,self.in_yvar,indexing='ij')
+			else:
+				self.in_ytrim= self.ytrim
+				self.in_yvar= self.MC_yvar
+				self.scale_in_y= self.scale_y 
+				self.scale_in= self.scale
+				self.X_in, self.Y_in= self.X, self.Y
+			
+		''' plot ticks '''
 		if self.RV:
 			self.xticks= [1,10,100]
 			self.yticks= [1,10,100,1000]
 		else:
 			self.xticks= [1,10,100,1000]
 			self.yticks= [0.5,1,4,10]
-		
-		#print '\nTrimming {} to {}'.format(self.eff_2D.shape,self.eff_trim.shape) 
-		#print 'xlim: {}-{}'.format(*self.xtrim)
-		#print 'ylim: {}-{}'.format(*self.ytrim)
-		#print '\nTrim: {}'.format(self.eff_xvar)
-		#print 'To  : {}'.format(self.MC_xvar)
-		#print '\nTrim: {}'.format(self.eff_yvar)
-		#print 'To  : {}'.format(self.MC_yvar)
-		
-		''' Habitable zone? '''
-		# generalize this to bins?
-		P1, P2= (0.95**1.5)*365, (1.67**1.5)*365
-		R1, R2= 0.7, 1.5
-		iHZ= (P1<=self.X) & (self.X<=P2) & (R1<=self.Y) & (self.Y<=R2)
-		self.HZ= iHZ.sum()>0
-		if self.HZ:
-			print '{} cells in HZ ({}x{})'.format(iHZ.sum(),
-					((P1<=self.MC_xvar) & (self.MC_xvar<=P2)).sum(),
-					((R1<=self.MC_yvar) & (self.MC_yvar<=R2)).sum())
-			self.hz_cells= iHZ
-			self.hz_area= np.log(P2/P1)*np.log(R2/R1)
-			#print self.hz_area
 			
 		self.Range=True
 	
@@ -347,7 +352,7 @@ class epos:
 		
 		focc['bin']={}
 		focc['bin']['x']= np.array(xbins)
-		focc['bin']['y']= np.array(ybins)
+		focc['bin']['y in']= np.array(ybins)
 
 	def set_parametric(self, func):
 		'''Define a parametric function to generate the planet size-period distribution
@@ -473,15 +478,23 @@ class epos:
 		
 		self.groups.append(sg)
 	
-	def set_massradius(self, RM, name):
-		if self.RadiusMassConversion:
-			raise ValueError('Already defined a Radius-Mass conversion function ')
+	def set_massradius(self, MR, name, masslimits= [0.01,1e3]):
+		print '\nMass-Radius relation from {}'.format(name)
+		if self.MassRadius:
+			raise ValueError('Already defined a Mass-Radius conversion function ')
 		# actually radius as funtion of mass (mass-to-radius)
-		if not callable(RM): raise ValueError('Radius-Mass function is not callable')
+		if not callable(MR): raise ValueError('Mass-Radius function is not callable')
 
-		self.RadiusMassConversion=True
-		self.RM=RM
-		self.RM_label=name
+		self.MassRadius=True
+		self.MR=MR
+		self.MR_label=name
+		
+		self.masslimits=masslimits 
+		meanradius= MR(masslimits)[0]
+		print 'Mass and Radius limits:'
+		print '  min M = {:.3f}-> <R> ={:.2f}'.format(masslimits[0], meanradius[0] )
+		print '  max M = {:.0f}-> <R> ={:.1f}'.format(masslimits[-1], meanradius[-1] )
+		
 
 def _trimarray(array,trim):
 	# trims array of points not needed for interpolation

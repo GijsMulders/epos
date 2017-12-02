@@ -1,3 +1,6 @@
+''' 
+This module contains helper functions to load kepler survey data into EPOS
+'''
 import numpy as np
 
 '''
@@ -8,36 +11,49 @@ cp ~/Kepler/npz/KOI.Q16.epos.*.npz files/
 #cp ~/Kepler/npdict/Q16.occ.Rp-P.sptype.*.npdict files/
 '''
 
-def readme():
-	#import clearscreen # works only on loading, not on execution
-	print '\nThis module contains helper functions to load kepler survey data into EPOS:'
-	print
-	print 'obs_Q16(): returns the Q16 exoplanet catalogue as numpy arrays'
-	print '  P:   Orbital period in days'
-	print '  Rp:  Planet radius in earth radii'
-	print '  KID: star identifier (for multis, not implemented)'
-	print
-	print 'eff_Q16(): returns the Q16 survey detection efficiency as a 2D matrix'
-	print '  P:   Orbital period in days'
-	print '  Rp:  Planet radius in earth radii'
-	print '  eff: 2D matrix of detection efficiency [0-1]'
-	print
-	print 'dr25(): returns the DR25 planet list and '
-	print '        survey detection efficiency as a 2D matrix'
-	print '  P:   Orbital period in days'
-	print '  Rp:  Planet radius in earth radii'
-	print '  eff: 2D matrix of detection efficiency [0-1]'
 
 def obs_Q16(subsample='all'):
+	'''
+	returns the Q16 exoplanet catalogue as numpy arrays
+	
+	Returns:
+		P(np.array):   Orbital period in days
+		Rp(np.array):  Planet radius in earth radii'
+		KID(np.array): star identifier (for multis)'
+	'''
 	KOI= np.load('files/KOI.Q16.epos.{}.npz'.format(subsample))
 	return KOI['P'], KOI['Rp'], KOI['KID']
 
 def eff_Q16(subsample='all'):
+	'''
+	returns the Q16 survey detection efficiency as a 2D matrix
+	
+	Returns:
+		P(np.array):   Orbital period in days
+		Rp(np.array):  Planet radius in earth radii'
+		eff(np.array):2D matrix of detection efficiency [0-1]
+	'''
 	eff= np.load('files/completeness.Q16.epos.{}.npz'.format(subsample))
 	return eff['x'], eff['y'], eff['fsnr']
 
 def dr25(subsample='all', score=0.9):
-
+	'''
+	Generates Kepler DR25 planet population and detection efficiency
+	
+	Args:
+		subsample(str):	Subsample, choose from 'all', 'M', 'K', 'G', or 'F'
+		
+	Returns:
+		tuple: two dictionaries
+		
+		obs(dict):
+			xvar(np.array of float): orbital period
+			yvar(np.array of float): planet radius
+			starID(np.array): stellar ID
+			nstars(int): number of stars surveyed
+		survey(dict):
+			the grid is in xvar,yvar, the detection efficiency in eff_2D 
+	'''
 	from astropy.table import Table
 	print '\nReading planets from IPAC file' 
 	ipac=Table.read('files/q1_q17_dr25_koi.tbl',format='ipac')

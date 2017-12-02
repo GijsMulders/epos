@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import helpers
 	
 def massradius(epos, MC=False, Log=False):
-	assert epos.RadiusMassConversion
+	assert epos.MassRadius
 	# plot R(M)
 	f, ax = plt.subplots()
 	ax.set_title('mass-radius relation + dispersion')
@@ -11,8 +11,8 @@ def massradius(epos, MC=False, Log=False):
 	ax.set_ylabel(r'Planet Radius [R$_\bigoplus$]')
 
 	if Log:
-		ax.set_xlim(0.5, 1000.) # 20.
-		ax.set_ylim(0.5, 20.) # 7.	
+		ax.set_xlim(epos.masslimits)
+		ax.set_ylim(0.1, 30.) # 7.	
 		ax.set_xscale('log')
 		ax.set_yscale('log')
 	else:
@@ -25,11 +25,11 @@ def massradius(epos, MC=False, Log=False):
 		ax.plot(ss['M'], ss['R'], ls='', marker='.', mew=0, ms=5.0, color='k', zorder=1)
 		
 	xM= np.logspace(*np.log10(ax.get_xlim())) if Log else np.linspace(*ax.get_xlim()) #np.max(tr['M']))
-	xR, dispersion= epos.RM(xM)
+	xR, dispersion= epos.MR(xM)
 	#ax.plot(xM, epos.MR['fRock'](xM), ls='-', marker='', color='r', label='Rocky constraint', zorder=0)
 	#xGas= epos.MR['fGas'](xM)
 	#dispersion= epos.MR['dispersion']
-	ax.plot(xM, xR, ls='-', marker='', color='b', label=epos.RM_label)
+	ax.plot(xM, xR, ls='-', marker='', color='b', label=epos.MR_label)
 	ax.plot(xM, xR-dispersion, ls='--', marker='', color='b')
 	ax.plot(xM, xR+dispersion, ls='--', marker='', color='b')
 

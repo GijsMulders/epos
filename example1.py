@@ -7,10 +7,7 @@ import EPOS
 epos= EPOS.epos(name='example1')
 
 # load the observed exoplanets and survey efficiency
-EPOS.kepler.readme()
-
 obs, survey= EPOS.kepler.dr25()
-
 epos.set_observation(**obs)
 epos.set_survey(**survey)
 

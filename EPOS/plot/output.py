@@ -26,7 +26,7 @@ def all(epos):
 		periodradius.pdf(epos)
 		periodradius.pdf_3d(epos)
 
-	if epos.RadiusMassConversion:
+	if epos.MassRadius:
 		massradius.massradius(epos, MC=True)
 		massradius.massradius(epos, MC=True, Log=True)
 

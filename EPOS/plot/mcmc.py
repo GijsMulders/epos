@@ -6,6 +6,7 @@ import parametric
 
 def all(epos):
 	if hasattr(epos, 'chain'):
+		print '\nPlotting input...'
 		chain(epos)
 		corners(epos)
 		if epos.populationtype is 'parametric':

@@ -34,6 +34,7 @@ def colored(epos, Bins=False):
 	ax.set_title(name)
 	
 	helpers.set_axes(ax, epos, Trim=True)
+	#if epos.plot['']
 	
 	#ax.plot(epos.obs_xvar, epos.obs_yvar, ls='', marker='.', mew=0, ms=5.0, color='k')
 
@@ -71,50 +72,27 @@ def colored(epos, Bins=False):
 		
 			xnudge=1.01
 			ynudge=1.02
-			ax.text(xbin[0]*xnudge,ybin[1]/ynudge,'{:.1%}'.format(occ), va='top')
-			ax.text(xbin[1]/xnudge,ybin[0]*ynudge,'n={}'.format(n), ha='right')
+			 
+			size=16 if not 'textsize' in epos.plotpars else epos.plotpars['textsize'] 
+				# 12 fit in box, 16 default
+			ax.text(xbin[0]*xnudge,ybin[1]/ynudge,'{:.1%}'.format(occ), va='top', 
+				size=size)
+			ax.text(xbin[1]/xnudge,ybin[0]*ynudge,'n={}'.format(n), ha='right',
+				size=size)
 	
 		helpers.save(plt, epos.plotdir+'occurrence/bins')
 	else:
 		helpers.save(plt, epos.plotdir+'occurrence/colored')
-	
-def	OLDbinned(epos):
-	f, ax = plt.subplots()
-	ax.set_title('Occurrence per Planet')
-	occbin= epos.occurrence['bin']
-	
-	helpers.set_axes(ax, epos, Trim=True)
-	
-	''' color scale? '''	
-	ax.plot(epos.obs_xvar, epos.obs_yvar, ls='', marker='.', mew=0, ms=5.0, color='0.7', zorder=0)
-
-	# loop over bins
-	for k, (xbin, ybin, n, inbin, occ) in enumerate(
-			zip(occbin['x'],occbin['y'],occbin['n'],occbin['i'], occbin['occ'])
-		):
-		clr= clrs[k%4]
 		
-		# colored dots
-		#ax.plot(epos.obs_xvar[inbin], epos.obs_yvar[inbin], 
-		#	ls='', marker='.', mew=0, ms=5.0, color=clr, zorder=1)
-		
-		# box
-		ax.add_patch(patches.Rectangle( (xbin[0],ybin[0]), 
-			xbin[1]-xbin[0], ybin[1]-ybin[0],fill=False, zorder=2, ls='-', color='k') )
-		
-		ax.text(xbin[0],ybin[1],'{:.1%}'.format(occ), va='top')
-		ax.text(xbin[1],ybin[0],'n={}'.format(n), ha='right')
-	
-	helpers.save(plt, epos.plotdir+'occurrence/binned')
-	
 def integrated(epos, MCMC=False):
 	
 	f, (ax, axb) = plt.subplots(1,2, gridspec_kw = {'width_ratios':[20, 1]})
 	f.subplots_adjust(wspace=0)
 	
-	ax.set_title('Occurrence'+ (' (dlnR dlnP)' if MCMC else ' (Initial Guess)'))
+	sy= 'M' if (epos.MR or epos.RV) else 'R'
+	ax.set_title('Occurrence'+ (' (dln'+sy+' dlnP)' if MCMC else ' (Initial Guess)'))
 	
-	helpers.set_axes(ax, epos, Trim=True)
+	helpers.set_axes(ax, epos, Trim=True, In=True)
 	
 	''' color scale? '''
 	cmap='jet' # cool, spring
@@ -125,7 +103,7 @@ def integrated(epos, MCMC=False):
 	''' 2D pdf '''
 	pps, pdf, _, _= _pdf(epos, Init=not MCMC)
 	pdflog= np.log10(pdf*epos.scale) # in %
-	cs= ax.contourf(epos.X, epos.Y, pdflog, cmap=cmap, levels=levels)
+	cs= ax.contourf(epos.X_in, epos.Y_in, pdflog, cmap=cmap, levels=levels)
 	cbar= f.colorbar(cs, cax=axb, ticks=ticks)
 	axb.set_yticklabels(100*10.**ticks)
 	axb.tick_params(axis='y', direction='out')
@@ -135,7 +113,7 @@ def integrated(epos, MCMC=False):
 	occbin= epos.occurrence['bin']
 	key = 'eta' if MCMC else 'eta0'
 	for k, (xbin, ybin, n, inbin, occ) in enumerate(
-			zip(occbin['x'],occbin['y'],occbin['n'],occbin['i'], occbin[key])
+			zip(occbin['x'],occbin['y in'],occbin['n'],occbin['i'], occbin[key])
 			):
 		clr= clrs[k%4]
 	
@@ -150,11 +128,13 @@ def integrated(epos, MCMC=False):
 	
 		xnudge=1.01
 		ynudge=1.02
-		ax.text(xbin[0]*xnudge,ybin[1]/ynudge,'{:.1%}'.format(occ), va='top')
+		size=16 if not 'textsize' in epos.plotpars else epos.plotpars['textsize'] 
+				# 12 fit in box, 16 default
+		ax.text(xbin[0]*xnudge,ybin[1]/ynudge,'{:.1%}'.format(occ), va='top',size=size)
 		if MCMC:
 			ax.text(xbin[0]*xnudge,ybin[1]/ynudge,'\n +{:.1%}\n  -{:.1%}'.format(
 				occbin['eta+'][k],occbin['eta-'][k]
-				), va='top')
+				), va='top',size=size)
 
 
 	fname= 'posterior' if MCMC else 'integrated'

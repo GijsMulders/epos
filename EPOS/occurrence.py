@@ -1,5 +1,8 @@
 import numpy as np
 from scipy import interpolate
+import multiprocessing
+from functools import partial
+
 from run import _pdf
 
 def all(epos):
@@ -38,6 +41,14 @@ def planets(epos, Log=False):
 	
 	''' Occurrence per bin '''
 	_occ, _n, _inbin=[],[],[]
+	
+	if epos.MassRadius:
+		focc['bin']['y']= epos.MR(focc['bin']['y in'])[0]
+		for i, ybin in enumerate(focc['bin']['y']):
+			if ybin[0]>ybin[-1]: focc['bin']['y'][i]= focc['bin']['y'][i][::-1] 
+	else:
+		focc['bin']['y']= focc['bin']['y in']
+	
 	for xbin, ybin in zip(focc['bin']['x'],focc['bin']['y']):
 		inbinx= (xbin[0]<=epos.obs_xvar) & (epos.obs_xvar<xbin[1])
 		inbiny= (ybin[0]<=epos.obs_yvar) & (epos.obs_yvar<ybin[1])
@@ -47,7 +58,9 @@ def planets(epos, Log=False):
 		_n.append(inbin.sum())
 		_occ.append(focc['planet']['occ'][inbin].sum())
 		
-		print 'x: {}, y: {}, n={}, occ={:.2g}'.format(xbin, ybin, _n[-1], _occ[-1])
+		print 'x: [{},{}], y: [{:.2g},{:.2g}], n={}, occ={:.2g}'.format(
+			xbin[0],xbin[-1], ybin[0],ybin[-1], _n[-1], _occ[-1])
+
 	
 	focc['bin']['n']= np.array(_n)
 	focc['bin']['i']= np.array(_inbin)
@@ -62,20 +75,26 @@ def parametric(epos):
 	_eta, _gamma, _area= [], [], []
 	_pos, _sigp, _sign=[], [], []
 	
-	for xbin, ybin in zip(focc['bin']['x'],focc['bin']['y']):
+	for xbin, ybin in zip(focc['bin']['x'],focc['bin']['y in']):
 		_area.append(np.log(xbin[1]/xbin[0])*np.log(ybin[1]/ybin[0]))
 		_, pdf, _, _= _pdf(epos, Init=True, xbin=xbin, ybin=ybin)
-		_gamma.append(np.average(pdf)*epos.scale)
+		_gamma.append(np.average(pdf)*epos.scale_in)
 		_eta.append(_gamma[-1]*_area[-1])
-		print 'x: {}, y: {}, area={:.2f}, eta={:.2g}'.format(
-			xbin, ybin, _area[-1], _eta[-1])
-		
+
+		print 'x: [{},{}], y: [{:.2g},{:.2g}], area={:.2f}, eta={:.2g}'.format(
+			xbin[0],xbin[-1], ybin[0],ybin[-1], _area[-1], _eta[-1])
+
 		''' Posterior?'''
 		if hasattr(epos, 'samples'):
 			posterior= []
-			for sample in epos.samples:
-				_, pdf, _, _= _pdf(epos, fpara=sample, xbin=xbin, ybin=ybin)
-				posterior.append(np.average(pdf)*epos.scale )
+			if epos.Parallel:
+				pool = multiprocessing.Pool()
+				one_arg_func= partial(_posterior, epos, xbin=xbin, ybin=ybin)
+				posterior= pool.map(one_arg_func, epos.samples)
+			else:
+				for sample in epos.samples:
+					_, pdf, _, _= _pdf(epos, fpara=sample, xbin=xbin, ybin=ybin)
+					posterior.append(np.average(pdf)*epos.scale_in )
 
 			pos= np.percentile(posterior, [16, 50, 84])
 			_pos.append(pos[1])
@@ -97,3 +116,9 @@ def parametric(epos):
 		focc['bin']['eta']= focc['bin']['gamma']*focc['bin']['area']
 		focc['bin']['eta+']= focc['bin']['gamma+']*focc['bin']['area']
 		focc['bin']['eta-']= focc['bin']['gamma-']*focc['bin']['area']
+
+def _posterior(epos, sample, xbin, ybin):
+	_, pdf, _, _= _pdf(epos, fpara=sample, xbin=xbin, ybin=ybin)
+	return np.average(pdf)*epos.scale_in
+	
+	
