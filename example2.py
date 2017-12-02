@@ -11,9 +11,6 @@ obs, survey= EPOS.kepler.dr25()
 epos.set_observation(**obs)
 epos.set_survey(**survey)
 
-# define the simulated range (trim) and the range compared to observations (zoom)
-epos.set_ranges(xtrim=[0,730],ytrim=[0.5,12.],xzoom=[2,200],yzoom=[0.7,8])
-
 # use a double broken power-law
 epos.set_parametric(EPOS.fitfunctions.brokenpowerlaw2D)
 epos.fitpars.add('pps', 2.0, min=0)
@@ -23,6 +20,9 @@ epos.fitpars.add('P2',0.0, dx=0.1, is2D=True)
 epos.fitpars.add('R break',3, min=0, is2D=True) 
 epos.fitpars.add('R1',0, dx=0.1, is2D=True)
 epos.fitpars.add('R2',-3., is2D=True)
+
+# define the simulated range (trim) and the range compared to observations (zoom)
+epos.set_ranges(xtrim=[0,730],ytrim=[0.5,12.],xzoom=[2,200],yzoom=[0.7,8])
 
 # one MC
 EPOS.run.once(epos) # == prep

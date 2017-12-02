@@ -89,7 +89,7 @@ def integrated(epos, MCMC=False):
 	f, (ax, axb) = plt.subplots(1,2, gridspec_kw = {'width_ratios':[20, 1]})
 	f.subplots_adjust(wspace=0)
 	
-	sy= 'M' if (epos.MR or epos.RV) else 'R'
+	sy= 'M' if (epos.MassRadius or epos.RV) else 'R'
 	ax.set_title('Occurrence'+ (' (dln'+sy+' dlnP)' if MCMC else ' (Initial Guess)'))
 	
 	helpers.set_axes(ax, epos, Trim=True, In=True)
