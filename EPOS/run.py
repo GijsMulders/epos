@@ -275,9 +275,14 @@ def MC(epos, fpara, Store=False, StorePopulation=False, Extra=False,
 	''' Seed the random number generator '''
 	if epos.seed is not None: np.random.seed(epos.seed)
 	
-	''' construct 1D arrays for P, R
+	''' construct 1D arrays allP, allR or allM
 	dimension equal to sample size * planets_per_star
-	also keeping track off subgroup (SG), inc (I), and period ratio (dP)
+	also keeping track of:
+		SG: subgroup
+		ID: star identifier
+		I: inc
+		N: Nth planet in system
+		dP: period ratio
 	'''
 	if epos.populationtype == 'parametric':
 		
@@ -355,7 +360,7 @@ def MC(epos, fpara, Store=False, StorePopulation=False, Extra=False,
 		else:		allR= allY
 				
 	else:
-		''' Fit parameters (redo)'''
+		''' Fit parameters (redo) '''
 		f_cor= 0.5 # doesn't seem to be well-constrained, light degenracy with f_inc
 		
 		if len(fpara) is len(epos.groups):
@@ -383,7 +388,9 @@ def MC(epos, fpara, Store=False, StorePopulation=False, Extra=False,
 				if Store: raise ValueError('parameters out of bounds')
 				return -np.inf		
 		
-		''' Draw from subgroups '''
+		'''
+		Draw from subgroups 
+		'''
 		L_P, L_M, L_R, L_I= [], [], [], []
 		L_SG=[] # keep track of subgroup
 		L_ID=[] # keep track of multis
@@ -404,6 +411,8 @@ def MC(epos, fpara, Store=False, StorePopulation=False, Extra=False,
 				L_ID.append(sg['all_ID']+ IDstart)
 				IDstart= L_ID[-1][-1]
 			
+			# set allN, Nth planet is system
+			
 			if 'all_Pratio' in sg: L_dP.append(np.tile(sg['all_Pratio'], ndraw))
 			if 'all_R' in sg: L_R.append(np.tile(sg['all_R'], ndraw))
 
@@ -422,72 +431,38 @@ def MC(epos, fpara, Store=False, StorePopulation=False, Extra=False,
 	#if Verbose: print '{:.3f} sec'.format(time.time()-tstart)
 			
 	''' 
-	remove planets according to geometric transit probability 
-	TODO: convert into function that returns itrans
+	Identify transiting planets (itrans is a T/F array)
 	'''
 	if epos.RV:
-		itrans= np.full(allP.size, True, np.bool) # keep all
-		MC_P= allP
-		MC_M= allM
-	elif (not epos.Multi) or dInc is None:
+		# RV keep all
+		itrans= np.full(allP.size, True, np.bool)
+	elif (not epos.Multi) or (epos.Multi and dInc==None):
+		# geometric transit probability
 		p_trans= epos.fgeo_prefac *allP**epos.Pindex
 		itrans= p_trans >= np.random.uniform(0,1,allP.size)
-
-		MC_P= allP[itrans]
-		if epos.MassRadius:
-			MC_M= allM[itrans]
-		else:
-			MC_R= allR[itrans]
-		if epos.Multi and dInc is None:
-			MC_ID= allID[itrans]
-			MC_N= allN[itrans]
 	else:
-		# draw same numbers for multi-planet systems
-		IDsys, toplanet= np.unique(allID, return_inverse=True) # return_counts=True
-		if Verbose: print '  {}/{} systems'.format(IDsys.size, allID.size)
-		
-		# draw system viewing angle proportionate to sin theta (i=0: edge-on)
-		inc_sys= np.arcsin(np.random.uniform(0,1,IDsys.size))
-		inc_pl= inc_sys[toplanet]
-		assert inc_pl.size == allP.size
-		
-		R_a= epos.fgeo_prefac *allP**epos.Pindex # == p_trans
-		mutual_inc= allI * f_inc
-		#mutual_inc= 0.0 # planar distribution
-		#mutual_inc= 1.0 # fit 
-		if Verbose: print '  Average mutual inc={:.1f} degrees'.format(np.median(allI))
-		delta_inc= mutual_inc *np.cos(np.random.uniform(0,np.pi,allP.size)) * np.pi/180.
-		itrans= np.abs(inc_pl+delta_inc) < np.arcsin(R_a)
-
-		# allow for a fraction of isotropic systems
-		if f_iso > 0:
-			p_trans= epos.fgeo_prefac *allP**epos.Pindex
-			itrans_iso= p_trans >= np.random.uniform(0,1,allP.size)
-			
-			iso_sys= (np.random.uniform(0,1,IDsys.size) < f_iso)
-			iso_pl= iso_sys[toplanet]
-			itrans = np.where(iso_pl, itrans_iso, itrans)
-
-		if epos.MassRadius:
-			MC_M= allM[itrans]
-		else:
-			# parametric + not isotropic
-			MC_R= allR[itrans]
-		
-		MC_ID= allID[itrans]
-		if epos.populationtype == 'parametric':
-			MC_P= allP[itrans]
-			MC_N= allN[itrans] # also for PFM?
-		else:
-			MC_P= allP[itrans] * (1.+0.1*np.random.normal(size=MC_M.size) )
-			MC_SG= allSG[itrans]
-	#		if len(alldP)>0: MC_dP= alldP[itrans]	
-			if 'all_Pratio' in sg: MC_dP= alldP[itrans]
+		#multi-transit probability
+		itrans= istransit(epos, allID, allI, allP, f_iso, f_inc, Verbose=Verbose)
 		
 	# Print multi statistics	
 	if Verbose and epos.Multi and not epos.RV: 
 		print '\n  {} planets, {} transit their star'.format(itrans.size, itrans.sum())
 		multi.frequency(allID[itrans], Verbose=True)
+	
+	'''
+	remove planets according to transit probability
+	'''	
+	MC_P= allP[itrans]
+	if epos.MassRadius or epos.RV:	MC_M= allM[itrans]
+	else:							MC_R= allR[itrans]	
+	if epos.Multi:
+		MC_ID= allID[itrans]	
+		if epos.populationtype == 'parametric':
+			MC_N= allN[itrans] # also for PFM?
+		else:
+			MC_P*= (1.+0.1*np.random.normal(size=MC_M.size) )
+			MC_SG= allSG[itrans]
+			if 'all_Pratio' in sg: MC_dP= alldP[itrans]
 
 	'''
 	Set the observable MC_Y (R or Msin i) 
@@ -504,8 +479,9 @@ def MC(epos, fpara, Store=False, StorePopulation=False, Extra=False,
 			MC_R= mean+ dispersion*np.random.normal(size=MC_M.size)
 		MC_Y=MC_R
 	
-	''' Store transiting planet sample for verification plot'''
-	#if Store and not epos.RV:
+	'''
+	Store (transiting) planet sample for verification plot
+	'''
 	if Store:
 		tr= epos.transit={}
 
@@ -515,7 +491,7 @@ def MC(epos, fpara, Store=False, StorePopulation=False, Extra=False,
 			tr['i sg']= MC_SG
 	
 	'''
-	remove planets due to SNR
+	Identify detectable planets based on SNR (idet is a T/F array)
 	'''
 	f_snr= interpolate.RectBivariateSpline(epos.MC_xvar, epos.MC_yvar, epos.MC_eff)
 	p_snr= f_snr(MC_P, MC_Y, grid=False)
@@ -532,6 +508,9 @@ def MC(epos, fpara, Store=False, StorePopulation=False, Extra=False,
 		cor_pl= cor_sys[toplanet]
 		idet = np.where(cor_pl, idet_cor, idet)
 
+	''' 
+	Remove undetectable planets
+	'''
 	# arrays with detected planets
 	if epos.Multi:
 		det_ID= MC_ID[idet]
@@ -539,17 +518,20 @@ def MC(epos, fpara, Store=False, StorePopulation=False, Extra=False,
 	det_P= MC_P[idet]
 	det_Y= MC_Y[idet]
 
-
 	#if len(alldP)>0: 
 	if epos.populationtype is 'model' and 'all_Pratio' in sg: 
 		det_dP= MC_dP[idet]
-	if Verbose and epos.Multi: 
+
+	if Verbose and epos.Multi: 		
 		print '  {} transiting planets, {} detectable'.format(idet.size, idet.sum())
 		multi.frequency(det_ID, Verbose=True)
 
-
 	'''
 	Probability that simulated data matches observables
+	TODO:
+	- store ln prob, D
+	- switches for in/excluding parameters
+	- likelyhood from D instead of prob?
 	'''
 	if KS:
 		tstart=time.time()
@@ -609,12 +591,22 @@ def MC(epos, fpara, Store=False, StorePopulation=False, Extra=False,
 		tgof= time.time()
 		if Verbose: print '  observation comparison in {:.3f} sec'.format(tgof-tstart)
 
-	if StorePopulation and not epos.RV:
-		# save R, P, ID, itrans[idet], 
-		# calc observed multi, observed single
-		# calc observed systems (including non-detections)
-		# include/exclude singles w/ iso_pl
-		pass
+	''' Store _systems_ with at least one detected planet '''
+	# StorePopulation
+	if Store and epos.Multi and (not epos.RV):
+		# include/exclude singles w/ iso_pl?
+		itransdet= np.copy(itrans)
+		itransdet[itrans]= idet
+		isysdet,isingle,imulti,order= storepopulation(allID, allP, det_ID, itransdet)
+				
+		pop= epos.population={}
+		pop['order']= order
+		pop['P']= allP
+		for key, subset in zip(['system', 'single', 'multi'],[isysdet, isingle, imulti]):
+			pop[key]={}
+			pop[key]['Y']= allY[subset] # R? M?
+			pop[key]['P']= allP[subset]
+			pop[key]['order']= order[subset]
 		
 	if Store:
 		ss={}
@@ -780,10 +772,11 @@ def draw_multi(epos, sysX, sysY, npl, dInc, dR, fpara, Store):
 		allY[im+(i-1)]= allY[im+(i-2)]* np.random.normal(1, dR, im.size)
 		
 		# nth planet in system (zoom range)
-		#allN[im+(i-1)]= i
-		#allN[im+(i-1)]+= np.where(allX[im+(i-2)]>=epos.xzoom[0],1,0) # init 1
-		#allN[im+(i-1)]= allN[im+(i-2)]+np.where(allX[im+(i-2)]>=epos.xzoom[0],1,0)
-		allN[im+(i-1)]= allN[im+(i-2)]+1
+		#allN[im+(i-1)]= allN[im+(i-2)]+1
+		#allN[im+(i-1)]= allN[im+(i-2)]+np.where(allX[im+(i-1)]>=epos.xzoom[0],1,0)
+		allN[im+(i-1)]= np.where(allX[im+(i-1)]>=epos.xzoom[0],allN[im+(i-2)]+1,0)
+
+		
 	#print '+{}={} story checks out?'.format(allID[i1].size, allID.size)
 	#print allX[:3]
 	
@@ -798,7 +791,6 @@ def draw_multi(epos, sysX, sysY, npl, dInc, dR, fpara, Store):
 	allID= allID[Xinrange]
 	
 	return allX, allY, allI, allN, allID
-
 
 def _pdf(epos, Init=False, fpara=None, xbin=None, ybin=None):
 	if fpara is None:
@@ -830,5 +822,66 @@ def _pdf(epos, Init=False, fpara=None, xbin=None, ybin=None):
 	pdf= pps* pdf/np.sum(_pdf)
 	
 	return pps, pdf, pdf_X, pdf_Y
+	
+def istransit(epos, allID, allI, allP, f_iso, f_inc, Verbose=False):
+	# draw same numbers for multi-planet systems
+	IDsys, toplanet= np.unique(allID, return_inverse=True) # return_counts=True
+	if Verbose: print '  {}/{} systems'.format(IDsys.size, allID.size)
+	
+	# draw system viewing angle proportionate to sin theta (i=0: edge-on)
+	inc_sys= np.arcsin(np.random.uniform(0,1,IDsys.size))
+	inc_pl= inc_sys[toplanet]
+	assert inc_pl.size == allP.size
+	
+	R_a= epos.fgeo_prefac *allP**epos.Pindex # == p_trans
+	mutual_inc= allI * f_inc
+	#mutual_inc= 0.0 # planar distribution
+	#mutual_inc= 1.0 # fit 
+	if Verbose: print '  Average mutual inc={:.1f} degrees'.format(np.median(allI))
+	delta_inc= mutual_inc *np.cos(np.random.uniform(0,np.pi,allP.size)) * np.pi/180.
+	itrans= np.abs(inc_pl+delta_inc) < np.arcsin(R_a)
 
+	# allow for a fraction of isotropic systems
+	if f_iso > 0:
+		p_trans= epos.fgeo_prefac *allP**epos.Pindex
+		itrans_iso= p_trans >= np.random.uniform(0,1,allP.size)
+		
+		iso_sys= (np.random.uniform(0,1,IDsys.size) < f_iso)
+		iso_pl= iso_sys[toplanet]
+		itrans = np.where(iso_pl, itrans_iso, itrans)
+		
+	return itrans
 
+def storepopulation(allID, allP, det_ID, idetected):
+	# add f_iso?
+
+	# systems with at least one detectable planet
+	try:
+		isysdet= np.isin(allID, det_ID)
+	except AttributeError:
+		isysdet= np.in1d(allID, det_ID)
+	
+	# detected multis/singles, index to allID
+	uniqueID, detcounts= np.unique(allID[idetected],return_counts=True)
+	IDmulti= uniqueID[(detcounts>1)] # systems that are multi
+	IDsingle= uniqueID[(detcounts==1)]
+	# returns all planets in system (not just detectable ones)
+	try:
+		imulti=  np.isin(allID, IDmulti)
+		isingle= np.isin(allID, IDsingle)
+	except AttributeError:
+		imulti=  np.in1d(allID, IDmulti)
+		isingle= np.in1d(allID, IDsingle)
+
+	# Sort order [0-1] based on inner period (also of undetected)
+	IDsys, iunique, toplanet= np.unique(allID, return_index=True, return_inverse=True)
+	assert np.all(IDsys[toplanet] == allID)
+	Pinner= allP[iunique] # inner if lexsorted
+	
+	idx= np.argsort(Pinner)
+	rank= np.argsort(idx)
+
+	#Porder= rank[toplanet]
+	Porder= 1.0 * rank[toplanet] / IDsys.size
+ 
+	return isysdet, isingle&idetected, imulti&idetected, Porder

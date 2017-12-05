@@ -3,6 +3,58 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
 import helpers
 
+
+def polar(epos):
+	'''
+	Plot plane populations as a half circle (not quite working) 
+	'''
+	# plot multiplicity
+	f, axlist = plt.subplots(2,2, subplot_kw=dict(projection='polar'))
+	
+	pop=epos.population
+
+	for ax, key in zip([axlist[0,0],axlist[0,1],axlist[1,0]],['system','single','multi']):
+		ax.set_title(key)
+		ax.set_xlabel('fraction')
+		ax.set_ylabel('P [days]')
+
+		ax.set_xlim(-0.05, 1.05)
+		ax.set_ylim(0.1, 1000) # 7.
+		ax.set_yscale('log')
+		
+		ax.set_rgrids([1, 10, 100])
+
+		try:
+			ax4.set_thetamin(0)
+			ax4.set_thetamax(90)
+		except AttributeError:
+			print 'Update pyplot'
+			raise
+		
+		ax.plot(pop[key]['order']*np.pi, pop[key]['P'],
+				ls='', marker='.', mew=0, ms=3, color='k')
+
+	ax4=axlist[1,1]
+	ax4.set_title('all')
+	ax4.set_xlabel('fraction')
+	ax4.set_ylabel('P [days]')
+
+	ax4.set_xlim(-0.05, 1.05)
+	ax4.set_ylim(0.1, 1000) # 7.
+	ax4.set_yscale('log')
+	
+	try:
+		ax4.set_thetamin(0)
+		ax4.set_thetamax(90)
+	except AttributeError:
+		print 'Update pyplot'
+		raise
+	
+	ax4.plot(pop['order']*np.pi, pop['P'],
+		ls='', marker='.', mew=0, ms=3, color='gray')
+
+	helpers.save(plt, '{}/polar_test'.format(epos.plotdir))
+
 def multiplicity(epos, MC=False, Planets=False):
 	# plot multiplicity
 	f, ax = plt.subplots()

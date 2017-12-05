@@ -58,14 +58,14 @@ def planets(epos, Log=False):
 		_n.append(inbin.sum())
 		_occ.append(focc['planet']['occ'][inbin].sum())
 		
-		print 'x: [{},{}], y: [{:.2g},{:.2g}], n={}, occ={:.2g}'.format(
+		print 'x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], n={}, occ={:.2g}'.format(
 			xbin[0],xbin[-1], ybin[0],ybin[-1], _n[-1], _occ[-1])
 
 	
 	focc['bin']['n']= np.array(_n)
 	focc['bin']['i']= np.array(_inbin)
 	focc['bin']['occ']= np.array(_occ)
-	#print type(np.array(_inbin))
+	focc['bin']['err']= focc['bin']['occ']/np.sqrt(np.where(focc['bin']['n']>0,focc['bin']['n'],1.))
 
 def parametric(epos):
 	assert epos.Prep and epos.populationtype is 'parametric' and (not epos.Multi)
@@ -81,7 +81,7 @@ def parametric(epos):
 		_gamma.append(np.average(pdf)*epos.scale_in)
 		_eta.append(_gamma[-1]*_area[-1])
 
-		print 'x: [{},{}], y: [{:.2g},{:.2g}], area={:.2f}, eta={:.2g}'.format(
+		print 'x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], area={:.2f}, eta={:.2g}'.format(
 			xbin[0],xbin[-1], ybin[0],ybin[-1], _area[-1], _eta[-1])
 
 		''' Posterior?'''

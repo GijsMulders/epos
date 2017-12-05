@@ -77,6 +77,8 @@ def colored(epos, Bins=False):
 				# 12 fit in box, 16 default
 			ax.text(xbin[0]*xnudge,ybin[1]/ynudge,'{:.1%}'.format(occ), va='top', 
 				size=size)
+			ax.text(xbin[0]*xnudge,ybin[1]/ynudge,'\n$\pm${:.1f}'.format(
+				occbin['err'][k]*100), va='top', size=size)
 			ax.text(xbin[1]/xnudge,ybin[0]*ynudge,'n={}'.format(n), ha='right',
 				size=size)
 	
