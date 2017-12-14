@@ -3,35 +3,71 @@ import os
 from matplotlib.colors import Normalize
 from matplotlib import cm
 
-def set_axes(ax, epos, Trim=False, Eff=False, In=False):
-	ax.set_xlabel('Orbital Period [days]')
-	if In:			ax.set_ylabel(r'M [M$_\bigoplus$]')
-	elif epos.RV:	ax.set_ylabel(r'M sin i [M$_\bigoplus$]')
-	else:			ax.set_ylabel(r'Planet Radius [R$_\bigoplus$]')
+def set_axes(ax, epos, **args):
+	set_axis_distance(ax, epos, **args)
+	set_axis_size(ax, epos, **args)
 
-	if Trim:
-		ax.set_xlim(epos.xtrim)
-		ax.set_ylim(epos.in_ytrim if In else epos.ytrim)
-	elif Eff:
-		ax.set_xlim(epos.eff_xlim)
-		ax.set_ylim(epos.eff_ylim)
+def set_axis_distance(ax, epos, Trim=False, Eff=False, In=False, IsX=True):
+
+	if IsX:
+		ax.set_xlabel('Orbital Period [days]')
+		if Trim:
+			ax.set_xlim(epos.xtrim)
+		elif Eff:
+			ax.set_xlim(epos.eff_xlim)
+		else:
+			ax.set_xlim(epos.obs_xlim)
+		
+		ax.set_xscale('log')
 	else:
-		ax.set_xlim(epos.obs_xlim)
-		ax.set_ylim(epos.obs_ylim)
-
-	ax.set_xscale('log')
-	ax.set_yscale('log')
+		ax.set_ylabel('Orbital Period [days]')
+		if Trim:
+			ax.set_ylim(epos.xtrim)
+		elif Eff:
+			ax.set_ylim(epos.eff_xlim)
+		else:
+			ax.set_ylim(epos.obs_xlim)
+		
+		ax.set_yscale('log')
 
 	#xticks=[3, 10, 30, 100, 300]
 	#ax.set_xticks(xticks)
 	#ax.set_xticklabels(xticks)
-
-	#yticks=[0.5, 1, 2, 4]
-	#ax.set_yticks(yticks)
-	#ax.set_yticklabels(yticks)
 	
 	pass
 
+def set_axis_size(ax, epos, Trim=False, Eff=False, In=False, IsY=True):
+
+	if In:			label= r'M [M$_\bigoplus$]'
+	elif epos.RV:	label= r'M sin i [M$_\bigoplus$]'
+	else:			label= r'Planet Radius [R$_\bigoplus$]'
+
+	if IsY:
+		ax.set_ylabel(label)
+
+		if Trim:
+			ax.set_ylim(epos.in_ytrim if In else epos.ytrim)
+		elif Eff:
+			ax.set_ylim(epos.eff_ylim)
+		else:
+			ax.set_ylim(epos.obs_ylim)
+		
+		ax.set_yscale('log')
+	else:
+		ax.set_xlabel(label)
+
+		if Trim:
+			ax.set_xlim(epos.in_ytrim if In else epos.ytrim)
+		elif Eff:
+			ax.set_xlim(epos.eff_ylim)
+		else:
+			ax.set_xlim(epos.obs_ylim)
+		
+		ax.set_xscale('log')
+
+	ax.set_yticks(epos.yticks)
+	ax.set_yticklabels(epos.yticks)
+	
 def set_pyplot_defaults():
 	from matplotlib import rcParams
 	#print rcParams

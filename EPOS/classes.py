@@ -260,7 +260,8 @@ class epos:
 
 		self.DetectionEfficiency=True
 	
-	def set_ranges(self, xtrim=None, ytrim=None, xzoom=None, yzoom=None):
+	def set_ranges(self, xtrim=None, ytrim=None, xzoom=None, yzoom=None, 
+			LogArea=False):
 		
 		if self.Range: raise ValueError('Range already defined')
 		if not self.Observation: raise ValueError('No observation defined')
@@ -310,8 +311,15 @@ class epos:
 		self.MC_eff= self.eff_2D[ixmin:ixmax,iymin:iymax]
 		
 		# scale factor to multiply pdf such that occurrence in units of dlnR dlnP
-		self.scale_x= self.MC_xvar.size/np.log(self.MC_xvar[-1]/self.MC_xvar[0])
-		self.scale_y= self.MC_yvar.size/np.log(self.MC_yvar[-1]/self.MC_yvar[0])	
+		if LogArea:
+			area= np.log10
+			self.plotpars['area']= 'd log'
+		else:
+			area= np.log
+			self.plotpars['area']= 'd ln'
+
+		self.scale_x= self.MC_xvar.size/area(self.MC_xvar[-1]/self.MC_xvar[0])
+		self.scale_y= self.MC_yvar.size/area(self.MC_yvar[-1]/self.MC_yvar[0])
 		self.scale= self.scale_x * self.scale_y
 		
 		self.X, self.Y= np.meshgrid(self.MC_xvar, self.MC_yvar, indexing='ij')
@@ -322,7 +330,7 @@ class epos:
 				self.in_ytrim= self.masslimits
 				self.in_yvar= np.logspace(*np.log10(self.in_ytrim))
 				self.scale_in_y= \
-					self.in_yvar.size/np.log(self.in_yvar[-1]/self.in_yvar[0])	
+					self.in_yvar.size/area(self.in_yvar[-1]/self.in_yvar[0])	
 				self.scale_in= self.scale_x * self.scale_in_y
 				self.X_in,self.Y_in= np.meshgrid(self.MC_xvar,self.in_yvar,indexing='ij')
 			else:
@@ -338,22 +346,64 @@ class epos:
 			self.yticks= [1,10,100,1000]
 		else:
 			self.xticks= [1,10,100,1000]
-			self.yticks= [0.5,1,4,10]
+			self.yticks= [0.5,1,2, 4,10]
 			
 		self.Range=True
 	
-	def set_bins(self, xbins=[[1,10]], ybins=[[1,10]], Sparse=False):
+	def set_bins(self, xbins=[[1,10]], ybins=[[1,10]],xgrid=None, ygrid=None,Grid=False):
+		'''
+		Initialize period-radius (or mass) bins for occurrence rate calculations
+		
+		Description:
+    		Bins can be generated from a grid, f.e. xgrid=[1,10,100], 
+    		or from a list of bin edges, f.e. xbins= [[1,10],[10,100]]
+    	
+    	Args:
+    		xbins(list):	(list of) period bin edges
+    		ybins(list):	(list of) radius/mass bin edges
+    		xgrid(list):	period bin in interfaces
+    		ygrid(list):	radius/mas bin interfaces
+    		Grid(bool):
+    			If true, create a 2D grid from bins: nbins = nx ``*`` ny.
+    			If false, pair x and y bins: nbins == nx == ny
+		'''
 		focc= self.occurrence={}
-		assert Sparse==False
-		if not (np.ndim(xbins) == np.ndim(ybins) == 2):
-			raise ValueError('wrong bin dimensions')
-		assert len(xbins) == len(ybins)
-		assert np.shape(xbins) == np.shape(ybins) 
+		
+		#generate list of bin inner and outer edges
+		if xgrid is None:
+			if np.ndim(xbins) ==1:
+				assert len(xbins)==2
+				_xbins= [xbins]
+			elif np.ndim(xbins) ==2: 
+				_xbins= xbins
+			else:
+				raise ValueError('wrong bin dimensions')
+		else:
+			_xbins= np.array([[i,j] for i,j in zip(xgrid[:-1],xgrid[1:])])
+
+		if ygrid is None:
+			if np.ndim(ybins) ==1:
+				assert len(ybins)==2
+				_ybins= [ybins]
+			elif np.ndim(ybins) ==2: 
+				_ybins= ybins
+			else:
+				raise ValueError('wrong bin dimensions')
+		else:
+			_ybins= np.array([[i,j] for i,j in zip(xgrid[:-1],xgrid[1:])])
 		
 		focc['bin']={}
-		focc['bin']['x']= np.array(xbins)
-		focc['bin']['y in']= np.array(ybins)
-
+		if Grid:
+			focc['bin']['x']= np.tile(_xbins, (len(_ybins),1))
+			focc['bin']['y in']= np.tile(_ybins, (len(_xbins),1))
+			# TODO: store 1d -> 2d mapping
+			
+		else:		
+			if np.shape(_xbins) != np.shape(_ybins):
+				raise ValueError('unequal amount of bins. Use Grid=True?')
+			focc['bin']['x']= _xbins
+			focc['bin']['y in']= _ybins
+		
 	def set_parametric(self, func):
 		'''Define a parametric function to generate the planet size-period distribution
 		
