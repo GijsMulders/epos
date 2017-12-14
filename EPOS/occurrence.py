@@ -40,7 +40,7 @@ def planets(epos, Log=False):
 	#print epos.planet_occurrence
 	
 	''' Occurrence per bin '''
-	_occ, _n, _inbin=[],[],[]
+	_occ, _n, _inbin, _xc, _yc, _dlnx, _dlny=[],[],[],[],[],[],[]
 	
 	if epos.MassRadius:
 		focc['bin']['y']= epos.MR(focc['bin']['y in'])[0]
@@ -60,12 +60,24 @@ def planets(epos, Log=False):
 		
 		print 'x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], n={}, occ={:.2g}'.format(
 			xbin[0],xbin[-1], ybin[0],ybin[-1], _n[-1], _occ[-1])
+		
+		_xc.append(np.sqrt(xbin[0])*np.sqrt(xbin[-1]) )
+		_yc.append(np.sqrt(ybin[0])*np.sqrt(ybin[-1]) )
+		_dlnx.append(np.log(xbin[-1]/xbin[0]))
+		_dlny.append(np.log(ybin[-1]/ybin[0]))
 
 	
 	focc['bin']['n']= np.array(_n)
 	focc['bin']['i']= np.array(_inbin)
 	focc['bin']['occ']= np.array(_occ)
-	focc['bin']['err']= focc['bin']['occ']/np.sqrt(np.where(focc['bin']['n']>0,focc['bin']['n'],1.))
+	focc['bin']['err']= focc['bin']['occ']/np.where(
+							focc['bin']['n']>0,np.sqrt(focc['bin']['n']),1.)
+	
+	focc['bin']['xc']= np.array(_xc)
+	focc['bin']['yc']= np.array(_yc)
+	focc['bin']['dlnx']= np.array(_dlnx)
+	focc['bin']['dlny']= np.array(_dlny)
+	
 
 def parametric(epos):
 	assert epos.Prep and epos.populationtype is 'parametric' and (not epos.Multi)

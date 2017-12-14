@@ -28,7 +28,8 @@ def all(epos):
 	
 	if epos.populationtype is 'parametric':
 		parametric.oneD(epos)
-		parametric.twoD(epos)		
+		parametric.twoD(epos)
+		parametric.panels(epos)
 	elif epos.populationtype is 'model':
 		input(epos, PlotBox=False)
 		input_diag(epos, PlotBox=False)

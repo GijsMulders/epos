@@ -4,7 +4,7 @@ import matplotlib.patches as patches
 import matplotlib.colorbar as clrbar
 import numpy as np
 
-import helpers
+import helpers, parametric
 from EPOS.run import _pdf
 
 clrs= ['r','g','b','m'] # in epos.prep
@@ -12,7 +12,7 @@ clrs= ['r','g','b','m'] # in epos.prep
 
 def all(epos):
 	assert epos.Observation
-	if hasattr(epos, 'occurrence'):
+	if hasattr(epos, 'occurrence') and 'planet' in epos.occurrence:
 		colored(epos)
 		colored(epos, Bins=True)
 		#binned(epos)
@@ -21,9 +21,13 @@ def all(epos):
 			integrated(epos)
 			if 'eta' in epos.occurrence['bin']:
 				integrated(epos, MCMC=True)
+
+		if epos.populationtype is 'parametric':
+			parametric.oneD(epos, Occ=True)
+
 	else:
 		print '\nNo occurrence to plot, did you run EPOS.occurrence.all()? \n'
-
+	
 def colored(epos, Bins=False):
 	
 	f, (ax, axb) = plt.subplots(1,2, gridspec_kw = {'width_ratios':[20, 1]})
