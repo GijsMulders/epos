@@ -5,15 +5,20 @@ import matplotlib.colorbar as clrbar
 import numpy as np
 
 import helpers, parametric
-from EPOS.run import _pdf
+from EPOS.population import periodradius
 
 clrs= ['r','g','b','m'] # in epos.prep
 #fmt_symbol= {'ls':'', 'marker':'o', 'mew':2, 'ms':8,'alpha':0.6}
 
 def all(epos):
 	assert epos.Observation
-	if hasattr(epos, 'occurrence') and 'planet' in epos.occurrence:
+	if not hasattr(epos, 'occurrence'):
+		print '\nNo occurrence to plot, did you run EPOS.occurrence.all()? \n'
+		
+	if 'planet' in epos.occurrence:
 		colored(epos)
+		
+	if 'bin' in epos.occurrence:
 		colored(epos, Bins=True)
 		#binned(epos)
 	
@@ -22,11 +27,12 @@ def all(epos):
 			if 'eta' in epos.occurrence['bin']:
 				integrated(epos, MCMC=True)
 
+	if 'xzoom' in epos.occurrence:
 		if epos.populationtype is 'parametric':
+			# replace by functions with occurrence and posterior per _bin_
 			parametric.oneD(epos, Occ=True)
-
-	else:
-		print '\nNo occurrence to plot, did you run EPOS.occurrence.all()? \n'
+			if hasattr(epos, 'chain'):
+				 parametric.oneD(epos, Occ=True, MCMC=True)
 	
 def colored(epos, Bins=False):
 	
@@ -107,8 +113,8 @@ def integrated(epos, MCMC=False):
 	levels=np.linspace(vmin, vmax, 256)
 	
 	''' 2D pdf '''
-	pps, pdf, _, _= _pdf(epos, Init=not MCMC)
-	pdflog= np.log10(pdf*epos.scale) # in %
+	pps, pdf, _, _= periodradius(epos, Init=not MCMC)
+	pdflog= np.log10(pdf) # in %
 	cs= ax.contourf(epos.X_in, epos.Y_in, pdflog, cmap=cmap, levels=levels)
 	cbar= f.colorbar(cs, cax=axb, ticks=ticks)
 	axb.set_yticklabels(100*10.**ticks)

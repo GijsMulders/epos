@@ -2,6 +2,7 @@
 import os
 from matplotlib.colors import Normalize
 from matplotlib import cm
+from matplotlib import gridspec
 
 def set_axes(ax, epos, **args):
 	set_axis_distance(ax, epos, **args)
@@ -67,7 +68,39 @@ def set_axis_size(ax, epos, Trim=False, Eff=False, In=False, IsY=True):
 
 	ax.set_yticks(epos.yticks)
 	ax.set_yticklabels(epos.yticks)
+
+def make_panels(plt):
+	gs = gridspec.GridSpec(2, 2,
+                       width_ratios=[6, 20],
+                       height_ratios=[10, 4]
+                       )
+	f= plt.figure()
+	f.subplots_adjust(wspace=0, hspace=0)
 	
+	ax = plt.subplot(gs[0, 1])	
+	#axb = plt.subplot(gs[0, 2])	
+
+	axR = plt.subplot(gs[0, 0])
+	axP = plt.subplot(gs[1, 1])
+
+	return f, (ax, axR, axP)
+
+def make_panels_clrbar(plt):
+	gs = gridspec.GridSpec(2, 3,
+                       width_ratios=[6, 20, 1],
+                       height_ratios=[10, 4]
+                       )
+	f= plt.figure()
+	f.subplots_adjust(wspace=0, hspace=0)
+	
+	ax = plt.subplot(gs[0, 1])	
+	axb = plt.subplot(gs[0, 2])	
+
+	axR = plt.subplot(gs[0, 0])
+	axP = plt.subplot(gs[1, 1])
+
+	return f, (ax, axb, axR, axP)
+
 def set_pyplot_defaults():
 	from matplotlib import rcParams
 	#print rcParams

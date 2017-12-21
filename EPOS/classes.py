@@ -261,7 +261,7 @@ class epos:
 		self.DetectionEfficiency=True
 	
 	def set_ranges(self, xtrim=None, ytrim=None, xzoom=None, yzoom=None, 
-			LogArea=False):
+			LogArea=False, Occ=True):
 		
 		if self.Range: raise ValueError('Range already defined')
 		if not self.Observation: raise ValueError('No observation defined')
@@ -349,6 +349,24 @@ class epos:
 			self.yticks= [0.5,1,2, 4,10]
 			
 		self.Range=True
+		
+		if Occ:
+			if not hasattr(self,'occurrence'):
+				self.occurrence={}
+			focc= self.occurrence			
+	
+			focc['xzoom']={}
+			#ygrid= np.exp(np.arange(np.log(self.MC_yvar[0]),np.log(self.MC_yvar[-1])+0))
+			ygrid= self.MC_yvar
+			focc['xzoom']['x']= [self.xzoom]* (ygrid.size-1)
+			focc['xzoom']['y']= [[i,j] for i,j in zip(ygrid[:-1],ygrid[1:])]
+
+			focc['yzoom']={}
+			#xgrid= np.exp(np.arange(np.log(self.MC_xvar[0]),np.log(self.MC_xvar[-1])+0))
+			xgrid= self.MC_xvar
+			focc['yzoom']['x']= [[i,j] for i,j in zip(xgrid[:-1],xgrid[1:])]
+			focc['yzoom']['y']= [self.yzoom]* (xgrid.size-1)
+			
 	
 	def set_bins(self, xbins=[[1,10]], ybins=[[1,10]],xgrid=None, ygrid=None,Grid=False):
 		'''
@@ -367,7 +385,9 @@ class epos:
     			If true, create a 2D grid from bins: nbins = nx ``*`` ny.
     			If false, pair x and y bins: nbins == nx == ny
 		'''
-		focc= self.occurrence={}
+		if not hasattr(self,'occurrence'):
+			self.occurrence={}
+		focc= self.occurrence
 		
 		#generate list of bin inner and outer edges
 		if xgrid is None:

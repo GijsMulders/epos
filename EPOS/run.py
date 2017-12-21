@@ -7,6 +7,7 @@ from functools import partial
 import cgs
 import multi
 from EPOS.fitfunctions import brokenpowerlaw1D
+from EPOS.population import periodradius
 
 try:
 	import emcee
@@ -211,7 +212,7 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1):
 		fMercury=[]
 		fVenus=[]
 		for sample in epos.samples:
-			_, _, xpdf, _= _pdf(epos, fpara=sample)
+			_, _, xpdf, _= periodradius(epos, fpara=sample)
 			fMercury.append(np.sum(xpdf[epos.MC_xvar>88.])/np.sum(xpdf))
 			fVenus.append(np.sum(xpdf[epos.MC_xvar>225.])/np.sum(xpdf))
 		
@@ -791,37 +792,6 @@ def draw_multi(epos, sysX, sysY, npl, dInc, dR, fpara, Store):
 	allID= allID[Xinrange]
 	
 	return allX, allY, allI, allN, allID
-
-def _pdf(epos, Init=False, fpara=None, xbin=None, ybin=None):
-	if fpara is None:
-		pps= epos.fitpars.get('pps',Init=Init)
-		fpar2d= epos.fitpars.get2d(Init=Init)
-	else:
-		pps= epos.fitpars.getmc('pps',fpara)
-		fpar2d= epos.fitpars.get2d_fromlist(fpara)
-		#print fpara
-	
-	_pdf= epos.func(epos.X_in, epos.Y_in, *fpar2d)
-	_pdf_X, _pdf_Y= np.sum(_pdf, axis=1), np.sum(_pdf, axis=0)
-	
-	# calculate pdf on different grid?
-	if (xbin is None) or (ybin is None):
-		pdf=_pdf
-		pdf_X=_pdf_X
-		pdf_Y=_pdf_Y
-	else:
-		xgrid= np.logspace(np.log10(xbin[0]),np.log10(xbin[-1]),5)
-		ygrid= np.logspace(np.log10(ybin[0]),np.log10(ybin[-1]),5)
-		X,Y=np.meshgrid(xgrid, ygrid)
-		pdf= epos.func(X,Y, *fpar2d)
-		pdf_X, pdf_Y= np.sum(pdf, axis=1), np.sum(pdf, axis=0)
-
-	# normalized to total area
-	pdf_X= pps* pdf_X/np.sum(_pdf_X)
-	pdf_Y= pps* pdf_Y/np.sum(_pdf_Y)
-	pdf= pps* pdf/np.sum(_pdf)
-	
-	return pps, pdf, pdf_X, pdf_Y
 	
 def istransit(epos, allID, allI, allP, f_iso, f_inc, Verbose=False):
 	# draw same numbers for multi-planet systems

@@ -10,18 +10,19 @@ fmt_symbol= {'ls':'', 'marker':'o', 'mew':2, 'ms':8,'alpha':0.6}
 
 def periodradius(epos, SNR=True, Parametric=False):
 
+	f, (ax, axR, axP)= helpers.make_panels(plt)
+	
 	if SNR:
 		sim=epos.synthetic_survey
-		suffix=''
-		fsuffix=''
+		title='detectable planets'
+		fsuffix='detect'
 	else:
 		sim=epos.transit
-		suffix=' (no SNR)'
-		fsuffix='_noSNR'
+		title= 'transiting planets'
+		fsuffix='transit'
 	
-	# plot R(P)
-	f, ax = plt.subplots()
-	ax.set_title('detectable planet sample'+suffix)
+	''' plot R(P), main panel'''
+	ax.set_title(title)
 	helpers.set_axes(ax, epos, Trim=True)
 	if Parametric or len(epos.groups)==1:
 		ax.plot(sim['P'], sim['Y'], ls='', marker='.', mew=0, ms=5.0, color='k')
@@ -30,9 +31,35 @@ def periodradius(epos, SNR=True, Parametric=False):
 			subset= sim['i sg']==k
 			ax.plot(sim['P'][subset], sim['Y'][subset], ls='', marker='.', mew=0, ms=5.0, color=clrs[k % 4], label=sg['name'])
 
+	''' Period side panel '''
+	helpers.set_axis_distance(axP, epos, Trim=True)
+	#axP.set_yscale('log')
+	#axP.set_ylim([2e-3,5])	
+	#axP.set_yticks([0.01,0.1,1])
+	#axP.set_yticklabels(['1%','10%','100%'])
+	axP.yaxis.tick_right()
+	axP.yaxis.set_ticks_position('both')
+	#axP.tick_params(axis='y', which='minor',left='off',right='off')
+	
+	#axP.plot(epos.MC_xvar, pdf_X, marker='',ls='-',color='k')
+	axP.hist(sim['P'], bins=epos.MC_xvar) #np.geomspace(*epos.xtrim))
+
+	''' Radius side panel'''
+	helpers.set_axis_size(axR, epos, Trim=True, In= epos.MassRadius)
+
+	#axR.set_xscale('log')
+	#axR.set_xlim([2e-3,5])
+	#axR.set_xticks([1,10,100,1000])
+	#axR.set_xticklabels(['1','10','100','1000'], rotation=70)
+	for tick in axR.get_xticklabels():
+		tick.set_rotation(70)
+	#axR.tick_params(axis='x', which='minor',top='off',bottom='off')
+	#axP.tick_params(axis='y', which='minor',left='off',right='off')
+
+	axR.hist(sim['Y'],orientation='horizontal', bins=epos.MC_yvar)
 	
 	#ax.legend(loc='lower left', shadow=False, prop={'size':14}, numpoints=1)
-	helpers.save(plt, '{}output/periodradius{}'.format(epos.plotdir,fsuffix))
+	helpers.save(plt, '{}output/periodradius.{}'.format(epos.plotdir,fsuffix))
 
 def pdf_3d(epos):
 	#plot in 3D
