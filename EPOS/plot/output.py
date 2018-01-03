@@ -15,16 +15,25 @@ def all(epos):
 	periodradius.periodradius(epos, Parametric=Parametric, SNR=False)
 	periodradius.periodradius(epos, Parametric=Parametric, SNR=True)
 	
+	periodradius.cdf(epos)
+	periodradius.panels(epos, Parametric=Parametric)
+	
 	if epos.Multi:
+		multi.periodradius(epos)
+		multi.periodradius(epos, Nth=True)
+	
 		multi.multiplicity(epos, MC=True)
 		multi.multiplicity(epos, MC=True, Planets=True)
 		multi.multiplicity_cdf(epos, MC=True)
 		multi.periodratio(epos, MC=True)
+		multi.periodratio(epos, MC=True, Input=True)
 		multi.periodratio_cdf(epos, MC=True)
 		multi.periodinner(epos, MC=True)
+		multi.periodinner(epos, MC=True, Input=True)
 		multi.periodinner_cdf(epos, MC=True)
-		periodradius.pdf(epos)
-		periodradius.pdf_3d(epos)
+		# pdf per subgroup
+		#periodradius.pdf(epos)
+		#periodradius.pdf_3d(epos)
 
 	if epos.MassRadius:
 		massradius.massradius(epos, MC=True)
@@ -40,8 +49,6 @@ def all(epos):
 		if epos.Multi and not epos.RV:
 			multi.periodratio(epos, MC=True, N=True)
 			multi.periodinner(epos, MC=True, N=True)
-	
-	periodradius.cdf(epos)
 		
 def out_Pratio(epos, SNR=True, Parametric=False):
 

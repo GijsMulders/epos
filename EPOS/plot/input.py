@@ -21,7 +21,7 @@ def all(epos):
 	survey.completeness(epos, PlotBox=False)
 	if not epos.RV: survey.completeness(epos, PlotBox=False, Transit=True)
 	
-	if epos.Range:
+	if epos.Range and epos.Zoom:
 		survey.observed(epos, PlotBox=True)
 		survey.completeness(epos, PlotBox=True)
 		if not epos.RV: survey.completeness(epos, PlotBox=True, Transit=True)
@@ -39,6 +39,8 @@ def all(epos):
 			inclination(epos)
 
 	if not epos.Isotropic:
+		multi.periodradius(epos, MC=False)
+		multi.periodradius(epos, MC=False, Nth=True)
 		multi.multiplicity(epos, MC=False)
 		multi.periodratio(epos, MC=False)
 		multi.periodratio_cdf(epos, MC=False)

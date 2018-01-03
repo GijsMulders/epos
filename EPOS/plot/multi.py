@@ -1,8 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
-import helpers
+import scipy.stats # norm
 
+import helpers
+import EPOS.multi
+from EPOS.population import periodradius as draw_PR
 
 def polar(epos):
 	'''
@@ -54,6 +57,95 @@ def polar(epos):
 		ls='', marker='.', mew=0, ms=3, color='gray')
 
 	helpers.save(plt, '{}/polar_test'.format(epos.plotdir))
+
+def periodradius(epos, Nth=False, MC=True):
+
+	f, (ax, axR, axP)= helpers.make_panels(plt)
+	
+	if MC:
+		sim=epos.synthetic_survey
+		ID= sim['ID']
+		P= sim['P']
+		Y= sim['Y']
+		outdir='output'
+		title= 'detectable planets'
+	else:
+		ID= epos.obs_starID
+		P= epos.obs_xvar
+		Y= epos.obs_yvar
+		outdir='input'
+		title= 'detected planets'
+	
+	''' plot R(P), main panel'''
+	ax.set_title(title)
+	helpers.set_axes(ax, epos, Trim=True)
+		
+	''' Period side panel '''
+	helpers.set_axis_distance(axP, epos, Trim=True)
+	#axP.set_yscale('log')
+	#axP.set_ylim([2e-3,5])	
+	#axP.set_yticks([0.01,0.1,1])
+	#axP.set_yticklabels(['1%','10%','100%'])
+	axP.yaxis.tick_right()
+	axP.yaxis.set_ticks_position('both')
+	#axP.tick_params(axis='y', which='minor',left='off',right='off')
+	
+	#axP.hist(sim['P'], bins=epos.MC_xvar, color='0.7')
+
+	''' Radius side panel'''
+	helpers.set_axis_size(axR, epos, Trim=True, In= epos.MassRadius)
+
+	#axR.set_xscale('log')
+	#axR.set_xlim([2e-3,5])
+	#axR.set_xticks([1,10,100,1000])
+	#axR.set_xticklabels(['1','10','100','1000'], rotation=70)
+	for tick in axR.get_xticklabels():
+		tick.set_rotation(70)
+	#axR.tick_params(axis='x', which='minor',top='off',bottom='off')
+	#axP.tick_params(axis='y', which='minor',left='off',right='off')
+
+	''' which multiplanets to color '''
+# 	single, multi= EPOS.multi.indices(sim['ID'])
+# 	for k, (label, subset) in enumerate(zip(['single','multi'],[single, multi])):
+# 		ax.plot(sim['P'][subset], sim['Y'][subset], ls='', marker='.', mew=0, ms=5.0, \
+# 			label=label)
+
+	if Nth:
+		single, multi, ksys, multis= EPOS.multi.nth_planet(ID, P)
+		suffix= '.nth'
+		label_single='single'
+	else:
+		single, multi, ksys, multis= EPOS.multi.indices(ID)
+		suffix= ''
+		label_single='1'
+	
+	ax.plot(P[single], Y[single], ls='', marker='.', \
+			color='0.7', label=label_single)
+			
+	for k, subset in zip(ksys, multis):
+		ht, = ax.plot(P[subset], Y[subset], ls='', marker='.', \
+			label=k)
+		
+		if True:
+			# pdf
+			axP.hist(P[subset], bins=epos.MC_xvar, 
+				color=ht.get_color(), histtype='step') #, cumulative=True, normed=1)
+			if k==ksys[-1]:
+				axP.hist(P[single], bins=epos.MC_xvar, color='0.7', histtype='step') 	
+		else:
+			# cumulative
+			Plist= np.sort(P[subset])
+			axP.step(Plist,np.arange(Plist.size,dtype=float)/Plist.size )
+
+	#axR.hist(Y,orientation='horizontal', bins=epos.MC_yvar, color='0.7')
+	axR.hist(Y,orientation='horizontal', bins=epos.MC_yvar, color='k',histtype='step')
+	axR.hist(Y[single],orientation='horizontal', bins=epos.MC_yvar, color='0.7')
+
+	
+	#ax.legend(loc='lower left', shadow=False, prop={'size':14}, numpoints=1)
+	ax.legend(bbox_to_anchor=(1.0, 1.0), markerscale=3)
+
+	helpers.save(plt, '{}{}/PR.multi{}'.format(epos.plotdir, outdir, suffix))
 
 def multiplicity(epos, MC=False, Planets=False):
 	# plot multiplicity
@@ -134,7 +226,7 @@ def multiplicity_cdf(epos, MC=False):
 	
 	helpers.save(plt, '{}{}/cdf'.format(epos.plotdir,prefix))
 	
-def periodratio(epos, MC=False, N=False):
+def periodratio(epos, MC=False, N=False, Input=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
 	ax.set_title('period ratio adjacent planets')
@@ -144,74 +236,63 @@ def periodratio(epos, MC=False, N=False):
 	ax.set_xlim(1, 10)
 	ax.set_xscale('log')
 	for s in [ax.set_xticks,ax.set_xticklabels]: s([1,2,3,4,5,7,10])
-		
-	#bins=np.linspace(1,10, 9*5+1)
-	bins=np.logspace(0,1, 15)
+	ax.set_xticks([], minor=True) # minor ticks generate labels
+
+	bins=np.geomspace(1,10, 15)
 	
 	# MC data
 	if MC:
 		ss=epos.synthetic_survey
 		ax.hist(ss['multi']['Pratio'], bins=bins, 
-				ec='b', histtype='step', label=epos.name)
+				color='C0', histtype='stepfilled', label=epos.name)
 	
-		if not N:
-			ax.axvline(np.median(ss['multi']['Pratio']), color='b', ls='--')
-
-			# Observed zoom
-			ax.hist(epos.obs_zoom['multi']['Pratio'], \
-				bins=bins, ec='k', histtype='step', label='Kepler subset')
-			ax.axvline(np.median(epos.obs_zoom['multi']['Pratio']), color='k', ls='--')
-		else:
+		if N:
 			# planets inbetween?
 			#ax.hist(ss['multi']['dPN'][0], \
 			#	bins=bins, ec='k', histtype='step', label='Adjacent planet')
-			ax.hist(np.concatenate(ss['multi']['dPN'][1:]), \
-				bins=bins, ec='k', histtype='stepfilled', label='Planet inbetween')
-			
-			if epos.populationtype=='parametric' and epos.Multi and \
-				'dP break' in epos.fitpars.keysall:
+			ax.hist(np.concatenate(ss['multi']['dPN'][1:]), 
+				bins=bins, ec='k', color='g',
+				histtype='stepfilled', label='Planet inbetween')
+		else:
+			#ax.axvline(np.median(ss['multi']['Pratio']), color='C0', ls='--')
+			pass
 				
-				from EPOS.fitfunctions import brokenpowerlaw1D
-				pbreak= epos.fitpars.get('dP break')
-				p1= epos.fitpars.get('dP 1')
-				p2= epos.fitpars.get('dP 2')
-			
-				xx= np.logspace(0,1)
-				yy= 150.*brokenpowerlaw1D(xx, pbreak, p1, p2)
-
-				ax.plot(xx, yy, marker='', ls=':', color='r',label='input')
-		
 	else:
 		# observed all
-		ax.hist(epos.multi['Pratio'], bins=bins, color='b', label='Kepler all')
-		ax.axvline(np.median(epos.multi['Pratio']), color='b', ls='--')
+		ax.hist(epos.multi['Pratio'], bins=bins, color='0.7', label='Kepler all')
+		#ax.axvline(np.median(epos.multi['Pratio']), color='0.7', ls='--')
+	
+	''' input distribution '''	
+	if Input and epos.populationtype=='parametric':
+		#Pgrid= np.logspace(0,1)
+		Pgrid=bins
+		if epos.spacing == 'powerlaw':
+			dPbreak= epos.fitpars.get('dP break')
+			dP1= epos.fitpars.get('dP 1')
+			dP2= epos.fitpars.get('dP 2')
+			pdf= EPOS.fitfunctions.brokenpowerlaw1D(Pgrid, dPbreak, dP1, dP2)
+		elif epos.spacing=='dimensionless':
+			logD=  epos.fitpars.get('log D')
+			sigma= epos.fitpars.get('sigma')	
 
-		# quick fit to Pratio distributio: what form is this??		
-		from scipy import stats
-		xx= np.logspace(0,1)
-		#yy= 40.* stats.norm.pdf(np.log10(xx-1), np.log10(0.5), 0.1)
-		#yy= 50.* stats.norm.pdf(np.log10(xx-0.3), np.log10(1.5), 0.12)
-		#yy= 50.* stats.rayleigh.pdf(np.log10(xx), scale=np.log10(2.0)) # too wide
-		#yy= 150.* (xx/2)**(-2.5) * stats.norm.cdf(xx, 1.6, 0.2)  #np.exp(1.-1./(xx/2.))
+			with np.errstate(divide='ignore'): 
+				Dgrid= np.log10(2.*(Pgrid**(2./3.)-1.)/(Pgrid**(2./3.)+1.))
+			Dgrid[0]= -2
+			#print Dgrid
+			pdf= scipy.stats.norm(logD,sigma).pdf(Dgrid)
+		pdf*= 0.95* ax.get_ylim()[1] / max(pdf)
 		
-		# skewed norm is reasonable but can't draw from it.
-		#frozen= stats.norm(loc=np.log10(1.7), scale=0.12)
-		#skewnorm= 2.*frozen.pdf(np.log10(xx))*frozen.cdf(2.0*np.log10(xx))
-		#yy=30. *skewnorm
-		#yy= 150. * stats.skewnorm.pdf(np.log10(xx), 0.0, np.log10(1.5), 0.12)
-		#ax.plot(xx, yy, marker='', ls=':', color='r')
-		
-		if epos.populationtype=='parametric' and epos.Multi and \
-				'dP break' in epos.fitpars.keysall:
-			from EPOS.fitfunctions import brokenpowerlaw1D
-			pbreak= epos.fitpars.get('dP break',Init=True)
-			p1= epos.fitpars.get('dP 1',Init=True)
-			p2= epos.fitpars.get('dP 2',Init=True)
-			yy= 170.*brokenpowerlaw1D(xx, pbreak, p1, p2)
-			ax.plot(xx, yy, marker='', ls=':', color='r')
+		ax.plot(Pgrid, pdf, marker='', ls='-', color='r',label='input')
+
+	elif epos.Zoom:
+		# Observed zoom
+		ax.hist(epos.obs_zoom['multi']['Pratio'], \
+			bins=bins, ec='C1', histtype='step', label='Kepler subset')
+		ax.axvline(np.median(epos.obs_zoom['multi']['Pratio']), color='C1', ls='--')
 	
 	prefix= 'output' if MC else 'survey'
-	suffix= '.index' if N else '' 
+	suffix= '.index' if N else ''
+	suffix= '.input' if Input else suffix
 
 	if MC: ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
 		
@@ -257,7 +338,7 @@ def periodratio_cdf(epos, MC=False):
 
 ''' these are practically identical to periodratio -> merge?'''
 
-def periodinner(epos, MC=False, N=False):
+def periodinner(epos, MC=False, N=False, Input=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
 	ax.set_title('period innermost planet')
@@ -267,7 +348,8 @@ def periodinner(epos, MC=False, N=False):
 	ax.set_xscale('log')
 	ax.set_xlim(epos.xtrim)
 		
-	bins= np.logspace(*np.log10(epos.xtrim))
+	#bins= np.geomspace(*epos.xtrim)
+	bins= epos.MC_xvar
 
 	#pdf= regression.sliding_window_log(P, None, xgrid) #, width=2. )
 	#ax3.plot(xgrid, pdf, ls='-', marker='', color=clrs[k % 4],label='{} x{:.3f}'.format(sg['name'], sg['weight']))
@@ -276,36 +358,33 @@ def periodinner(epos, MC=False, N=False):
 	if MC:
 		ss=epos.synthetic_survey
 		ax.hist(ss['multi']['Pinner'], bins=bins, 
-				ec='b', histtype='step', label=epos.name)
+				color='C0', histtype='stepfilled', label=epos.name)
 	
-		if not N:
-			# Observed zoom
-			ax.hist(epos.obs_zoom['multi']['Pinner'], bins=bins, 
-				ec='k', histtype='step', label='Kepler subset')
-		else:
+		if N:
 			# Innermost is nth planet
-			ax.hist(ss['multi']['PN'][0], bins=bins, 
-					ec='k', histtype='step', label='actual inner planet')
+			#ax.hist(ss['multi']['PN'][0], bins=bins, 
+			#		ec='k', histtype='step', label='actual inner planet')
 			# Not actual inner planet
 			ax.hist(np.concatenate(ss['multi']['PN'][1:]), bins=bins, 
-					ec='k', histtype='stepfilled', label='not inner planet')
-			
+					color='r', histtype='stepfilled', label='not inner planet')
+
 	else:
 		# observed all
-		ax.hist(epos.multi['Pinner'], bins=bins, color='b', label='Kepler all')
-	
-	# Input distribution (not very useful)
-# 	if epos.populationtype=='parametric' and epos.Multi:
-# 		try:
-# 			pdf= epos.func(epos.X, epos.Y, *epos.pfit[epos.ip2d])
-# 		except:
-# 			raise
-# 			pdf= epos.func(epos.X, epos.Y, *epos.p0[epos.ip2d])
-# 		pdf_X, pdf_Y= np.sum(pdf, axis=1), np.sum(pdf, axis=0)
-# 		ax.plot(epos.MC_xvar, 500.*pdf_X, marker='', ls=':', color='r',label='input')
+		ax.hist(epos.multi['Pinner'], bins=bins, color='0.7', label='Kepler all')
+
+	''' Initial distribution or zoomed observations '''
+	if Input and epos.populationtype=='parametric':
+		_, _, pdf0_X, _= draw_PR(epos, Init=True, ybin=epos.yzoom)
+		norm= 0.95* ax.get_ylim()[1] / max(pdf0_X)
+		ax.plot(epos.MC_xvar, pdf0_X*norm, marker='',ls='-',color='r',label='input')
+				
+	elif epos.Zoom and not N:
+		ax.hist(epos.obs_zoom['multi']['Pinner'], bins=bins, 
+			ec='C1', histtype='step', label='Kepler subset')
 	
 	prefix= 'output' if MC else 'survey'
 	suffix= '.index' if N else '' 
+	suffix= '.input' if Input else suffix
 
 	if MC: ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
 		

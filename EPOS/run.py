@@ -624,6 +624,7 @@ def MC(epos, fpara, Store=False, StorePopulation=False, Extra=False,
 		
 		#if len(alldP)>0
 		if epos.Multi:
+			ss['ID']= det_ID
 			ss['multi']={}
 			ss['multi']['bin'], ss['multi']['count']= multi.frequency(det_ID[ix&iy])
 			ss['multi']['pl cnt']=ss['multi']['bin']* ss['multi']['count']

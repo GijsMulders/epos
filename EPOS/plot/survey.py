@@ -1,8 +1,9 @@
-#import numpy as np
+import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import matplotlib.colorbar as clrbar
 from mpl_toolkits.mplot3d import Axes3D
-import numpy as np
+
 from EPOS import regression
 import helpers
 
@@ -37,26 +38,31 @@ def observed(epos, PlotBox=True):
 	
 def completeness(epos, PlotBox=False, Transit=False):
 	assert epos.DetectionEfficiency
-	f, ax = plt.subplots()
+
+	f, (ax, axb) = plt.subplots(1,2, gridspec_kw = {'width_ratios':[20, 1]})
+	f.subplots_adjust(wspace=0)
+	#f.set_size_inches(7, 5)
+
 	ax.set_title('Detection Efficiency [%]' if Transit else 'Completeness [%]')
 	helpers.set_axes(ax, epos, Trim=False, Eff=True)
-
-	# contour with labels (not straightforward)
-	# missing: vmin, vmx, a log scale, contour linestyles
-	labels=['0.001','0.01', '0.1','1.0','10','100']
-	n=len(labels)-1
-	levels_log= np.linspace(-n,0,10*n+1)
-	ticks_log= np.linspace(-n,0,n+1)
-	ticks= np.logspace(-n,0, n+1)
 	
 	toplot= epos.eff_2D if Transit else epos.completeness
-	
-	cmap = plt.cm.get_cmap('PuRd')
 	with np.errstate(divide='ignore'): log_completeness=  np.log10(toplot)
-	cs= ax.contourf(epos.eff_xvar, epos.eff_yvar,log_completeness.T, cmap=cmap, levels=levels_log) #vmin=-3., vmax=0.)	# vmax keywords don't work on colorbar
-	cbar= f.colorbar(cs, ax=ax, shrink=0.95, ticks=ticks_log)
-	cbar.ax.set_yticklabels(labels)
-		
+	
+	''' color map and ticks'''
+	cmap = 'PuRd'
+	vmin, vmax= -5, 0
+	ticks=np.linspace(vmin, vmax, (vmax-vmin)+1)
+	levels=np.linspace(vmin, vmax, 256)
+
+	cs= ax.contourf(epos.eff_xvar, epos.eff_yvar,log_completeness.T, cmap=cmap, levels=levels)
+
+	cbar= f.colorbar(cs, cax=axb, ticks=ticks)
+	axb.set_yticklabels(100*10.**ticks)
+	axb.tick_params(axis='y', direction='out')
+	axb.set_title('%')
+	
+	''' Plot the zoom box or a few black contours'''	
 	if PlotBox:
 		fname='.box'
 		assert epos.Range
@@ -66,17 +72,17 @@ def completeness(epos, PlotBox=False, Transit=False):
 			ax.add_patch(patches.Rectangle( (epos.xzoom[0],epos.yzoom[0]), 
 				epos.xzoom[1]-epos.xzoom[0], epos.yzoom[1]-epos.yzoom[0],fill=False, zorder=1) )
 	else: 
-		#ax.contour(epos.eff_xvar, epos.eff_yvar, epos.eff_2D.T,levels= ticks, colors = ['k','k','k','k'], linewidths=3.)
 		if epos.RV:
 			levels= [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
 			labels= ['10','20','30','40','50','60','70','80','90']
 			cs= ax.contour(epos.eff_xvar, epos.eff_yvar, toplot.T,\
 					levels= levels, colors = 'k', linewidths=2.)
 		else:
-			for tick, label in zip(ticks,labels):
-				cs= ax.contour(epos.eff_xvar, epos.eff_yvar, toplot.T,\
-					levels= [tick], colors = ['k'], linewidths=3.)
-				plt.clabel(cs, inline=1, fmt=label+'%%')
+			levels= [1e-4, 1e-3, 0.01, 0.1, 0.5, 0.9] if Transit else 10.**ticks
+			cs= ax.contour(epos.eff_xvar, epos.eff_yvar, toplot.T, 
+				colors='k', levels=levels)
+			fmt_percent= lambda x: '{:g} %'.format(100.*x)
+			plt.clabel(cs, cs.levels, inline=True, fmt=fmt_percent)
 
 		fname=''
 
