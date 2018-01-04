@@ -42,7 +42,7 @@ def eff_Q16(subsample='all'):
 	eff= np.load('files/completeness.Q16.epos.{}.npz'.format(subsample))
 	return eff['x'], eff['y'], eff['fsnr']
 
-def dr25(subsample='all', score=0.9):
+def dr25(subsample='all', score=0.9, Huber=False):
 	'''
 	Generates Kepler DR25 planet population and detection efficiency
 	
@@ -75,7 +75,17 @@ def dr25(subsample='all', score=0.9):
 		np.savez(fkoi, **koi)
 
 	''' Select reliable candidates, remove giant stars'''
-	isdwarf= koi['koi_slogg']>4.2
+	if Huber:
+		isdwarf= stars['logg'] > 1./4.671 * \
+					np.arctan((stars['Teff']-6300.)/-67.172)+ 3.876
+		isgiant= stars['logg'] < np.where(stars['Teff']>5000, 
+									13.463-0.00191*stars['Teff'],3.9)
+		issubgiant= ~isdwarf & ~isgiant
+		suffix='huber'
+	else:
+		isdwarf= koi['koi_slogg']>4.2
+		suffix='logg42'
+	
 	iscandidate= koi['koi_pdisposition']=='CANDIDATE'
 	isreliable= koi['koi_score']>score # removes rolling band, ~ 500 planets
 	print '  {}/{} dwarfs'.format(isdwarf.sum(), isdwarf.size)
@@ -84,7 +94,8 @@ def dr25(subsample='all', score=0.9):
 	print '  {}+{} with score > {:.2f}'.format((isdwarf&iscandidate&isreliable).sum(), 
 				(isdwarf&~iscandidate&isreliable).sum(),score )
 
-	isall= isdwarf & isreliable # reliability score cuts out false positives
+	isall= islogg42 & isreliable
+	#isall= isdwarf & isreliable # reliability score cuts out false positives
 #	isall= isdwarf & iscandidate & isreliable
 
 	slice={'all':isall}
@@ -97,7 +108,7 @@ def dr25(subsample='all', score=0.9):
 		'starID':koi['kepid'][slice[subsample]]}
 	
 	# from dr25_epos.py in 
-	eff= np.load('files/completeness.dr25.{}.npz'.format(subsample))
+	eff= np.load('files/completeness.dr25.{}.{}.npz'.format(subsample, suffix))
 	#eff= np.load('files/det_eff.dr25.{}.npz'.format(subsample))
 	survey= {'xvar':eff['P'], 'yvar':eff['Rp'], 'eff_2D':eff['fsnr'], 
 			'Mstar': eff['Mst'], 'Rstar':eff['Rst']}
