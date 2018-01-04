@@ -48,6 +48,7 @@ def all(epos):
 	else:
 		if epos.Multi and not epos.RV:
 			multi.periodratio(epos, MC=True, N=True)
+			multi.periodratio(epos, MC=True, N=True, Input=True)
 			multi.periodinner(epos, MC=True, N=True)
 		
 def out_Pratio(epos, SNR=True, Parametric=False):

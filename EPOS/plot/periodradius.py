@@ -12,12 +12,12 @@ def periodradius(epos, SNR=True, Parametric=False):
 
 	f, (ax, axR, axP)= helpers.make_panels(plt)
 	
+	sim=epos.synthetic_survey
+	title='detectable planets'
+	fsuffix='detect'
+
 	if SNR:
-		sim=epos.synthetic_survey
-		title='detectable planets'
-		fsuffix='detect'
-	else:
-		sim=epos.transit
+		transit=epos.transit
 		title= 'transiting planets'
 		fsuffix='transit'
 	
@@ -25,8 +25,10 @@ def periodradius(epos, SNR=True, Parametric=False):
 	ax.set_title(title)
 	helpers.set_axes(ax, epos, Trim=True)
 	if Parametric or len(epos.groups)==1:
+		if SNR: ax.plot(transit['P'], transit['Y'], ls='', marker='.', color='C6')
 		ax.plot(sim['P'], sim['Y'], ls='', marker='.', color='C0')
 	else:
+		# ??
 		for k, sg in enumerate(epos.groups):
 			subset= sim['i sg']==k
 			ax.plot(sim['P'][subset], sim['Y'][subset], ls='', marker='.', mew=0, ms=5.0, color=clrs[k % 4], label=sg['name'])
@@ -41,8 +43,8 @@ def periodradius(epos, SNR=True, Parametric=False):
 	axP.yaxis.set_ticks_position('both')
 	#axP.tick_params(axis='y', which='minor',left='off',right='off')
 	
-	#axP.plot(epos.MC_xvar, pdf_X, marker='',ls='-',color='k')
-	axP.hist(sim['P'], bins=epos.MC_xvar) #np.geomspace(*epos.xtrim))
+	if SNR: axP.hist(transit['P'], bins=epos.MC_xvar, color='C6')
+	axP.hist(sim['P'], bins=epos.MC_xvar)
 
 	''' Radius side panel'''
 	helpers.set_axis_size(axR, epos, Trim=True, In= epos.MassRadius)
@@ -56,6 +58,7 @@ def periodradius(epos, SNR=True, Parametric=False):
 	#axR.tick_params(axis='x', which='minor',top='off',bottom='off')
 	#axP.tick_params(axis='y', which='minor',left='off',right='off')
 
+	if SNR: axR.hist(transit['Y'],orientation='horizontal', bins=epos.MC_yvar, color='C6')
 	axR.hist(sim['Y'],orientation='horizontal', bins=epos.MC_yvar)
 	
 	#ax.legend(loc='lower left', shadow=False, prop={'size':14}, numpoints=1)

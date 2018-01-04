@@ -118,6 +118,7 @@ def set_pyplot_defaults():
 	rcParams.update({'ytick.major.width': 1.0})
 	rcParams.update({'ytick.minor.width': 1.0})
 	rcParams.update({'lines.markeredgewidth': 2.0})
+	#rcParams.update({'hatch.linewidth':  1.0}) # error in pyplot <2.0?
 
 def save(plt, name, dpi=150):
 

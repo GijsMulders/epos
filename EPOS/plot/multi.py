@@ -73,7 +73,7 @@ def periodradius(epos, Nth=False, MC=True):
 		ID= epos.obs_starID
 		P= epos.obs_xvar
 		Y= epos.obs_yvar
-		outdir='input'
+		outdir='survey'
 		title= 'detected planets'
 	
 	''' plot R(P), main panel'''
@@ -154,7 +154,7 @@ def multiplicity(epos, MC=False, Planets=False):
 	ax.set_xlabel('planets per system')
 	ax.set_ylabel('number of planets' if Planets else 'number of systems')
 
-	ax.set_xlim(0, 9)
+	ax.set_xlim(0.5, 7.5)
 	if not Planets:
 		ax.set_ylim(0.5, 1e4) # 7.	
 		ax.set_yscale('log')
@@ -165,22 +165,35 @@ def multiplicity(epos, MC=False, Planets=False):
 	# MC data
 	if MC:
 		ss=epos.synthetic_survey
-		ax.plot(ss['multi']['bin'], ss['multi'][key], 
-			ls='', marker='+', mew=2, ms=10, color='k',label=epos.name)
+		if Planets:
+			ax.bar(ss['multi']['bin'], ss['multi'][key], color='C0',label=epos.name, width=1)
+
+			f_iso= epos.fitpars.get('f_iso')
+			if f_iso > 0:
+				fsingle= np.sum(ss['multi']['count'])*f_iso
+				ax.bar(1, fsingle, bottom= ss['multi'][key][0]-fsingle, color='',label='isotropic', width=1, 
+					hatch='xx') #, ec='k')
+				#ax.plot(1, ss['multi'][key][0]-fsingle, marker='+', ms=10, ls='', color='k', label='no dichotomy')
+
+		else:
+			#ax.step(ss['multi']['bin'], ss['multi'][key], color='C0',label=epos.name, where='mid')
+			ax.plot(ss['multi']['bin'], ss['multi'][key], 
+				ls='', marker='+', ms=10, color='C0',label=epos.name)
 		
+
 		if hasattr(epos, 'ss_extra'):
 			for ss in epos.ss_extra:
 				ax.plot(ss['multi']['bin'], ss['multi'][key], 
 					ls='', marker='+', mew=2, ms=10, color='g',label='no dichotomy')
 	
 		# observations in same region 
-		ax.plot(epos.obs_zoom['multi']['bin'], epos.obs_zoom['multi'][key], 
-			drawstyle='steps-mid', 
-			ls='-', marker='', color='k', label='Kepler subset')
+		ax.step(epos.obs_zoom['multi']['bin'], epos.obs_zoom['multi'][key], 
+			where='mid', color='C1', label='Kepler subset')
 
-	# observations
-	ax.plot(epos.multi['bin'], epos.multi[key], drawstyle='steps-mid', 
-		ls='--', marker='', color='gray', label='Kepler all')
+	else:
+		# observations
+		ax.plot(epos.multi['bin'], epos.multi[key], drawstyle='steps-mid', 
+			ls='--', marker='', color='gray', label='Kepler all')
 
 	ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
 	
@@ -251,8 +264,8 @@ def periodratio(epos, MC=False, N=False, Input=False):
 			#ax.hist(ss['multi']['dPN'][0], \
 			#	bins=bins, ec='k', histtype='step', label='Adjacent planet')
 			ax.hist(np.concatenate(ss['multi']['dPN'][1:]), 
-				bins=bins, ec='k', color='g',
-				histtype='stepfilled', label='Planet inbetween')
+				bins=bins, hatch='xx',
+				histtype='stepfilled', label='Planet inbetween') # ec, color
 		else:
 			#ax.axvline(np.median(ss['multi']['Pratio']), color='C0', ls='--')
 			pass
@@ -292,7 +305,7 @@ def periodratio(epos, MC=False, N=False, Input=False):
 	
 	prefix= 'output' if MC else 'survey'
 	suffix= '.index' if N else ''
-	suffix= '.input' if Input else suffix
+	if Input: suffix+= '.input' 
 
 	if MC: ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
 		
