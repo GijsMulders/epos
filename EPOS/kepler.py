@@ -76,10 +76,10 @@ def dr25(subsample='all', score=0.9, Huber=False):
 
 	''' Select reliable candidates, remove giant stars'''
 	if Huber:
-		isdwarf= stars['logg'] > 1./4.671 * \
-					np.arctan((stars['Teff']-6300.)/-67.172)+ 3.876
-		isgiant= stars['logg'] < np.where(stars['Teff']>5000, 
-									13.463-0.00191*stars['Teff'],3.9)
+		isdwarf= koi['koi_slogg'] > 1./4.671 * \
+					np.arctan((koi['koi_steff']-6300.)/-67.172)+ 3.876
+		isgiant= koi['koi_slogg'] < np.where(koi['koi_steff']>5000, 
+									13.463-0.00191*koi['koi_steff'],3.9)
 		issubgiant= ~isdwarf & ~isgiant
 		suffix='huber'
 	else:
@@ -94,21 +94,22 @@ def dr25(subsample='all', score=0.9, Huber=False):
 	print '  {}+{} with score > {:.2f}'.format((isdwarf&iscandidate&isreliable).sum(), 
 				(isdwarf&~iscandidate&isreliable).sum(),score )
 
-	isall= islogg42 & isreliable
-	#isall= isdwarf & isreliable # reliability score cuts out false positives
+	isall= isdwarf & isreliable # reliability score cuts out false positives
 #	isall= isdwarf & iscandidate & isreliable
 
 	slice={'all':isall}
 	for spT, Tmin, Tmax in zip(['M','K','G','F'],
 		[2400, 3865, 5310, 5980], [3865, 5310, 5980, 7320]):
 		slice[spT]= isall & (Tmin<koi['koi_steff']) & (koi['koi_steff']<=Tmax)
+	if Huber: slice['subgiants']=issubgiant
 	
 	obs= {'xvar':koi['koi_period'][slice[subsample]],
 		'yvar':koi['koi_prad'][slice[subsample]], 
 		'starID':koi['kepid'][slice[subsample]]}
 	
-	# from dr25_epos.py in 
-	eff= np.load('files/completeness.dr25.{}.{}.npz'.format(subsample, suffix))
+	# from dr25_epos.py
+	sfile= 'dwarfs' if 'all' else subsample
+	eff= np.load('files/completeness.dr25.{}.{}.npz'.format(sfile, suffix))
 	#eff= np.load('files/det_eff.dr25.{}.npz'.format(subsample))
 	survey= {'xvar':eff['P'], 'yvar':eff['Rp'], 'eff_2D':eff['fsnr'], 
 			'Mstar': eff['Mst'], 'Rstar':eff['Rst']}
