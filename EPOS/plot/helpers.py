@@ -82,6 +82,9 @@ def make_panels(plt):
 
 	axR = plt.subplot(gs[0, 0])
 	axP = plt.subplot(gs[1, 1])
+	
+	ax.tick_params(direction='in', which='both', top=True, right=True, 
+		bottom=False, left=False)
 
 	return f, (ax, axR, axP)
 

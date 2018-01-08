@@ -60,7 +60,7 @@ class fitparameters:
 			self.add(key, value, fixed=True)
 	
 	def set(self, key, value):
-		self.fitpars[key]['value_fit']=value
+		self.fitpars[key]['value_init']=value
 
 	def setfit(self, mclist):
 		for i,key in enumerate(self.keysfit):

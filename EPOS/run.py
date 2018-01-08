@@ -14,10 +14,15 @@ try:
 except ImportError:
 	print '#WARNING# emcee could not be imported'
 
-def once(epos, fac=1.0, Extra=False):
+def once(epos, fac=1.0, Extra=None):
 	'''
-	A test run with equal weights
-	TODO: throw in a bunch of assertions
+	Run EPOS once
+	
+	Description:
+		Sets up some defaults and runs the MC simulation once (steps 1-4 in paper)
+		
+	Args:
+		Extra: store the planet population as an extra for plotting, default None
 	'''
 	if not epos.Prep:
 		
@@ -75,14 +80,17 @@ def once(epos, fac=1.0, Extra=False):
 	else: assert False
 	
 	''' Time the first MC run'''
-	print '\nStarting the first MC run'
+	if Extra is None:
+		print '\nStarting the first MC run'
+	else:
+		print '\nStarting extra MC run {}'.format(Extra)
 	tstart=time.time()
 	MC(epos, fpara, Store=True, Extra=Extra)
 	tMC= time.time()
 	print 'Finished one MC in {:.3f} sec'.format(tMC-tstart)
 	epos.tMC= tMC-tstart
 	
-def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1):
+def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1, npos=None):
 	if not 'emcee' in sys.modules:
 		raise ImportError('You need to install emcee')
 	assert epos.Prep
@@ -207,6 +215,17 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1):
 		# set weight instead?
 		epos.pfit=[p[0] for p in fitpars]
 	
+	''' Generate posterior populations '''
+	if npos is not None:
+		epos.plotsample= epos.samples[np.random.randint(len(epos.samples), size=npos)]
+		# run & store
+		print '\nMC-ing the {} samples to plot'.format(npos)
+		epos.ss_sample=[]
+		for fpara in epos.plotsample:
+			epos.ss_sample.append(MC(epos, fpara, Store=True, Sample=True, Verbose=False))
+		# parallel
+		# return & store in structure
+	
 	''' Estimate Solar System Analogs'''
 	if epos.populationtype is 'parametric' and epos.Multi:
 		fMercury=[]
@@ -261,7 +280,7 @@ def prep_obs(epos):
 		multi.periodratio(epos.obs_starID[ix&iy], epos.obs_xvar[ix&iy])
 	z['multi']['cdf']= multi.cdf(epos.obs_starID[ix&iy])
 
-def MC(epos, fpara, Store=False, StorePopulation=False, Extra=False, 
+def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None, 
 		Verbose=True, KS=True, LogProb=False):
 	''' 
 	Do the Monte Carlo Simulations
@@ -640,10 +659,14 @@ def MC(epos, fpara, Store=False, StorePopulation=False, Extra=False,
 		ss['Y zoom']= det_Y[ix&iy]
 		
 		# Store as an extra model 
-		if Extra:
-			if ~hasattr(epos,'ss_extra'):
+		if Sample:
+			return ss
+		elif Extra is not None:
+			ss['name']=Extra
+			if not hasattr(epos,'ss_extra'):
 				epos.ss_extra=[]
 			epos.ss_extra.append(ss)
+			#print 'saving extra {}'.format(Extra)
 		else:
 			epos.synthetic_survey= ss 
 	else:

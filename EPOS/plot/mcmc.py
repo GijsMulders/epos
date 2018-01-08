@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import helpers
-import parametric
+import parametric, periodradius, multi
 
 try:
 	import corner
@@ -21,9 +21,19 @@ def all(epos):
 			corners(epos)
 		except NameError:
 			print '  (skipping corner plot)'
+		
 		if epos.populationtype is 'parametric':
 			parametric.oneD(epos, MCMC=True)
 			parametric.twoD(epos, MCMC=True)
+		
+		# plot sample from posterior
+		if hasattr(epos, 'plotsample'):
+			periodradius.panels(epos, MCMC=True)
+			if epos.Multi:
+				multi.multiplicity(epos, MCMC=True)
+				multi.periodratio(epos, MCMC=True)
+				multi.periodinner(epos, MCMC=True)
+			
 	else:
 		print '\nNo chain to plot, did you run EPOS.run.mcmc()? \n'
 	

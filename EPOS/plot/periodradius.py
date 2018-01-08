@@ -64,16 +64,18 @@ def periodradius(epos, SNR=True, Parametric=False):
 	#ax.legend(loc='lower left', shadow=False, prop={'size':14}, numpoints=1)
 	helpers.save(plt, '{}output/periodradius.{}'.format(epos.plotdir,fsuffix))
 
-def panels(epos, Parametric=False):
+def panels(epos, MCMC=False):
 
 	f, (ax, axR, axP)= helpers.make_panels(plt)
 	
 	sim=epos.synthetic_survey
+	
+	clr_bf= 'g'
 		
 	''' plot R(P), main panel'''
 	ax.set_title('detectable planets')
 	helpers.set_axes(ax, epos, Trim=True)
-	ax.plot(sim['P'], sim['Y'], ls='', marker='.', color='C0')
+	ax.plot(sim['P'], sim['Y'], ls='', marker='.', color=clr_bf if MCMC else 'C0')
 
 	''' Period side panel '''
 	helpers.set_axis_distance(axP, epos, Trim=True)
@@ -84,11 +86,7 @@ def panels(epos, Parametric=False):
 	axP.yaxis.tick_right()
 	axP.yaxis.set_ticks_position('both')
 	#axP.tick_params(axis='y', which='minor',left='off',right='off')
-	
-	xbins= np.geomspace(*epos.xzoom, num=20)
-	axP.hist(sim['P zoom'], bins=xbins)
-	axP.hist(epos.obs_zoom['x'], bins=xbins,histtype='step')
-	
+			
 	''' Radius side panel'''
 	helpers.set_axis_size(axR, epos, Trim=True, In= epos.MassRadius)
 
@@ -101,19 +99,35 @@ def panels(epos, Parametric=False):
 	#axR.tick_params(axis='x', which='minor',top='off',bottom='off')
 	#axP.tick_params(axis='y', which='minor',left='off',right='off')
 
+	''' Histograms / posterior samples '''
+	xbins= np.geomspace(*epos.xzoom, num=20)
 	ybins= np.geomspace(*epos.yzoom, num=10)
-	axR.hist(sim['Y zoom'], bins=ybins, orientation='horizontal')
-	axR.hist(epos.obs_zoom['y'], bins=ybins, orientation='horizontal',histtype='step')
+	
+	if MCMC:
+		for ss in epos.ss_sample:
+			axP.hist(ss['P zoom'], bins=xbins, histtype='step', color='b', alpha=0.1)
+			axR.hist(ss['Y zoom'], bins=ybins, orientation='horizontal', histtype='step', color='b', alpha=0.1)
+		axP.hist(sim['P zoom'], bins=xbins, histtype='step', color=clr_bf)
+		axR.hist(sim['Y zoom'], bins=ybins, orientation='horizontal', histtype='step', color=clr_bf)
+	else:
+		axP.hist(sim['P zoom'], bins=xbins)
+		axR.hist(sim['Y zoom'], bins=ybins, orientation='horizontal')
+
+	''' Observations'''
+	axP.hist(epos.obs_zoom['x'], bins=xbins,histtype='step', color='C1')
+	axR.hist(epos.obs_zoom['y'], bins=ybins, orientation='horizontal',histtype='step', color='C1')
 	
 	''' Box/ lines'''
-	if epos.Zoom: 
+	if epos.Zoom:
 		for zoom in epos.xzoom: axP.axvline(zoom, ls='--', color='k')
 		for zoom in epos.yzoom: axR.axhline(zoom, ls='--', color='k')
 		ax.add_patch(patches.Rectangle( (epos.xzoom[0],epos.yzoom[0]), 
 			epos.xzoom[1]-epos.xzoom[0], epos.yzoom[1]-epos.yzoom[0],fill=False, zorder=1) )
 	
 	#ax.legend(loc='lower left', shadow=False, prop={'size':14}, numpoints=1)
-	helpers.save(plt, '{}output/pdf.zoom'.format(epos.plotdir))
+	
+	fdir= 'mcmc' if MCMC else 'output'
+	helpers.save(plt, '{}{}/pdf.zoom'.format(epos.plotdir, fdir))
 
 def pdf_3d(epos):
 	#plot in 3D

@@ -147,7 +147,7 @@ def periodradius(epos, Nth=False, MC=True):
 
 	helpers.save(plt, '{}{}/PR.multi{}'.format(epos.plotdir, outdir, suffix))
 
-def multiplicity(epos, MC=False, Planets=False):
+def multiplicity(epos, MC=False, Planets=False, MCMC=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
 	ax.set_title('planet multiplicity')
@@ -163,7 +163,7 @@ def multiplicity(epos, MC=False, Planets=False):
 	key = 'pl cnt' if Planets else 'count'
 
 	# MC data
-	if MC:
+	if MC or MCMC:
 		ss=epos.synthetic_survey
 		if Planets:
 			ax.bar(ss['multi']['bin'], ss['multi'][key], color='C0',label=epos.name, width=1)
@@ -171,20 +171,29 @@ def multiplicity(epos, MC=False, Planets=False):
 			f_iso= epos.fitpars.get('f_iso')
 			if f_iso > 0:
 				fsingle= np.sum(ss['multi']['count'])*f_iso
-				ax.bar(1, fsingle, bottom= ss['multi'][key][0]-fsingle, color='',label='isotropic', width=1, 
-					hatch='xx') #, ec='k')
+				ax.bar(1, fsingle, bottom= ss['multi'][key][0]-fsingle, 
+					color='',label='dichotomy', width=1, hatch='xx') #, ec='k')
 				#ax.plot(1, ss['multi'][key][0]-fsingle, marker='+', ms=10, ls='', color='k', label='no dichotomy')
-
+		elif MCMC:
+			for ss in epos.ss_sample:
+				ax.hlines(ss['multi'][key], ss['multi']['bin']-0.5,ss['multi']['bin']+0.5,
+					color='b', alpha=0.1)
+				
 		else:
 			#ax.step(ss['multi']['bin'], ss['multi'][key], color='C0',label=epos.name, where='mid')
 			ax.plot(ss['multi']['bin'], ss['multi'][key], 
 				ls='', marker='+', ms=10, color='C0',label=epos.name)
 		
-
 		if hasattr(epos, 'ss_extra'):
+			# advance color cycle
+			# ax._get_lines.get_next_color()
+			ax.plot([], [])
+			ax.plot([], [])
+
+			# plot extra epos runs
 			for ss in epos.ss_extra:
 				ax.plot(ss['multi']['bin'], ss['multi'][key], 
-					ls='', marker='+', mew=2, ms=10, color='g',label='no dichotomy')
+					ls='', marker='+', ms=10, label=ss['name'])
 	
 		# observations in same region 
 		ax.step(epos.obs_zoom['multi']['bin'], epos.obs_zoom['multi'][key], 
@@ -198,6 +207,7 @@ def multiplicity(epos, MC=False, Planets=False):
 	ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
 	
 	prefix= 'output' if MC else 'survey'
+	if MCMC: prefix= 'mcmc'
 	suffix='.planets' if Planets else ''
 	
 	helpers.save(plt, '{}{}/multiplicity{}'.format(epos.plotdir,prefix,suffix))
@@ -239,7 +249,7 @@ def multiplicity_cdf(epos, MC=False):
 	
 	helpers.save(plt, '{}{}/cdf'.format(epos.plotdir,prefix))
 	
-def periodratio(epos, MC=False, N=False, Input=False):
+def periodratio(epos, MC=False, N=False, Input=False, MCMC=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
 	ax.set_title('period ratio adjacent planets')
@@ -254,10 +264,16 @@ def periodratio(epos, MC=False, N=False, Input=False):
 	bins=np.geomspace(1,10, 15)
 	
 	# MC data
-	if MC:
+	if MC or MCMC:
 		ss=epos.synthetic_survey
-		ax.hist(ss['multi']['Pratio'], bins=bins, 
-				color='C0', histtype='stepfilled', label=epos.name)
+		if MCMC:
+			for ss in epos.ss_sample:
+				# bar?
+				ax.hist(ss['multi']['Pratio'], bins=bins, histtype='step', color='b', alpha=0.1)
+				#ax.hist(ss['multi']['Pratio'], bins=bins, color='b', alpha=1./len(epos.ss_sample))
+		else:
+			ax.hist(ss['multi']['Pratio'], bins=bins, 
+					color='C0', histtype='step', label=epos.name)
 	
 		if N:
 			# planets inbetween?
@@ -269,7 +285,19 @@ def periodratio(epos, MC=False, N=False, Input=False):
 		else:
 			#ax.axvline(np.median(ss['multi']['Pratio']), color='C0', ls='--')
 			pass
-				
+		
+		if hasattr(epos, 'ss_extra'):
+			# advance color cycle
+			# ax._get_lines.get_next_color()
+			ax.plot([], [])
+			ax.plot([], [])
+			ax.plot([], [])
+			
+			# plot extra epos runs
+			for ss in epos.ss_extra:
+				ax.hist(ss['multi']['Pratio'], bins=bins, 
+					histtype='step', label=ss['name'])
+		
 	else:
 		# observed all
 		ax.hist(epos.multi['Pratio'], bins=bins, color='0.7', label='Kepler all')
@@ -301,11 +329,13 @@ def periodratio(epos, MC=False, N=False, Input=False):
 		# Observed zoom
 		ax.hist(epos.obs_zoom['multi']['Pratio'], \
 			bins=bins, ec='C1', histtype='step', label='Kepler subset')
-		ax.axvline(np.median(epos.obs_zoom['multi']['Pratio']), color='C1', ls='--')
+		if not MCMC:
+			ax.axvline(np.median(epos.obs_zoom['multi']['Pratio']), color='C1', ls='--')
 	
 	prefix= 'output' if MC else 'survey'
 	suffix= '.index' if N else ''
 	if Input: suffix+= '.input' 
+	if MCMC: prefix= 'mcmc'
 
 	if MC: ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
 		
@@ -351,7 +381,7 @@ def periodratio_cdf(epos, MC=False):
 
 ''' these are practically identical to periodratio -> merge?'''
 
-def periodinner(epos, MC=False, N=False, Input=False):
+def periodinner(epos, MC=False, N=False, Input=False, MCMC=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
 	ax.set_title('period innermost planet')
@@ -368,10 +398,15 @@ def periodinner(epos, MC=False, N=False, Input=False):
 	#ax3.plot(xgrid, pdf, ls='-', marker='', color=clrs[k % 4],label='{} x{:.3f}'.format(sg['name'], sg['weight']))
 				
 	# MC data
-	if MC:
+	if MC or MCMC:
 		ss=epos.synthetic_survey
-		ax.hist(ss['multi']['Pinner'], bins=bins, 
-				color='C0', histtype='stepfilled', label=epos.name)
+		if MCMC:
+			for ss in epos.ss_sample:
+				ax.hist(ss['multi']['Pinner'], bins=bins, 
+						color='b', alpha=0.1, histtype='step')			
+		else:
+			ax.hist(ss['multi']['Pinner'], bins=bins, 
+					color='C0', histtype='stepfilled', label=epos.name)
 	
 		if N:
 			# Innermost is nth planet
@@ -398,6 +433,7 @@ def periodinner(epos, MC=False, N=False, Input=False):
 	prefix= 'output' if MC else 'survey'
 	suffix= '.index' if N else '' 
 	suffix= '.input' if Input else suffix
+	if MCMC: prefix= 'mcmc'
 
 	if MC: ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
 		
