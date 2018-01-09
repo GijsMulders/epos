@@ -10,10 +10,6 @@ import survey, parametric, multi, massradius, helpers
 clrs= ['r','g','b','m'] # in epos.prep
 fmt_symbol= {'ls':'', 'marker':'o', 'mew':2, 'ms':8,'alpha':0.6}
 
-def readme():
-	print '\nMakes plots for the input (no MC)'
-	print 
-
 def all(epos):
 	print '\nPlotting input...'
 

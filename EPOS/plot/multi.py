@@ -7,6 +7,11 @@ import helpers
 import EPOS.multi
 from EPOS.population import periodradius as draw_PR
 
+# backwards compatible colors 
+import matplotlib
+if matplotlib.__version__[0] != 2: 
+	helpers.default_pyplot2_colors(matplotlib.colors)
+
 def polar(epos):
 	'''
 	Plot plane populations as a half circle (not quite working) 

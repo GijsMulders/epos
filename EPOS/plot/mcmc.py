@@ -37,7 +37,6 @@ def all(epos):
 	else:
 		print '\nNo chain to plot, did you run EPOS.run.mcmc()? \n'
 	
-
 def chain(epos):
 	nwalker, nstep, npara= epos.chain.shape
 

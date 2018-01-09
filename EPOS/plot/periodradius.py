@@ -8,6 +8,11 @@ from EPOS import regression
 clrs= ['r','g','b','m'] # in epos.prep
 fmt_symbol= {'ls':'', 'marker':'o', 'mew':2, 'ms':8,'alpha':0.6}
 
+# backwards compatible colors 
+import matplotlib
+if matplotlib.__version__[0] != 2: 
+	helpers.default_pyplot2_colors(matplotlib.colors)
+
 def periodradius(epos, SNR=True, Parametric=False):
 
 	f, (ax, axR, axP)= helpers.make_panels(plt)
@@ -106,9 +111,11 @@ def panels(epos, MCMC=False):
 	if MCMC:
 		for ss in epos.ss_sample:
 			axP.hist(ss['P zoom'], bins=xbins, histtype='step', color='b', alpha=0.1)
-			axR.hist(ss['Y zoom'], bins=ybins, orientation='horizontal', histtype='step', color='b', alpha=0.1)
+			axR.hist(ss['Y zoom'], bins=ybins, orientation='horizontal', \
+				histtype='step', color='b', alpha=0.1)
 		axP.hist(sim['P zoom'], bins=xbins, histtype='step', color=clr_bf)
-		axR.hist(sim['Y zoom'], bins=ybins, orientation='horizontal', histtype='step', color=clr_bf)
+		axR.hist(sim['Y zoom'], bins=ybins, orientation='horizontal', \
+			histtype='step', color=clr_bf)
 	else:
 		axP.hist(sim['P zoom'], bins=xbins)
 		axR.hist(sim['Y zoom'], bins=ybins, orientation='horizontal')

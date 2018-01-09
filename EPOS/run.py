@@ -90,7 +90,7 @@ def once(epos, fac=1.0, Extra=None):
 	print 'Finished one MC in {:.3f} sec'.format(tMC-tstart)
 	epos.tMC= tMC-tstart
 	
-def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1, npos=None):
+def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1, npos=30):
 	if not 'emcee' in sys.modules:
 		raise ImportError('You need to install emcee')
 	assert epos.Prep

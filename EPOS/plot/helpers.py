@@ -123,6 +123,18 @@ def set_pyplot_defaults():
 	rcParams.update({'lines.markeredgewidth': 2.0})
 	#rcParams.update({'hatch.linewidth':  1.0}) # error in pyplot <2.0?
 
+def default_pyplot2_colors(colors):
+	colors.ColorConverter.colors['C0']='#1f77b4'
+	colors.ColorConverter.colors['C1']='#ff7f0e'
+	colors.ColorConverter.colors['C2']='#2ca02c'
+	colors.ColorConverter.colors['C3']='#d62728'
+	colors.ColorConverter.colors['C4']='#9467bd'
+	colors.ColorConverter.colors['C5']='#8c564b'
+	colors.ColorConverter.colors['C6']='#e377c2'
+	colors.ColorConverter.colors['C7']='#7f7f7f'
+	colors.ColorConverter.colors['C8']='#bcbd22'
+	colors.ColorConverter.colors['C9']='#17becf'
+
 def save(plt, name, dpi=150):
 
 	# make sure path exists
