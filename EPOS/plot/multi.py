@@ -266,7 +266,7 @@ def periodratio(epos, MC=False, N=False, Input=False, MCMC=False):
 	for s in [ax.set_xticks,ax.set_xticklabels]: s([1,2,3,4,5,7,10])
 	ax.set_xticks([], minor=True) # minor ticks generate labels
 
-	bins=np.geomspace(1,10, 15)
+	bins=np.logspace(0,1, 15) # 1,10
 	
 	# MC data
 	if MC or MCMC:

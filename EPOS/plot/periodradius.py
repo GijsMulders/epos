@@ -105,8 +105,12 @@ def panels(epos, MCMC=False):
 	#axP.tick_params(axis='y', which='minor',left='off',right='off')
 
 	''' Histograms / posterior samples '''
-	xbins= np.geomspace(*epos.xzoom, num=20)
-	ybins= np.geomspace(*epos.yzoom, num=10)
+	try:
+		xbins= np.geomspace(*epos.xzoom, num=20)
+		ybins= np.geomspace(*epos.yzoom, num=10)
+	except:
+		xbins= np.logspace(*np.log10(epos.xzoom), num=20)
+		ybins= np.logspace(*np.log10(epos.yzoom), num=10)
 	
 	if MCMC:
 		for ss in epos.ss_sample:
