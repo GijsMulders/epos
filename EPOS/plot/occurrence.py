@@ -29,7 +29,6 @@ def all(epos):
 
 	if 'xzoom' in epos.occurrence:
 		if epos.populationtype is 'parametric':
-			# replace by functions with occurrence and posterior per _bin_
 			parametric.oneD(epos, Occ=True)
 			if hasattr(epos, 'chain'):
 				 parametric.oneD(epos, Occ=True, MCMC=True)

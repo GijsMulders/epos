@@ -261,7 +261,7 @@ class epos:
 		self.DetectionEfficiency=True
 	
 	def set_ranges(self, xtrim=None, ytrim=None, xzoom=None, yzoom=None, 
-			LogArea=False, Occ=True):
+			LogArea=False, Occ=False):
 		
 		if self.Range: raise ValueError('Range already defined')
 		if not self.Observation: raise ValueError('No observation defined')
@@ -351,6 +351,9 @@ class epos:
 		self.Range=True
 		
 		if Occ:
+			if self.MR:
+				raise Valuerror('Plotting occurrence with mass-radius not yet supported')
+				
 			if not hasattr(self,'occurrence'):
 				self.occurrence={}
 			focc= self.occurrence			
@@ -410,7 +413,7 @@ class epos:
 			else:
 				raise ValueError('wrong bin dimensions')
 		else:
-			_ybins= np.array([[i,j] for i,j in zip(xgrid[:-1],xgrid[1:])])
+			_ybins= np.array([[i,j] for i,j in zip(ygrid[:-1],ygrid[1:])])
 		
 		focc['bin']={}
 		if Grid:
