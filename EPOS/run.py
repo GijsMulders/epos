@@ -763,6 +763,7 @@ def draw_multi(epos, sysX, sysY, npl, dInc, dR, fpara, Store):
 	
 	''' Draw period of 2nd, 3rd planet etc.'''
 	Pgrid= np.logspace(0,1)
+	# use population.periodratio here
 	if epos.spacing == 'powerlaw':
 		dPbreak= epos.fitpars.getmc('dP break', fpara)
 		dP1= epos.fitpars.getmc('dP 1', fpara)

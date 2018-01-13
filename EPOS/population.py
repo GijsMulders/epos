@@ -1,4 +1,6 @@
 import numpy as np
+import scipy.stats # norm
+import EPOS.fitfunctions
 
 def periodradius(epos, Init=False, fpara=None, xbin=None, ybin=None, xgrid=None, ygrid=None):
 	''' return the period-radius distribution'''
@@ -48,3 +50,29 @@ def periodradius(epos, Init=False, fpara=None, xbin=None, ybin=None, xgrid=None,
 		pdf= pps* _pdf/np.sum(_pdf)* epos.scale
 	
 	return pps, pdf, pdf_X, pdf_Y
+
+def periodratio(epos, Pgrid=None, fpara=None, Init=False):
+	
+	if fpara is None:
+		if epos.spacing == 'powerlaw':
+			dPbreak= epos.fitpars.get('dP break')
+			dP1= epos.fitpars.get('dP 1')
+			dP2= epos.fitpars.get('dP 2')
+			pdf= EPOS.fitfunctions.brokenpowerlaw1D(Pgrid, dPbreak, dP1, dP2)
+		elif epos.spacing=='dimensionless':
+			logD=  epos.fitpars.get('log D')
+			sigma= epos.fitpars.get('sigma')
+
+			with np.errstate(divide='ignore'): 
+				Dgrid= np.log10(2.*(Pgrid**(2./3.)-1.)/(Pgrid**(2./3.)+1.))
+			Dgrid[0]= -2
+			#print Dgrid
+			pdf= scipy.stats.norm(logD,sigma).pdf(Dgrid)
+			
+		cdf= np.cumsum(pdf)
+		cdf/=cdf[-1]
+	else:
+		# copy-pasta from run.py
+		raise ValueError('test needed')
+	
+	return pdf, cdf

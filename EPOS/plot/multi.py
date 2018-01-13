@@ -1,11 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
-import scipy.stats # norm
 
 import helpers
 import EPOS.multi
 from EPOS.population import periodradius as draw_PR
+from EPOS.population import periodratio as draw_dP
 
 # backwards compatible colors 
 import matplotlib
@@ -310,25 +310,12 @@ def periodratio(epos, MC=False, N=False, Input=False, MCMC=False):
 	
 	''' input distribution '''	
 	if Input and epos.populationtype=='parametric':
-		#Pgrid= np.logspace(0,1)
-		Pgrid=bins
-		if epos.spacing == 'powerlaw':
-			dPbreak= epos.fitpars.get('dP break')
-			dP1= epos.fitpars.get('dP 1')
-			dP2= epos.fitpars.get('dP 2')
-			pdf= EPOS.fitfunctions.brokenpowerlaw1D(Pgrid, dPbreak, dP1, dP2)
-		elif epos.spacing=='dimensionless':
-			logD=  epos.fitpars.get('log D')
-			sigma= epos.fitpars.get('sigma')	
-
-			with np.errstate(divide='ignore'): 
-				Dgrid= np.log10(2.*(Pgrid**(2./3.)-1.)/(Pgrid**(2./3.)+1.))
-			Dgrid[0]= -2
-			#print Dgrid
-			pdf= scipy.stats.norm(logD,sigma).pdf(Dgrid)
-		pdf*= 0.95* ax.get_ylim()[1] / max(pdf)
-		
+		#Pgrid=bins
+		Pgrid= np.logspace(0,1)
+		pdf, _= draw_dP(epos, Pgrid=Pgrid)
+		pdf*= 0.95* ax.get_ylim()[1] / max(pdf)	
 		ax.plot(Pgrid, pdf, marker='', ls='-', color='r',label='input')
+
 
 	elif epos.Zoom:
 		# Observed zoom
@@ -346,7 +333,7 @@ def periodratio(epos, MC=False, N=False, Input=False, MCMC=False):
 		
 	helpers.save(plt, '{}{}/periodratio{}'.format(epos.plotdir, prefix, suffix))	
 
-def periodratio_cdf(epos, MC=False):
+def periodratio_cdf(epos, Input=True, MC=False):
 
 	# plot multiplicity CDF
 	f, ax = plt.subplots()
@@ -357,7 +344,8 @@ def periodratio_cdf(epos, MC=False):
 	ax.set_xlim(1, 10)
 	ax.set_xscale('log')
 	for s in [ax.set_xticks,ax.set_xticklabels]: s([1,2,3,4,5,7,10])
-
+	ax.set_xticks([], minor=True) # minor ticks generate labels
+	
 	# MC data
 	if MC:
 		ss=epos.synthetic_survey
@@ -377,6 +365,16 @@ def periodratio_cdf(epos, MC=False):
 	Psort= np.sort(epos.multi['Pratio'])
 	cdf= cdf= np.arange(Psort.size, dtype=float)/Psort.size
 	ax.plot(Psort, cdf ,color='gray' if MC else 'k', label='Kepler all')	
+	
+# 	''' input distribution '''	
+# 	if Input and epos.populationtype=='parametric':
+# 		Pgrid= np.logspace(0,1)
+# 		_, cdf= draw_dP(epos, Pgrid=Pgrid)
+# 		ax.plot(Pgrid, cdf, marker='', ls='-', color='r',label='input')
+# 	
+# 	# HZ
+# 	ax.axvline(2.6, ls=':',label='Hab zone width')
+# 	ax.axvline(2.6**0.5, ls=':',label='Hab zone 2 planets')
 	
 	prefix= 'output' if MC else 'survey'
 	

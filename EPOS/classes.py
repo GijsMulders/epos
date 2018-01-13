@@ -351,7 +351,7 @@ class epos:
 		self.Range=True
 		
 		if Occ:
-			if self.MR:
+			if self.MassRadius:
 				raise Valuerror('Plotting occurrence with mass-radius not yet supported')
 				
 			if not hasattr(self,'occurrence'):

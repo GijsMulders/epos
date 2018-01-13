@@ -108,7 +108,7 @@ def dr25(subsample='all', score=0.9, Huber=False):
 		'starID':koi['kepid'][slice[subsample]]}
 	
 	# from dr25_epos.py
-	sfile= 'dwarfs' if 'all' else subsample
+	sfile= 'dwarfs' if subsample=='all' else subsample
 	eff= np.load('files/completeness.dr25.{}.{}.npz'.format(sfile, suffix))
 	#eff= np.load('files/det_eff.dr25.{}.npz'.format(subsample))
 	survey= {'xvar':eff['P'], 'yvar':eff['Rp'], 'eff_2D':eff['fsnr'], 
