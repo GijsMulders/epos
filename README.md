@@ -11,17 +11,21 @@ This repository hosts the EPOS source code
 ### Summary of set up ###
 Download the source, preferably using git
 ```
-git clone https://GijsMulders@bitbucket.org/GijsMulders/epos.git
+git clone https://username@bitbucket.org/GijsMulders/epos.git
+```
+Then you can update to the latest version with
+```
+git pull
 ```
 
 ### Configuration ###
 None. Optionally add the epos/EPOS dir to your python path
 
 ### Dependencies ###
-* (i)python 2.7
-* numpy
+* python 2.7
+* numpy 1.13+
 * scipy
-* matplotlib
+* matplotlib 2.0+
 * [emcee](http://dan.iel.fm/emcee) for the MCMC fitting
 * [corner.py](http://corner.readthedocs.io/) for the MCMC plots
 
