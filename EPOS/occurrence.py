@@ -14,7 +14,7 @@ def all(epos):
 			zoomed(epos)
 		
 		# posterior per bin
-		if epos.Prep and epos.populationtype is 'parametric' and (not epos.Multi) \
+		if epos.Prep and epos.Parametric and (not epos.Multi) \
 				and 'bin' in epos.occurrence:
 			parametric(epos)
 	else:
@@ -44,6 +44,34 @@ def planets(epos, Log=False):
 	focc['planet']={}
 	focc['planet']['completeness']= completeness
 	focc['planet']['occ']= 1./completeness/epos.nstars
+	#print epos.planet_occurrence
+
+def models(epos, Log=False):
+	if not epos.Range: epos.set_ranges()
+	
+	''' Interpolate occurrence for each planet (on log scale) '''
+	focc= epos.occurrence
+	print '\nInterpolating model planet occurrence'
+	
+	pfm=epos.pfm
+	if not 'R' in pfm:
+		pfm['R'], _= epos.MR(pfm['M'])
+	
+	if Log:
+		# does not seem to make a big difference
+		pl_comp_log= interpolate.RectBivariateSpline(np.log10(epos.eff_xvar), 
+			np.log10(epos.eff_yvar), np.log10(epos.completeness))
+		completeness= 10.**pl_comp_log(np.log10(pfm['P']), np.log10(pfm['R']), grid=False) 
+		#print completeness
+	else:
+		# if zeros in detection efficiency?
+		pl_comp= interpolate.RectBivariateSpline(epos.eff_xvar, 
+			epos.eff_yvar, epos.completeness)
+		completeness= pl_comp(pfm['P'], pfm['R'], grid=False)
+		
+	focc['model']={}
+	focc['model']['completeness']= completeness
+	#focc['model']['occ']= 1./completeness/epos.nstars
 	#print epos.planet_occurrence
 
 def binned(epos):	
@@ -101,7 +129,7 @@ def _occ_per_bin(epos, foccbin):
 	foccbin['dlny']= np.array(_dlny)
 	
 def parametric(epos):
-	assert epos.Prep and epos.populationtype is 'parametric' and (not epos.Multi)
+	assert epos.Prep and epos.Parametric and (not epos.Multi)
 	focc= epos.occurrence
 	
 	''' loop over all bins '''

@@ -2,17 +2,14 @@ import numpy as np
 import scipy.stats # norm
 import EPOS.fitfunctions
 
-def periodradius(epos, Init=False, fpara=None, xbin=None, ybin=None, xgrid=None, ygrid=None):
+def periodradius(epos, Init=False, fpara=None, FromFit=True, xbin=None, ybin=None, xgrid=None, ygrid=None):
 	''' return the period-radius distribution'''
-	# normalisation does not make sense, use 
-	# - per unit dlnPdlnR (*epos.scale)
-	# - per grid cell
 	if fpara is None:
-		pps= epos.fitpars.get('pps',Init=Init)
-		fpar2d= epos.fitpars.get2d(Init=Init)
+		pps= epos.pdfpars.get('pps',Init=Init)
+		fpar2d= epos.pdfpars.get2d(Init=Init)
 	else:
-		pps= epos.fitpars.getmc('pps',fpara)
-		fpar2d= epos.fitpars.get2d_fromlist(fpara)
+		pps= epos.pdfpars.getmc('pps',fpara)
+		fpar2d= epos.pdfpars.get2d_fromlist(fpara)
 		#print fpara
 	
 	_pdf= epos.func(epos.X_in, epos.Y_in, *fpar2d)
@@ -28,7 +25,8 @@ def periodradius(epos, Init=False, fpara=None, xbin=None, ybin=None, xgrid=None,
 		if xgrid is None:
 			xgrid= epos.MC_xvar
 		if ygrid is None:
-			ygrid= epos.MC_yvar
+			#ygrid= epos.MC_yvar
+			ygrid= epos.in_yvar
 	
 		X,Y=np.meshgrid(xgrid, ygrid,indexing='ij')
 		pdf= epos.func(X,Y, *fpar2d)

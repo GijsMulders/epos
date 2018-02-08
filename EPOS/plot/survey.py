@@ -1,3 +1,6 @@
+'''
+Plots the exoplanet survey: observed planets and completeness
+'''
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -9,10 +12,6 @@ import helpers
 
 clrs= ['r','g','b','m'] # in epos.prep
 fmt_symbol= {'ls':'', 'marker':'o', 'mew':2, 'ms':8,'alpha':0.6}
-
-def readme():
-	print '\nPlots the exoplanet survey: observed planets and completeness'
-	print 
 
 def observed(epos, PlotBox=True):
 	assert epos.Observation

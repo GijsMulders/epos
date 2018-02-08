@@ -93,7 +93,7 @@ def panels(epos, MCMC=False):
 	#axP.tick_params(axis='y', which='minor',left='off',right='off')
 			
 	''' Radius side panel'''
-	helpers.set_axis_size(axR, epos, Trim=True, In= epos.MassRadius)
+	helpers.set_axis_size(axR, epos, Trim=True) #, In= epos.MassRadius)
 
 	#axR.set_xscale('log')
 	#axR.set_xlim([2e-3,5])

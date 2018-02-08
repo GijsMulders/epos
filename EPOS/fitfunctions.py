@@ -5,7 +5,7 @@ assuming x and y are numpy arrays of equal length (i.e. coordinates)
 '''
 
 import numpy as np
-from scipy.stats import norm
+import scipy.stats
 
 def uniform(x,y): 
 	''' Uniform distribution'''
@@ -44,6 +44,24 @@ def brokenpowerlaw1D(x, xp, p1, p2):
 	# normalized to 1 at x=xp
 	return (x/xp)**np.where(x<xp,p1,p2)
 
+def lognormal_size(x, y, xp, p1, p2, y0, dy):
+	'''
+	Lognormal distribution in planet size `y` and a broken power law in distance `x` 
+	
+	Args:
+		x(np.array): x
+		y(np.array): y
+		xp(float): break in x
+		p1(float): power law index at x<xp
+		p2(float): power law index at x>xp
+		y(float): mean of y
+		dy(flat): dispersion of y, in dex	
+	Note:		
+		Only works with support for a non-separable function in x and y
+	'''	
+	return brokenpowerlaw1D(x, xp, p1, p2) * \
+			scipy.stats.norm.pdf(np.log10(y), loc=np.log10(y0), scale=dy)
+
 def bimodal2D(x, y, rp0, rxp, rp1, rp2, ry, ryw, gxp, gp1, gp2, gy, gyw):
 	''' Bimodal distribution where each component (r,g) is a broken power law in `x` 
 	and a lognormal in `y`
@@ -51,7 +69,7 @@ def bimodal2D(x, y, rp0, rxp, rp1, rp2, ry, ryw, gxp, gp1, gp2, gy, gyw):
 	Args:
 		x(np.array): x
 		y(np.array): y
-		rp0(float): normalisation of r component
+		rp0(float): ratio of rocky `r` component versus gaseous `g` component
 		rxp(float): break in x
 		rp1(float): power law index at x<xp
 		rp2(float): power law index at x>xp
@@ -60,8 +78,6 @@ def bimodal2D(x, y, rp0, rxp, rp1, rp2, ry, ryw, gxp, gp1, gp2, gy, gyw):
 	Note:		
 		Only works with support for a non-separable function in x and y
 	'''
-	rocky= rp0 * brokenpowerlaw1D(x, rxp, rp1, rp2) * \
-			norm.pdf(np.log10(y), loc=np.log10(ry), scale=ryw)
-	gas=   brokenpowerlaw1D(x, gxp, gp1, gp2) * \
-			norm.pdf(np.log10(y), loc=np.log10(gy), scale=gyw)
+	rocky= rp0 * lognormal_size(x, y, rxp, rp1, rp2, ry, ryw)
+	gas=   lognormal_size(x, y, gxp, gp1, gp2, gy, gyw)
 	return rocky+gas

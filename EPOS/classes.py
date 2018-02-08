@@ -8,7 +8,7 @@ see example.py for a simple demonstration of the class
 
 import numpy as np
 import cgs
-from EPOS import multi
+import EPOS.multi
 from EPOS.plot.helpers import set_pyplot_defaults
 
 class fitparameters:
@@ -134,9 +134,11 @@ class epos:
 		plotdir(str): plot directory
 		RV(bool): Compare to Radial Velocity instead of transit data
 		Multi(bool): Do multi-planet statistics
-		RandomPairing(bool): multis are randomly paired
+		RandomPairing(bool): multis are randomly paired'''
+Plots the exoplanet survey: observed planets and completeness
+'''
 		Isotropic(bool): Assume isotropic mutual inclinations
-		populationtype(str): type of planet population. 'parametric' or 'model'
+		Parametric(bool): parametric planet population?
 		Debug(bool): Verbose logging
 		seed(int): Random seed, int or None
     """
@@ -152,7 +154,8 @@ class epos:
 		self.RandomPairing= False
 		self.Isotropic= False # phase out?
 		
-		self.populationtype=None # ['parametric','model']
+		#self.populationtype=None # ['parametric','model']
+		#self.Parametric=None
 
 		# Seed for the random number generator
 		if seed is None: self.seed= None
@@ -211,14 +214,14 @@ class epos:
 		# print some stuff
 		print '\nObservations:\n  {} stars'.format(int(nstars))
 		print '  {} planets'.format(self.obs_starID.size)
-		multi.indices(self.obs_starID, Verbose=True)
+		EPOS.multi.indices(self.obs_starID, Verbose=True)
 		epos.multi={}
 		epos.multi['bin'], epos.multi['count']= \
-			multi.frequency(self.obs_starID, Verbose=True)
+			EPOS.multi.frequency(self.obs_starID, Verbose=True)
 		epos.multi['pl cnt']= epos.multi['bin']* epos.multi['count']
 		epos.multi['Pratio'], epos.multi['Pinner']= \
-			multi.periodratio(self.obs_starID, self.obs_xvar, Verbose=True)
-		epos.multi['cdf']= multi.cdf(self.obs_starID, Verbose=True)	
+			EPOS.multi.periodratio(self.obs_starID, self.obs_xvar, Verbose=True)
+		epos.multi['cdf']= EPOS.multi.cdf(self.obs_starID, Verbose=True)	
 		
 	def set_survey(self, xvar, yvar, eff_2D, Rstar=1.0, Mstar=1.0):
 		'''Survey detection efficiency (completeness)
@@ -325,7 +328,7 @@ class epos:
 		self.X, self.Y= np.meshgrid(self.MC_xvar, self.MC_yvar, indexing='ij')
 		
 		''' Prep the grid for the PDF, if using a mass-radius conversion'''
-		if self.populationtype is 'parametric':
+		if self.PDF:
 			if self.MassRadius:
 				self.in_ytrim= self.masslimits
 				self.in_yvar= np.logspace(*np.log10(self.in_ytrim))
@@ -352,7 +355,8 @@ class epos:
 		
 		if Occ:
 			if self.MassRadius:
-				raise Valuerror('Plotting occurrence with mass-radius not yet supported')
+				raise ValuError('Plotting occurrence with mass-radius not yet supported')
+				#pass
 				
 			if not hasattr(self,'occurrence'):
 				self.occurrence={}
@@ -370,7 +374,6 @@ class epos:
 			focc['yzoom']['x']= [[i,j] for i,j in zip(xgrid[:-1],xgrid[1:])]
 			focc['yzoom']['y']= [self.yzoom]* (xgrid.size-1)
 			
-	
 	def set_bins(self, xbins=[[1,10]], ybins=[[1,10]],xgrid=None, ygrid=None,Grid=False):
 		'''
 		Initialize period-radius (or mass) bins for occurrence rate calculations
@@ -443,113 +446,98 @@ class epos:
 		Args:
 			func (function): callable function
 		
-		'''
-		if self.populationtype is None:
-			self.populationtype='parametric'
-		elif self.populationtype is not 'parametric':
-			raise ValueError('You have already defined a planet population ({})'.format(self.populationtype))
-		
-		if not callable(func): raise ValueError('func is not a callable function')
-		
+		'''		
+		if not callable(func): raise ValueError('func is not a callable function')		
 		self.func=func
-		self.fitpars= fitparameters()
+		
+		self.pdfpars= fitparameters()
+		
+		self.Parametric= True
+		self.PDF=True	
+		self.fitpars=self.pdfpars
 		
 	def set_multi(self, spacing=None):
-		if self.populationtype is not 'parametric':
+		if not self.Parametric:
 			raise ValueError('Define a parametric planet population first')
 		self.Multi=True
 		
 		self.RandomPairing= (spacing==None)
 		self.spacing= spacing # None, brokenpowerlaw, dimensionless
 	
-	def add_population(self, name, sma, mass, 
-					inc=None, tag1=None, Verbose=False, weight=1.):
-		# tag is fit parameter, i.e. metallicity or surface density
-		if self.populationtype is None:
-			self.populationtype='model'
-			self.groups=[]
-			self.mod_xlim=[np.inf,0]
-			self.mod_ylim=[np.inf,0]
-		elif self.populationtype is not 'model':
-			raise ValueError('You have already defined a planet population ({})'.format(self.populationtype))
+	def set_population(self, name, sma, mass, 
+					inc=None, starID=None, tag=None, Verbose=False):
+		# tag is fit parameter, i.e. metallicity, surface density, or model #
+
+		if hasattr(self, 'pfm'):
+			raise ValueError('expand: adding multiple populations?')
 		
-		print '\nLoading subgroup {} '.format(name)
+		self.Parametric=False
+		self.modelpars= fitparameters()
+		self.fitpars= self.modelpars
 		
+		# length checks
 		try:
-			if len(sma) is not len(mass): raise ValueError('sma ({}) and mass ({}) not same length'.format(sma,mass))
-		except: raise ValueError('sma ({}) and mass ({}) have to be iterable'.format(type(sma), type(mass)))
+			if len(sma) != len(mass): 
+				raise ValueError('sma ({}) and mass ({}) not same length'.format(len(sma),len(mass)))
+		except: 
+			raise ValueError('sma ({}) and mass ({}) have to be iterable'.format(type(sma), type(mass)))
 		
 		# model has mutual inclinations?
-		Inc= inc is not None
-		if not Inc:
+		self.Multi= (inc != None)
+		
+		pfm= self.pfm= {}
+		pfm['name']= name
+		
+		# lexsort?
+		pfm['sma']= np.asarray(sma)
+		pfm['M']= np.asarray(mass)
+		pfm['ID']= np.arange(len(sma)) if starID is None else np.asarray(starID)
+		if tag is not None:
+			pfm['tag']= np.asarray(tag)		
+		if inc is None:
 			self.Multi=False
 		else:
-			self.Multi=True # no mix of T/F
+			self.Multi= True
+			pfm['inc']= np.asarray(inc)
 		
-		sg={}
-		sg['name']= name
-		sg['n']= len(sma)
-		sg['system']=[] # remains empty if list
-		sg['weight']= weight
+		pfm['P']= pfm['sma']**1.5 * 365.25 # update
+		#pfm['dP']= ??
+		
+		pfm['np']= pfm['ID'].size
+		pfm['ns']= np.unique(pfm['ID']).size
 
-		# list of lists or 1-dim list?
-		#print type(sma[0]) 
-		if type(sma[0]) is list or type(sma[0]) is np.ndarray:
-			# loop over systems
-			for k, (L_sma, L_mass) in enumerate(zip(sma, mass)):
-				#assert type(L_sma) is list
-				sg['system'].append({})
-				order= np.argsort(L_sma)
-				_sma=	sg['system'][-1]['sma']= np.array(L_sma)[order]
-				_P=		sg['system'][-1]['P']= _sma**1.5 * 365.25 # 
-				_mass=	sg['system'][-1]['mass']= np.array(L_mass)[order]
-				sg['system'][-1]['np']= len(L_sma)
-				sg['system'][-1]['ID']= np.array([k+1]*len(L_sma))
-				
-				# quick ratio, nan for first planet
-				dP= sg['system'][-1]['P ratio']= np.full_like(_P, np.nan)
-				if _P.size>1:
-					dP[1:]= _P[1:]/_P[:-1]
-				
-				# inc (can't zip if variable is None)
-				if Inc: sg['system'][-1]['inc']= np.array(inc[k])[order]
-				
-			sg['all_sma']= 	np.concatenate([plsys['sma'] for plsys in sg['system']])
-			sg['all_mass']=	np.concatenate([plsys['mass'] for plsys in sg['system']])
-			sg['all_P']= 	np.concatenate([plsys['P'] for plsys in sg['system']])
-			sg['all_ID']= 	np.concatenate([plsys['ID'] for plsys in sg['system']])
-			sg['all_Pratio']= np.concatenate([plsys['P ratio'] for plsys in sg['system']])
-			if Inc: sg['all_inc']= np.concatenate([plsys['inc'] for plsys in sg['system']])
-				
-		else:
-			sg['all_sma']= 		np.asarray(sma)
-			sg['all_mass']=		np.asarray(mass)
-			#sg['all_ID']= 	
-			if Inc: sg['inc']=	np.asarray(inc)
-			if tag1 is not None: sg['all_tag1']= np.asarray(tag1)
-	
-		#sg['all_P']= sg['all_sma']**1.5 * 365.25
+		''' If multiple planets per stars: Lexsort, period ratio'''
+		if pfm['np'] > pfm['ns']:
+			order= np.lexsort((pfm['sma'],pfm['ID'])) # sort by ID, then sma
+			for key in ['ID','sma','M','P','inc','tag']:
+				if key in pfm: pfm[key]=pfm[key][order]
 			
-		print '  {} planetary systems'.format(sg['n'])
-		if Verbose:
-			# print '\nLoaded subgroup {} with {} planetary systems'.format(sg['name'], sg['n'])
-			for system in sg['system']:
-				print 'system has {} planets, {:.1f} Mearth:'.format(
-					system['np'],np.sum(system['mass']))
-				for a,m in zip(system['sma'], system['mass']):
-					print '  {:.2f} au, {:.1f} Mearth'.format(a,m)
-				#print sg['all_Pratio']
-				#print
+			EPOS.multi.indices(pfm['ID'], Verbose=True)
+			EPOS.multi.frequency(pfm['ID'], Verbose=True)
+			
+			single, multi, ksys, multis= EPOS.multi.nth_planet(pfm['ID'],pfm['P'])
+			pfm['dP']=np.ones_like(pfm['P'])
+			pfm['dP'][single]= 0 #np.nan
+			for km in multis[1:]:
+				# 2nd, 3rd, 4th??
+				pfm['dP'][km]= pfm['P'][km]/pfm['P'][np.array(km)-1]
+# 			print pfm['ID'][1:6]
+# 			print pfm['P'][1:6]
+# 			print pfm['dP'] # not ok?
+
+		pfm['M limits']=[np.min(pfm['M']),np.max(pfm['M'])]
+		pfm['P limits']=[np.min(pfm['P']),np.max(pfm['P'])]
 		
 		# set plot limits in model 5% wider than data
-		xmin,xmax= min(sg['all_sma']), max(sg['all_sma'])
-		ymin,ymax= min(sg['all_mass']), max(sg['all_mass'])
+		xmin,xmax= min(pfm['P']), max(pfm['P'])
+		ymin,ymax= min(pfm['M']), max(pfm['M'])
 		dx= (xmax/xmin)**0.05
 		dy= (ymax/ymin)**0.05
-		self.mod_xlim=[min(xmin/dx, self.mod_xlim[0]),max(xmax*dx, self.mod_xlim[1])]
-		self.mod_ylim=[min(ymin/dy, self.mod_ylim[0]),max(ymax*dy, self.mod_ylim[1])]
+		self.mod_xlim=[xmin/dx, xmax*dx]
+		self.mod_ylim=[ymin/dy, ymax*dy]
+# 		self.mod_xlim=[min(xmin/dx, self.mod_xlim[0]),max(xmax*dx, self.mod_xlim[1])]
+# 		self.mod_ylim=[min(ymin/dy, self.mod_ylim[0]),max(ymax*dy, self.mod_ylim[1])]
 		
-		self.groups.append(sg)
 	
 	def set_massradius(self, MR, name, masslimits= [0.01,1e3]):
 		print '\nMass-Radius relation from {}'.format(name)

@@ -1,16 +1,19 @@
-import matplotlib
-matplotlib.use('Agg')
+import matplotlib, warnings
+#warnings.filterwarnings("ignore", category=UserWarning, module='matplotlib')
+with warnings.catch_warnings():
+	warnings.simplefilter("ignore")
+	matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
 from EPOS import regression
-import survey, parametric, multi, massradius, helpers
+import survey, parametric, multi, massradius, helpers, model
 
 clrs= ['r','g','b','m'] # in epos.prep
 fmt_symbol= {'ls':'', 'marker':'o', 'mew':2, 'ms':8,'alpha':0.6}
 
-def all(epos):
+def all(epos, color=None):
 	print '\nPlotting input...'
 
 	survey.observed(epos, PlotBox=False)
@@ -22,26 +25,42 @@ def all(epos):
 		survey.completeness(epos, PlotBox=True)
 		if not epos.RV: survey.completeness(epos, PlotBox=True, Transit=True)
 	
-	if epos.populationtype is 'parametric':
+	if epos.Parametric:
 		parametric.oneD(epos)
 		parametric.twoD(epos)
 		parametric.panels(epos)
-	elif epos.populationtype is 'model':
-		input(epos, PlotBox=False)
-		input_diag(epos, PlotBox=False)
-		if 'all_Pratio' in epos.groups[0]:
-			Pratio(epos)
-		if 'all_inc' in epos.groups[0]:
-			inclination(epos)
+	else:
+		model.panels_mass(epos, color=color)
+		if hasattr(epos, 'func'):
+			model.panels_mass(epos, Population=True, color=color)
+		if hasattr(epos, 'occurrence'):
+			if 'planet' in epos.occurrence:	
+				model.panels_radius(epos, Occurrence=True, color=color)
+			if 'model' in epos.occurrence:
+				model.panels_radius(epos, Observation=True, color=color)
+		if 'inc' in epos.pfm:
+			model.inclination(epos, color=color)
+		if 'dP' in epos.pfm:
+			model.periodratio(epos, color=color)
+			
+# 		input(epos, PlotBox=False)
+# 		input_diag(epos, PlotBox=False)
+# 		if 'all_Pratio' in epos.groups[0]:
+# 			Pratio(epos)
+# 		if 'all_inc' in epos.groups[0]:
+# 			inclination(epos)
 
-	if not epos.Isotropic:
-		multi.periodradius(epos, MC=False)
-		multi.periodradius(epos, MC=False, Nth=True)
-		multi.multiplicity(epos, MC=False)
-		multi.periodratio(epos, MC=False)
-		multi.periodratio_cdf(epos, MC=False)
-		multi.periodinner(epos, MC=False)
-		multi.periodinner_cdf(epos, MC=False)
+	if epos.Multi:
+		if epos.Parametric:
+			multi.periodradius(epos, MC=False)
+			multi.periodradius(epos, MC=False, Nth=True)
+			multi.multiplicity(epos, MC=False)
+			multi.periodratio(epos, MC=False)
+			multi.periodratio_cdf(epos, MC=False)
+			multi.periodinner(epos, MC=False)
+			multi.periodinner_cdf(epos, MC=False)
+		else:
+			pass
 		
 	if epos.MassRadius: 
 		massradius.massradius(epos, MC=False)
@@ -161,76 +180,4 @@ def input_diag(epos, PlotBox=True):
 	
 	helpers.save(plt, epos.plotdir+'input/model_planets.diag')
 
-def inclination(epos):
-	assert epos.populationtype is 'model'
-	
-	for k, sg in enumerate(epos.groups):
-		f, ax = plt.subplots()
-		ax.set_title('Input Inclination {}'.format(sg['name']))
-	
-		ax.set_xlabel('Semi-Major Axis [au]')
-		#ax.set_ylabel(r'Planet Mass [M$_\bigoplus$]')
-		ax.set_ylabel('Inclination [degree]')
-
-		ax.set_xlim(epos.mod_xlim)
-		ax.set_ylim(0.01,90)
-
-		ax.set_xscale('log')
-		ax.set_yscale('log')
-
-		ax.axhspan(1.0, 2.2, facecolor='0.5', alpha=0.5,lw=0.1)
-		ax.axhline(1.6, color='0.5', ls='-')
-		
-		ax.axhline(np.median(sg['all_inc']), color=clrs[k % 4], ls='--')
-		ax.plot(sg['all_sma'], sg['all_inc'], color=clrs[k % 4], **fmt_symbol)
-
-		helpers.save(plt, epos.plotdir+'input/inc.sma.{}'.format(sg['name']))
-
-def Pratio(epos):
-	# these plots don't seem very useful due to unfinished planet formation...
-	assert epos.populationtype is 'model'
-	
-	for k,sg in enumerate(epos.groups):
-		f, ax = plt.subplots()
-		ax.set_title('Input Period Ratio {}'.format(sg['name']))
-	
-		ax.set_xlabel('Semi-Major Axis [au]')
-		#ax.set_ylabel(r'Planet Mass [M$_\bigoplus$]')
-		ax.set_ylabel('P2/P1')
-
-		ax.set_xlim(epos.mod_xlim)
-		ax.set_ylim(0.1,100)
-
-		ax.set_xscale('log')
-		ax.set_yscale('log')
-
-		ax.axhspan(1.3, 3.1, facecolor='0.5', alpha=0.5)
-		ax.axhline(1.9, color='0.5', ls='-')
-		
-		ax.axhline(np.median(sg['all_Pratio']), color=clrs[k % 4], ls='--')
-		#Pratio= np.isfinite()
-		ax.plot(sg['all_sma'], sg['all_Pratio'], color=clrs[k % 4], **fmt_symbol)
-
-		helpers.save(plt, epos.plotdir+'input/Pratio.sma.{}'.format(sg['name']))
-
-
-		f, ax = plt.subplots()
-		ax.set_title('Input Period Ratio {}'.format(sg['name']))
-	
-		ax.set_xlabel(r'Planet Mass [M$_\bigoplus$]')
-		ax.set_ylabel('P2/P1')
-
-		ax.set_xlim(epos.mod_ylim)
-		ax.set_ylim(0.1,100)
-
-		ax.set_xscale('log')
-		ax.set_yscale('log')
-
-		ax.axhspan(1.2, 4.0, facecolor='0.5', alpha=0.5)
-		ax.axhline(2.2, color='0.5', ls='-')
-		
-		#Pratio= np.isfinite()
-		ax.plot(sg['all_mass'], sg['all_Pratio'], color=clrs[k % 4], **fmt_symbol)
-
-		helpers.save(plt, epos.plotdir+'input/Pratio.mass.{}'.format(sg['name']))
 

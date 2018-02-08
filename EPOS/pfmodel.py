@@ -1,11 +1,12 @@
 import h5py
 import glob
 import numpy as np
+import sys, os
+
 import cgs
-import sys
 
 #def symba(name='HMSim1', dir='hdf5/Sim1', plts_mass=0, istep=None, Verbose=False):
-def symba(fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False):
+def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False):
 	''' 
 	returns a list of planetary systems
 	sma in au
@@ -13,82 +14,118 @@ def symba(fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False):
 	remove planetesimals (m < plt_mass)
 	cut planets that are still forming (m < cut*au)
 	'''
-	print '\nProcessing Symba HDF5 file'
-	#fname= '{}/{}_set??.h5'.format(dir,name)
-	flist= glob.glob(fname)
-	if len(flist)==0: raise ValueError('file not found: {}'.format(fname))
 	
-	sma, mass, inc= [], [], []
-	sma0, mass0=[], []
-	symbamassunit= cgs.Msun/cgs.Mearth / (2.*np.pi)**2.
+	dir= 'npz/{}'.format(name)
+	if not os.path.exists(dir): os.makedirs(dir)
+	fnpz= '{}/{}.npz'.format(dir, name)	
 	
-	for i,fname in enumerate(flist):
-		with h5py.File(fname,'r') as hf:
+	''' Load hdf5 file or npz dictionary for quicker access'''
+	if os.path.isfile(fnpz):
+		print '\nLoading saved status from {}'.format(fnpz)
+		npz= np.load(fnpz)
+				
+		# check if keys present
+		for key in ['sma','mass','inc','starID']:
+			if not key in npz: 
+				raise ValueError('Key {} not present\n{}'.format(key,npz.keys()))
+	else:
+		print '\nProcessing Symba HDF5 file for {}'.format(name)
+		#fname= '{}/{}_set??.h5'.format(dir,name)
+		flist= glob.glob(fname)
+		if len(flist)==0: 
+			raise ValueError('file not found: {}'.format(fname))
+		else:
+			if Verbose: print '  {} files'.format(len(flist))
+	
+		sma, mass, inc, ID= [], [], [], []
+		#sma0, mass0=[], []
+		symbamassunit= cgs.Msun/cgs.Mearth / (2.*np.pi)**2.
+	
+		for i,fname in enumerate(flist):
+			with h5py.File(fname,'r') as hf:
 
-			# get final steps
-			if istep is None:
-				nsteps=0
+				# get final steps
+				if istep is None:
+					nsteps=0
+					for particle in hf:
+						nsteps=max(nsteps, hf.get(particle).shape[0])
+				else:
+					nsteps=istep
+
+				if Verbose: 
+					print '\n{}, step {}'.format(fname, nsteps)
+				else:
+					amtDone= float(i)/len(flist)
+					print '\r  [{:50s}] {:5.1f}%'.format('#' * int(amtDone * 50), amtDone * 100),
+					sys.stdout.flush() 
+			
+				L_sma, L_mass, L_inc= [], [], []
+				#L_sma0, L_mass0= [], []
+			
 				for particle in hf:
-					nsteps=max(nsteps, hf.get(particle).shape[0])
-			else:
-				nsteps=istep
+					#if Verbose: print particle, hf.get(particle).shape[0]
+					if hf.get(particle).shape[0] == nsteps:
+						final_architecture= np.array(hf.get(particle))[-1,:]
+						#print final_architecture.shape
 
-			if Verbose: 
-				print '  {}: Using planetary system at step {}'.format(fname, nsteps)
-			else:
-				amtDone= float(i)/len(flist)
-				print '\r  [{:50s}] {:5.1f}%'.format('#' * int(amtDone * 50), amtDone * 100),
-				sys.stdout.flush() 
-			
-			L_sma, L_mass, L_inc= [], [], []
-			L_sma0, L_mass0= [], []
-			
-			for particle in hf:
-				#if Verbose: print particle, hf.get(particle).shape[0]
-				if hf.get(particle).shape[0] == nsteps:
-					final_architecture= np.array(hf.get(particle))[-1,:]
-					#print final_architecture.shape
+						_mass= final_architecture[8]* symbamassunit
+						_sma= final_architecture[2]
+						if (_mass > plts_mass) & (_mass > cut * _sma**1.5):
+							L_sma.append(_sma)
+							L_mass.append(_mass)
+							L_inc.append(final_architecture[4])
+							ID.append(i)
+						#if not 'time' in sg: sg['time']= final_architecture[0]/1e6
+				
+					# 			# print '\nLoaded subgroup {} with {} planetary systems'.format(sg['name'], sg['n'])
+	# 			for system in sg['system']:
+	# 				print 'system has {} planets, {:.1f} Mearth:'.format(
+	# 					system['np'],np.sum(system['mass']))
+	# 				for a,m in zip(system['sma'], system['mass']):
+	# 					print '  {:.2f} au, {:.1f} Mearth'.format(a,m)
+					#print sg['all_Pratio']
 
- 					_mass= final_architecture[8]* symbamassunit
- 					_sma= final_architecture[2]
- 					if (_mass > plts_mass) & (_mass > cut * _sma**1.5):
-						L_sma.append(_sma)
-						L_mass.append(_mass)
-						L_inc.append(final_architecture[4])
-					#if not 'time' in sg: sg['time']= final_architecture[0]/1e6
 				
-				#initial_condition= np.array(hf.get(particle))[0,:]
-				#print hf.get(particle).shape
-				#L_sma0.append(initial_condition[2]) ?? crashes at HMSim3
-				#L_mass0.append(initial_condition[8]* symbamassunit)
+					#initial_condition= np.array(hf.get(particle))[0,:]
+					#print hf.get(particle).shape
+					#L_sma0.append(initial_condition[2]) ?? crashes at HMSim3
+					#L_mass0.append(initial_condition[8]* symbamassunit)
 				
-				# -Col 1: time in yrs
-				# -Col 2: Body identifier
-				# -Col 3: Semi major axis
-				# -Col 4: Eccentricity
-				# -Col 5: Inclination
-				# -Col 6: Longitude of ascending node
-				# -Col 7: Argument of Periapsis
-				# -Col 8: Mean anomaly at epoch
-				# -Col 9: Mass in units where 1 solar mass = (2*pi)^2
+					# -Col 1: time in yrs
+					# -Col 2: Body identifier
+					# -Col 3: Semi major axis
+					# -Col 4: Eccentricity
+					# -Col 5: Inclination
+					# -Col 6: Longitude of ascending node
+					# -Col 7: Argument of Periapsis
+					# -Col 8: Mean anomaly at epoch
+					# -Col 9: Mass in units where 1 solar mass = (2*pi)^2
 			
-			# story copy(?) in list of planetary systems
-			sma.append(L_sma)
-			mass.append(L_mass)
-			inc.append(L_inc)
-			#sma0.append(L_sma0)
-			#mass0.append(L_mass0)
-		if not Verbose: print '\r  [{:50s}] {:.1f}%'.format('#' * int(1 * 50), 1 * 100),
-	
-# 	print sma0
-# 	sma_min= min([min(x) for x in sma0])
-# 	sma_max= max([max(x) for x in sma0])
-# 	print '{}: {:.2f}-{:.1f} au'.format(name, sma_min,sma_max)
-#	print '    {:.3f}-{:.3f} Mearth'.format(name, np.min(mass0),np.max(sma))
-	 
+				# print system properties:
+				if Verbose:
+					print 'System {} has {} planets, {:.1f} Mearth:'.format(
+						i, len(L_sma),np.sum(L_mass))
+					for a,m in zip(L_sma, L_mass):
+						print '  {:.2f} au, {:.1f} Mearth'.format(a,m)
 			
-	return sma, mass, inc
-	#return {'sma':sma, 'mass':mass, 'inc':inc}
+				sma.extend(L_sma)
+				mass.extend(L_mass)
+				inc.extend(L_inc)
+				#ID (set in loop)
+			
+				#sma0.append(L_sma0)
+				#mass0.append(L_mass0)
+			if not Verbose: print '\r  [{:50s}] {:.1f}%'.format('#' * int(1 * 50), 1 * 100),
+		
+		npz={'sma':np.asarray(sma), 'mass':np.asarray(mass), 
+			'inc':np.asarray(inc), 'starID':np.asarray(ID)}
+		
+		print 'Saving status in {}'.format(fnpz)
+		#np.save(fname, epos.chain)
+		# compression slow on loading?
+		np.savez_compressed(fnpz, **npz)
+		
+	return npz
 	
 def mercury(fname, istep=None, Verbose=False):
 	print '\nProcessing Mercury file'

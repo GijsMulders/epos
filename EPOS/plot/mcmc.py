@@ -22,7 +22,7 @@ def all(epos):
 		except NameError:
 			print '  (skipping corner plot)'
 		
-		if epos.populationtype is 'parametric':
+		if epos.Parametric:
 			parametric.oneD(epos, MCMC=True)
 			parametric.twoD(epos, MCMC=True)
 		

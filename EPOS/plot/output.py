@@ -10,10 +10,8 @@ def all(epos):
 
 	print '\nPlotting output...'
 	
-	Parametric= epos.populationtype == 'parametric'
-	
-	periodradius.periodradius(epos, Parametric=Parametric, SNR=False)
-	periodradius.periodradius(epos, Parametric=Parametric, SNR=True)
+	periodradius.periodradius(epos, Parametric=epos.Parametric, SNR=False)
+	periodradius.periodradius(epos, Parametric=epos.Parametric, SNR=True)
 	
 	periodradius.cdf(epos)
 	periodradius.panels(epos)
@@ -41,7 +39,7 @@ def all(epos):
 		massradius.massradius(epos, MC=True)
 		massradius.massradius(epos, MC=True, Log=True)
 
-	if epos.populationtype is 'model':			
+	if not epos.Parametric:			
 		# Inclinations and period ratios of observed systems
 		# NOTE: These are not observable parameters
 		if 'all_Pratio' in epos.groups[0]: 

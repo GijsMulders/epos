@@ -16,7 +16,7 @@ def oneD(epos, PlotZoom=False, MCMC=False, Occ=False):
 		# works with occ??
 		oneD_y(epos, PlotZoom=PlotZoom, MCMC=MCMC, PlotQ=True)
 
-def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False):	
+def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True):	
 
 	if Occ:
 		fname= 'occurrence/posterior' if MCMC else 'occurrence/input'
@@ -42,9 +42,12 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False):
 	ax.set_xlabel('Orbital Period [days]')
 	ax.set_ylabel('Occurrence / {} P'.format(epos.plotpars['area']))
 	ax.set_xscale('log')
-	ax.set_yscale('log')
 	ax.set_xlim(epos.xtrim)
-	ax.set_ylim([1e-3,1e1])
+	if Log:
+		ax.set_yscale('log')
+		ax.set_ylim([1e-3,1e1])
+	else:
+		ax.set_ylim([0,0.5])
 	
 	if MCMC:
 		for fpara in plotsample:
@@ -160,7 +163,7 @@ def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False):
 def twoD(epos, PlotZoom=False, MCMC=False):
 	
 	# where does this go -> run.py
-	assert epos.populationtype is 'parametric'
+	assert epos.Parametric
 	if not epos.Range: epos.set_ranges()
 
 	# pdf

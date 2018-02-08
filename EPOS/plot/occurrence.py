@@ -12,26 +12,29 @@ clrs= ['r','g','b','m'] # in epos.prep
 
 def all(epos):
 	assert epos.Observation
-	if not hasattr(epos, 'occurrence'):
-		print '\nNo occurrence to plot, did you run EPOS.occurrence.all()? \n'
+	if hasattr(epos, 'occurrence'):
 		
-	if 'planet' in epos.occurrence:
-		colored(epos)
+		if 'planet' in epos.occurrence:
+			colored(epos)
 		
-	if 'bin' in epos.occurrence:
-		colored(epos, Bins=True)
-		#binned(epos)
+		if 'bin' in epos.occurrence:
+			colored(epos, Bins=True)
+			#binned(epos)
 	
-		if 'eta0' in epos.occurrence['bin']:
-			integrated(epos)
-			if 'eta' in epos.occurrence['bin']:
-				integrated(epos, MCMC=True)
+			if 'eta0' in epos.occurrence['bin']:
+				integrated(epos)
+				if 'eta' in epos.occurrence['bin']:
+					integrated(epos, MCMC=True)
+					integrated(epos, MCMC=True,Planets=True)
 
-	if 'xzoom' in epos.occurrence:
-		if epos.populationtype is 'parametric':
-			parametric.oneD(epos, Occ=True)
-			if hasattr(epos, 'chain'):
-				 parametric.oneD(epos, Occ=True, MCMC=True)
+		if 'xzoom' in epos.occurrence:
+			if epos.Parametric:
+				parametric.oneD(epos, Occ=True)
+				if hasattr(epos, 'chain'):
+					 parametric.oneD(epos, Occ=True, MCMC=True)
+	else:
+		print '\nNo occurrence to plot, did you run EPOS.occurrence.all()? \n'
+
 	
 def colored(epos, Bins=False):
 	
@@ -95,7 +98,7 @@ def colored(epos, Bins=False):
 	else:
 		helpers.save(plt, epos.plotdir+'occurrence/colored')
 		
-def integrated(epos, MCMC=False):
+def integrated(epos, MCMC=False, Planets=False):
 	
 	f, (ax, axb) = plt.subplots(1,2, gridspec_kw = {'width_ratios':[20, 1]})
 	f.subplots_adjust(wspace=0)
@@ -147,6 +150,11 @@ def integrated(epos, MCMC=False):
 				occbin['eta+'][k],occbin['eta-'][k]
 				), va='top',size=size)
 
+	''' overplot planets '''
+	if Planets:
+		ax.plot(epos.obs_xvar, epos.obs_yvar, 
+			ls='', marker='.', mew=0, ms=5, alpha=1, color='k')
 
 	fname= 'posterior' if MCMC else 'integrated'
+	if Planets: fname+= '.planets'
 	helpers.save(plt, epos.plotdir+'occurrence/'+fname)

@@ -88,6 +88,29 @@ def make_panels(plt):
 
 	return f, (ax, axR, axP)
 
+def make_panels_right(plt):
+	gs = gridspec.GridSpec(2, 2,
+                       width_ratios=[20, 6],
+                       height_ratios=[10, 4]
+                       )
+	f= plt.figure()
+	f.subplots_adjust(wspace=0, hspace=0)
+	
+	ax = plt.subplot(gs[0, 0])	
+	#axb = plt.subplot(gs[0, 2])	
+
+	axR = plt.subplot(gs[0, 1])
+	axP = plt.subplot(gs[1, 0])
+
+	ax.tick_params(direction='in', which='both', top=True)
+	ax.tick_params(direction='out', which='both', left=True, top=False)
+	
+	axR.yaxis.tick_right()
+	#axR.tick_params(direction='out', which='both', right=True, left=False)
+	#axR.yaxis.set_label_position('right')
+			
+	return f, (ax, axR, axP)
+
 def make_panels_clrbar(plt):
 	gs = gridspec.GridSpec(2, 3,
                        width_ratios=[6, 20, 1],

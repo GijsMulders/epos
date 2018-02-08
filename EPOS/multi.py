@@ -20,7 +20,7 @@ def indices(ID, Verbose=False):
 	'''
 	IDsys, toplanet, counts= np.unique(ID, return_inverse=True,return_counts=True)
 	if Verbose:
-		print '  {} single systems, {} multis'.format(np.sum(counts==1),np.sum(counts>1))
+		print '\n  {} singles, {} multis'.format(np.sum(counts==1),np.sum(counts>1))
 	
 	single=(counts==1)[toplanet]
 	multi= (counts>1)[toplanet]
@@ -52,10 +52,14 @@ def nth_planet(ID, P):
 
 	single=(counts==1)[toplanet]
 	multi= (counts>1)[toplanet]
+
+	ksys= range(1, len(np.bincount(counts))) # [1,2,3,...n]
+	#ksys= range(2, len(np.bincount(counts)))
 	
-	ksys= range(1, len(np.bincount(counts)))
-	multis=  [i1[counts>1]]
+	multis=  [i1[counts>1]] # 1st planet in multi
 	for i in ksys[1:]:
+	#for i in ksys:
+		# 2nd, 3rd, ..
 		multis.append([i1[counts>=i]+(i-1)])
 		
 	return single, multi, ksys, multis
@@ -90,7 +94,7 @@ def cdf(ID, Verbose=False):
 
 def periodratio(ID, P, N=None, Verbose=False):
 	'''
-	returns the period ratios of adjacent planets
+	returns the period ratios of adjacent planets as a list
 	'''
 	IDsys, toplanet, counts= np.unique(ID, return_inverse=True,return_counts=True)
 
@@ -107,11 +111,11 @@ def periodratio(ID, P, N=None, Verbose=False):
 	for i in range(2,len(np.bincount(counts)) ):
 		#print '\nmultiplicity: {}'.format(i)
 		im= i1[counts>=i] # multis with 
-		dP= P[im+(i-1)]/P[im+(i-2)]
+		_dP= P[im+(i-1)]/P[im+(i-2)]
 		#for k, _dP in zip(im,Pratio):
 		#	print ' ID {}, P={}, dP= {}'.format(ID[k], P[ID==ID[k]], _dP)
 		#print 'i={}: {}'.format(i,dP.size)
-		Pratio.extend(dP)
+		Pratio.extend(_dP)
 	#print 'n dP= {}'.format(len(Pratio))
 	
 	if N is None:

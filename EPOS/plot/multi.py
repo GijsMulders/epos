@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
+import scipy.stats
 
 import helpers
 import EPOS.multi
@@ -14,7 +15,7 @@ if matplotlib.__version__[0] != 2:
 
 def polar(epos):
 	'''
-	Plot plane populations as a half circle (not quite working) 
+	Plot planet populations as a half circle (not quite working) 
 	'''
 	# plot multiplicity
 	f, axlist = plt.subplots(2,2, subplot_kw=dict(projection='polar'))
@@ -309,13 +310,12 @@ def periodratio(epos, MC=False, N=False, Input=False, MCMC=False):
 		#ax.axvline(np.median(epos.multi['Pratio']), color='0.7', ls='--')
 	
 	''' input distribution '''	
-	if Input and epos.populationtype=='parametric':
+	if Input and epos.Parametric:
 		#Pgrid=bins
 		Pgrid= np.logspace(0,1)
 		pdf, _= draw_dP(epos, Pgrid=Pgrid)
 		pdf*= 0.95* ax.get_ylim()[1] / max(pdf)	
 		ax.plot(Pgrid, pdf, marker='', ls='-', color='r',label='input')
-
 
 	elif epos.Zoom:
 		# Observed zoom
@@ -367,7 +367,7 @@ def periodratio_cdf(epos, Input=True, MC=False):
 	ax.plot(Psort, cdf ,color='gray' if MC else 'k', label='Kepler all')	
 	
 # 	''' input distribution '''	
-# 	if Input and epos.populationtype=='parametric':
+# 	if Input and epos.Parametric:
 # 		Pgrid= np.logspace(0,1)
 # 		_, cdf= draw_dP(epos, Pgrid=Pgrid)
 # 		ax.plot(Pgrid, cdf, marker='', ls='-', color='r',label='input')
@@ -387,7 +387,7 @@ def periodratio_cdf(epos, Input=True, MC=False):
 def periodinner(epos, MC=False, N=False, Input=False, MCMC=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
-	ax.set_title('period innermost planet')
+	ax.set_title('Period innermost planet')
 	ax.set_xlabel('Orbital Period [days]')
 	ax.set_ylabel('PDF')
 
@@ -424,7 +424,7 @@ def periodinner(epos, MC=False, N=False, Input=False, MCMC=False):
 		ax.hist(epos.multi['Pinner'], bins=bins, color='0.7', label='Kepler all')
 
 	''' Initial distribution or zoomed observations '''
-	if Input and epos.populationtype=='parametric':
+	if Input and epos.Parametric:
 		_, _, pdf0_X, _= draw_PR(epos, Init=True, ybin=epos.yzoom)
 		norm= 0.95* ax.get_ylim()[1] / max(pdf0_X)
 		ax.plot(epos.MC_xvar, pdf0_X*norm, marker='',ls='-',color='r',label='input')

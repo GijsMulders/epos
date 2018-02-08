@@ -42,7 +42,7 @@ def eff_Q16(subsample='all'):
 	eff= np.load('files/completeness.Q16.epos.{}.npz'.format(subsample))
 	return eff['x'], eff['y'], eff['fsnr']
 
-def dr25(subsample='all', score=0.9, Huber=False):
+def dr25(subsample='all', score=0.9, Huber=True):
 	'''
 	Generates Kepler DR25 planet population and detection efficiency
 	

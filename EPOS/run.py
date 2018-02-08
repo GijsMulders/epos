@@ -1,6 +1,6 @@
 import numpy as np
 from scipy import interpolate
-from scipy.stats import ks_2samp, norm
+from scipy.stats import ks_2samp, norm, chi2_contingency
 import os, sys, logging, time
 from functools import partial
 
@@ -28,8 +28,8 @@ def once(epos, fac=1.0, Extra=None):
 		
 		print '\nPreparing EPOS run...'
 		# prep the input population (this should be after MC run?)
-		if epos.populationtype is 'parametric':
-			fpar2d= epos.fitpars.get2d(Init=True)
+		if epos.Parametric:
+			fpar2d= epos.pdfpars.get2d(Init=True)
 			print '  {} fit parameters'.format(len(fpar2d))
 		
 			# Call function once to see if it works, P=1, R=1
@@ -39,32 +39,31 @@ def once(epos, fac=1.0, Extra=None):
 			''' Check if all parameters are set, set defaults '''
 			
 			if epos.Multi:
-				epos.fitpars.default('f_cor',0.5)
-				epos.fitpars.default('f_iso',0.5)
-				epos.fitpars.default('inc',2)
-				#epos.fitpars.default('',)
+				epos.pdfpars.default('f_cor',0.5)
+				epos.pdfpars.default('f_iso',0.5)
+				epos.pdfpars.default('inc',2)
+				#epos.pdfpars.default('',)
 				if epos.RandomPairing:
-					epos.fitpars.default('npl',5)
+					epos.pdfpars.default('npl',5)
 				else:
-					epos.fitpars.default('dR',0.1)
+					epos.pdfpars.default('dR',0.1)
 					if epos.spacing == 'brokenpowerlaw':
-						epos.fitpars.default('dP break',1.7)
-						epos.fitpars.default('dP 1',10)
-						epos.fitpars.default('dP 2',-3)
+						epos.pdfpars.default('dP break',1.7)
+						epos.pdfpars.default('dP 1',10)
+						epos.pdfpars.default('dP 2',-3)
 					elif epos.spacing == 'dimensionless':
-						epos.fitpars.default('log D',-0.3)
-						epos.fitpars.default('sigma',0.2)
+						epos.pdfpars.default('log D',-0.3)
+						epos.pdfpars.default('sigma',0.2)
 					else:
 						raise ValueError('no spacing defined')
 
-		elif epos.populationtype is 'model':
+		else:
 			summedweight= np.sum([sg['weight'] for sg in epos.groups])
 			for sg in epos.groups:
 				sg['weight']*= fac/summedweight
 				print 'set weight {} to {}'.format(sg['name'],sg['weight']) 
 			#epos.weights= [fac/len(epos.groups)]* len(epos.groups) # equal weights
 			assert epos.MassRadius, 'set mass-to-radius function'
-		else: assert False
 		
 		# prep the detection efficiency / observations
 		if not epos.Range: epos.set_ranges()
@@ -72,12 +71,7 @@ def once(epos, fac=1.0, Extra=None):
 		epos.Prep=True
 	
 	''' set weights / parameters '''
-	if epos.populationtype is 'parametric':
-		fpara= epos.fitpars.getfit(Init=True)
-	elif epos.populationtype is 'model':
-		fpara= [sg['weight'] for sg in epos.groups]
-		if hasattr(epos,'p0'): fpara=epos.p0
-	else: assert False
+	fpara= epos.fitpars.getfit(Init=True)
 	
 	''' Time the first MC run'''
 	if Extra is None:
@@ -96,15 +90,8 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1, npos=30):
 	assert epos.Prep
 	
 	''' set starting parameters '''
-	if epos.populationtype is 'parametric':
-		fpara= epos.fitpars.getfit(Init=True)
-	elif epos.populationtype is 'model':
-		if len(epos.groups) == 1:
-			fpara=epos.p0 # [epos.ipfit] ??
-		else:
-			fpara= [sg['weight'] for sg in epos.groups]
-	else: assert False
-	
+	fpara= epos.fitpars.getfit(Init=True)
+		
 	if not len(fpara)>0: raise ValueError('no fit paramaters defined')
 	
 	''' Load previous chain?'''
@@ -207,13 +194,7 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1, npos=30):
 	fitpars = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
                              zip(*np.percentile(epos.samples, [16, 50, 84],
                                                 axis=0)))
-	if epos.populationtype is 'parametric':
-		epos.fitpars.setfit([p[0] for p in fitpars])
-		#print 'before: {}'.format(epos.pfit)
-		#print 'after: {}'.format(epos.pfit)
-	else:
-		# set weight instead?
-		epos.pfit=[p[0] for p in fitpars]
+	epos.fitpars.setfit([p[0] for p in fitpars])
 	
 	''' Generate posterior populations '''
 	if npos is not None:
@@ -227,7 +208,7 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1, npos=30):
 		# return & store in structure
 	
 	''' Estimate Solar System Analogs'''
-	if epos.populationtype is 'parametric' and epos.Multi:
+	if epos.Parametric and epos.Multi:
 		fMercury=[]
 		fVenus=[]
 		for sample in epos.samples:
@@ -304,11 +285,11 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		N: Nth planet in system
 		dP: period ratio
 	'''
-	if epos.populationtype == 'parametric':
+	if epos.Parametric:
 		
 		''' parameters within bounds? '''
 		try:
-			epos.fitpars.checkbounds(fpara)
+			epos.pdfpars.checkbounds(fpara)
 		except ValueError as message:
 			if Store: raise
 			else:
@@ -477,7 +458,7 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 	else:							MC_R= allR[itrans]	
 	if epos.Multi:
 		MC_ID= allID[itrans]	
-		if epos.populationtype == 'parametric':
+		if epos.Parametric:
 			MC_N= allN[itrans] # also for PFM?
 		else:
 			MC_P*= (1.+0.1*np.random.normal(size=MC_M.size) )
@@ -507,7 +488,7 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 
 		tr['P']= MC_P
 		tr['Y']= MC_Y
-		if epos.populationtype is 'model':
+		if not epos.Parametric:
 			tr['i sg']= MC_SG
 	
 	'''
@@ -534,12 +515,12 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 	# arrays with detected planets
 	if epos.Multi:
 		det_ID= MC_ID[idet]
-		if not epos.RV and not epos.populationtype == 'model': det_N= MC_N[idet]
+		if not epos.RV and epos.Parametric: det_N= MC_N[idet]
 	det_P= MC_P[idet]
 	det_Y= MC_Y[idet]
 
 	#if len(alldP)>0: 
-	if epos.populationtype is 'model' and 'all_Pratio' in sg: 
+	if not epos.Parametric and 'all_Pratio' in sg: 
 		det_dP= MC_dP[idet]
 
 	if Verbose and epos.Multi: 		
@@ -571,7 +552,7 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		prob= 1.* gof['n']
 		if not epos.Multi:
 			prob*= gof['xvar']* gof['yvar'] # increase acceptance fraction for models
-		elif epos.populationtype == 'parametric' and epos.Multi:
+		elif epos.Parametric and epos.Multi:
 			prob*= gof['xvar']
 		
 		if epos.Multi:
@@ -585,14 +566,28 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 			prob*= gof['Pinner']
 
 			# Multi-planets
-			multis= multi.cdf(det_ID[ix&iy], Verbose=False)
-			if epos.obs_zoom['multi']['Pratio'].size > 20:
-				_, gof['multi']= ks_2samp(epos.obs_zoom['multi']['cdf'], multis)		
-			else:
-				# not enough statistics
-				nobs= epos.obs_zoom['multi']['Pratio'].size
-				nsim= sim_dP.size
-				gof['multi']= np.exp(-0.5*(nobs-nsim)**2. / nobs )
+			
+			# pearson chi_squared
+			#obs= [multis,epos.obs_zoom['multi']['cdf']] # planets (not systems)
+			k, Nk= multi.frequency(det_ID[ix&iy])
+			Nk_obs= epos.obs_zoom['multi']['count']
+			# pad with zeros
+			obs= np.zeros((2,max(len(Nk),len(Nk_obs))), dtype=int)
+			obs[0,:len(Nk)]= Nk
+			obs[1,:len(Nk_obs)]= Nk_obs			
+			#obs= [Nk, Nk_obs]
+			#obs= [k*Nk, epos.obs_zoom['multi']['pl cnt']]
+			#print obs
+			_, gof['multi'], _, _ = chi2_contingency(obs)
+
+#			multis= multi.cdf(det_ID[ix&iy], Verbose=False)
+# 			if epos.obs_zoom['multi']['Pratio'].size > 20:
+# 				_, gof['multi']= ks_2samp(epos.obs_zoom['multi']['cdf'], multis)		
+# 			else:
+# 				# not enough statistics
+# 				nobs= epos.obs_zoom['multi']['Pratio'].size
+# 				nsim= sim_dP.size
+# 				gof['multi']= np.exp(-0.5*(nobs-nsim)**2. / nobs )
 			
 			prob*= gof['multi']
 		
@@ -632,7 +627,7 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		ss={}
 		ss['P']= det_P # MC_P[idet]
 		ss['Y']= det_Y
-		if epos.populationtype is 'model':
+		if not epos.Parametric:
 			ss['i sg']= MC_SG[idet]
 			if 'all_Pratio' in sg:
 				ss['dP']= det_dP
@@ -650,7 +645,7 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 			ss['multi']['Pratio'], ss['multi']['Pinner']= \
 				multi.periodratio(det_ID[ix&iy], det_P[ix&iy]) # *f_dP
 			ss['multi']['cdf']= multi.cdf(det_ID[ix&iy])
-			if not epos.RV and not epos.populationtype is 'model':
+			if not epos.RV and epos.Parametric:
 				ss['multi']['PN'],ss['multi']['dPN']= multi.periodratio(
 						det_ID[ix&iy], det_P[ix&iy], N=det_N[ix&iy]) 
 		
