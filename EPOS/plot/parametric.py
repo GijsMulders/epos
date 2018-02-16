@@ -26,6 +26,9 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True):
 		fname= 'mcmc/posterior' if MCMC else 'input/parametric_initial'
 		ybin=None
 		title= r'Marginalized Distribution ({:.1f}-{:.0f} $R_\bigoplus$)'.format(*epos.ytrim)
+	
+	if not Log: 
+		fname+= '.linear'
 
 	# initial guess
 	pps, _, pdf0_X, _= periodradius(epos, Init=True, ybin=ybin)
@@ -47,7 +50,7 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True):
 		ax.set_yscale('log')
 		ax.set_ylim([1e-3,1e1])
 	else:
-		ax.set_ylim([0,0.5])
+		ax.set_ylim([0,0.45])
 	
 	if MCMC:
 		for fpara in plotsample:
@@ -75,6 +78,10 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True):
 	#from scipy.stats import norm
 	#gauss= 2.*norm(loc=1., scale=0.4).pdf(np.log10(epos.MC_xvar))
 	#ax.plot(epos.MC_xvar, gauss, ls='-', marker='', color='r')
+
+	if not Log:
+		xx=np.geomspace(20,400)
+		ax.plot(xx, 0.2* (xx/10.)**0.1, marker='', ls='-', color='g', label='all planets')
 
 	if Occ or MCMC:
 		ax.legend(loc='upper right')
@@ -153,9 +160,14 @@ def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False):
 	if Occ:
 		occbin= epos.occurrence['xzoom']
 		ax.errorbar(occbin['yc'], occbin['occ']/occbin['dlny'], 
-			yerr= occbin['err']/occbin['dlny'], color='r', marker='_', ls='', capsize=3) #,capthick=2
+			yerr= occbin['err']/occbin['dlny'], color='r', marker='_', ls='', capsize=3)
+			
+# 		for y, occ, err in zip(occbin['yc'], occbin['occ']/occbin['dlny'], 
+# 							occbin['err']/occbin['dlny']):
+# 			print '{:.3g} {:.3g} {:.3g}'.format(y, occ, err)
 
-	if Occ or MCMC:
+#	if Occ or MCMC:
+	if MCMC:
 		ax.legend(loc='upper right')
 
 	helpers.save(plt, epos.plotdir+fname+('_q' if PlotQ else '_y'))

@@ -339,7 +339,7 @@ def cdf(epos):
 	''' 
 	cdf orbital period 
 	'''
-	ax3.set_title('Period, p={:.3g}'.format(epos.gof['xvar']))
+	ax3.set_title('Period, p={:.3g}'.format(epos.prob['xvar']))
 	ax3.set_xlabel('Orbital Period [days]')
 	ax3.set_ylabel('CDF')
 	ax3.set_xscale('log')
@@ -358,7 +358,7 @@ def cdf(epos):
 	''' 
 	CDF planet radius
 	'''
-	ax4.set_title('{}, p={:.3g}'.format('M sin i' if epos.RV else 'Radius', epos.gof['yvar']))
+	ax4.set_title('{}, p={:.3g}'.format('M sin i' if epos.RV else 'Radius', epos.prob['yvar']))
 	if epos.RV:	ax4.set_xlabel(r'Planet M sin i [M$_\bigoplus$]')
 	else:		ax4.set_xlabel(r'Planet Radius [R$_\bigoplus$]')
 	ax4.set_ylabel('CDF')

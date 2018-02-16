@@ -183,7 +183,7 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False, c
 	
 	helpers.save(plt, '{}model/input.radius{}'.format(epos.plotdir, fname))
 
-def inclination(epos, color='C1'):
+def inclination(epos, color='C1', imin=1e-2):
 	pfm=epos.pfm
 	
 	gs = gridspec.GridSpec(1, 2,
@@ -205,7 +205,7 @@ def inclination(epos, color='C1'):
 	ax.set_ylabel('Inclination [degree]')
 
 	#ax.set_xlim(epos.mod_xlim)
-	ax.set_ylim(1e-2,90)
+	ax.set_ylim(imin,90)
 
 	ax.set_xscale('log')
 	ax.set_yscale('log')
@@ -215,9 +215,9 @@ def inclination(epos, color='C1'):
 
 	''' Histogram'''
 	axh.set_yscale('log')
-	axh.set_ylim(1e-2,90)
+	axh.set_ylim(imin,90)
 
-	inc= np.logspace(-3,2)
+	inc= np.logspace(-4,2)
 	axh.hist(pfm['inc'], bins=inc, orientation='horizontal', color=color) 
 	
 	#Model best-fit

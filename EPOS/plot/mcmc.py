@@ -25,6 +25,9 @@ def all(epos):
 		if epos.Parametric:
 			parametric.oneD(epos, MCMC=True)
 			parametric.twoD(epos, MCMC=True)
+			if epos.Multi:
+				parametric.oneD_x(epos, MCMC=True, Log=False)
+				
 		
 		# plot sample from posterior
 		if hasattr(epos, 'plotsample'):

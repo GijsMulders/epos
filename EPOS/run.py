@@ -1,6 +1,6 @@
 import numpy as np
 from scipy import interpolate
-from scipy.stats import ks_2samp, norm, chi2_contingency
+from scipy.stats import ks_2samp, anderson_ksamp, norm, chi2_contingency
 import os, sys, logging, time
 from functools import partial
 
@@ -14,7 +14,7 @@ try:
 except ImportError:
 	print '#WARNING# emcee could not be imported'
 
-def once(epos, fac=1.0, Extra=None):
+def once(epos, fac=1.0, Extra=None, goftype='KS'):
 	'''
 	Run EPOS once
 	
@@ -24,6 +24,8 @@ def once(epos, fac=1.0, Extra=None):
 	Args:
 		Extra: store the planet population as an extra for plotting, default None
 	'''
+	epos.goftype=goftype
+	
 	if not epos.Prep:
 		
 		print '\nPreparing EPOS run...'
@@ -58,11 +60,8 @@ def once(epos, fac=1.0, Extra=None):
 						raise ValueError('no spacing defined')
 
 		else:
-			summedweight= np.sum([sg['weight'] for sg in epos.groups])
-			for sg in epos.groups:
-				sg['weight']*= fac/summedweight
-				print 'set weight {} to {}'.format(sg['name'],sg['weight']) 
-			#epos.weights= [fac/len(epos.groups)]* len(epos.groups) # equal weights
+			# set defaults for planet formation models here
+			# epos.fitpars.default
 			assert epos.MassRadius, 'set mass-to-radius function'
 		
 		# prep the detection efficiency / observations
@@ -147,7 +146,7 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1, npos=30):
 		logging.info('MCMC with random seed {}'.format(epos.seed))
 		
 		''' Wrap function '''
-		lnmc= partial(MC, epos, Verbose=False, LogProb= True)
+		lnmc= partial(MC, epos, Verbose=False)
 	
 		''' Set up the MCMC walkers '''
 		#p0 = [np.array(fpara)*np.random.uniform(1.-dx,1+dx,len(fpara)) 
@@ -262,7 +261,7 @@ def prep_obs(epos):
 	z['multi']['cdf']= multi.cdf(epos.obs_starID[ix&iy])
 
 def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None, 
-		Verbose=True, KS=True, LogProb=False):
+		Verbose=True):
 	''' 
 	Do the Monte Carlo Simulations
 	Note:
@@ -534,77 +533,84 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 	- switches for in/excluding parameters
 	- likelyhood from D instead of prob?
 	'''
-	if KS:
-		tstart=time.time()
-		gof={}
-		# make sure that x=P, y=R (where?)
-		ix= (epos.xzoom[0]<=det_P) & (det_P<=epos.xzoom[1])
-		iy= (epos.yzoom[0]<=det_Y) & (det_Y<=epos.yzoom[1])
-		if (ix&iy).sum()<1:
-			if Store: raise ValueError('no planets detectable')
-			return -np.inf			
+	# bugfix 
+	#np.seterr(divide='raise')
+
+	tstart=time.time()
+	prob={}
+	lnp={}
 	
-		_, gof['xvar']=  ks_2samp(epos.obs_zoom['x'], det_P[ix&iy])
-		_, gof['yvar']=  ks_2samp(epos.obs_zoom['y'], det_Y[ix&iy])
-		# chi^2: (np-nobs)/nobs**0.5 -> p: e^-0.5 x^2
-		gof['n']= np.exp(-0.5*(epos.obs_zoom['x'].size-np.sum(ix&iy))**2. 
-							/ epos.obs_zoom['x'].size )
-		prob= 1.* gof['n']
+	# make sure that x=P, y=R (where?)
+	ix= (epos.xzoom[0]<=det_P) & (det_P<=epos.xzoom[1])
+	iy= (epos.yzoom[0]<=det_Y) & (det_Y<=epos.yzoom[1])
+	if (ix&iy).sum()<1:
+		if Store: raise ValueError('no planets detectable')
+		return -np.inf			
+	
+	if epos.goftype=='KS':
+		prob_2samp= _prob_ks
+	elif epos.goftype=='AD': 
+		prob_2samp= _prob_ad
+	else:
+		raise ValueError('{} not a goodness-of-fit type (KS, AD)'.format(epos.goftype))
+
+	prob['xvar'], lnp['xvar']=  prob_2samp(epos.obs_zoom['x'], det_P[ix&iy])
+	prob['yvar'], lnp['yvar']=  prob_2samp(epos.obs_zoom['y'], det_Y[ix&iy])
+
+	# chi^2: (np-nobs)/nobs**0.5 -> p: e^-0.5 x^2
+	chi2= (epos.obs_zoom['x'].size-np.sum(ix&iy))**2. / epos.obs_zoom['x'].size
+	lnp['N']= -0.5* chi2
+	prob['N']= np.exp(-0.5* chi2)
+	
+	if epos.Multi:
+		''' Multi-planet frequency, pearson chi_squared '''
+		k, Nk= multi.frequency(det_ID[ix&iy])
+		Nk_obs= epos.obs_zoom['multi']['count']
+		# pad with zeros
+		obs= np.zeros((2,max(len(Nk),len(Nk_obs))), dtype=int)
+		obs[0,:len(Nk)]= Nk
+		obs[1,:len(Nk_obs)]= Nk_obs			
+		_, prob['Nk'], _, _ = chi2_contingency(obs)
+		with np.errstate(divide='ignore'): lnp['Nk']= np.log(prob['Nk'])			
+		
+		''' Period ratio, innermost planet '''
+		sim_dP, sim_Pinner= multi.periodratio(det_ID[ix&iy], det_P[ix&iy])
+
+		if (len(sim_dP)>0) & (len(sim_Pinner)>0): 
+			prob['dP'],lnp['dP']= prob_2samp(epos.obs_zoom['multi']['Pratio'],f_dP*sim_dP)					
+			prob['Pin'],lnp['Pin']= prob_2samp(epos.obs_zoom['multi']['Pinner'],
+											sim_Pinner)
+		else:
+			logging.debug('no multi-planet statistics, {}'.format(len(sim_dP)))
+			prob['dP'], prob['Pin']= 0, 0 
+		
+		# skipping N, yvar here
+		prob_keys= ['N','xvar','Nk','dP','Pin']
+	
+	else:
+	
+		prob_keys= ['N','xvar','yvar']
+
+	# combine with Fischer's rule:
+	lnprob= np.sum([lnp[key] for key in prob_keys])
+	#dof= len(prob_keys)
+	chi_fischer= -2. * lnprob
+	
+	
+	if Verbose:
+		print '\nGoodness-of-fit'
+		print '  logp= {:.1f}'.format(lnprob)
+		print '  - p(n={})={:.2g}'.format(np.sum(ix&iy), prob['N'])
+		print '  - p(x)={:.2g}'.format(prob['xvar'])
 		if not epos.Multi:
-			prob*= gof['xvar']* gof['yvar'] # increase acceptance fraction for models
-		elif epos.Parametric and epos.Multi:
-			prob*= gof['xvar']
+			print '  - p(y)={:.2g}'.format(prob['yvar'])
+		else:
+			print '  - p(N_k)={:.2g}'.format(prob['Nk'])
+			print '  - p(P ratio)={:.2g}'.format(prob['dP'])
+			print '  - p(P inner)={:.2g}'.format(prob['Pin'])
 		
-		if epos.Multi:
-			# Period ratio
-			sim_dP, sim_Pinner= multi.periodratio(det_ID[ix&iy], det_P[ix&iy])
-			_, gof['dP']= ks_2samp(epos.obs_zoom['multi']['Pratio'], f_dP*sim_dP)
-			prob*= gof['dP']
-
-			# Inner planet
-			_, gof['Pinner']= ks_2samp(epos.obs_zoom['multi']['Pinner'], sim_Pinner)
-			prob*= gof['Pinner']
-
-			# Multi-planets
-			
-			# pearson chi_squared
-			#obs= [multis,epos.obs_zoom['multi']['cdf']] # planets (not systems)
-			k, Nk= multi.frequency(det_ID[ix&iy])
-			Nk_obs= epos.obs_zoom['multi']['count']
-			# pad with zeros
-			obs= np.zeros((2,max(len(Nk),len(Nk_obs))), dtype=int)
-			obs[0,:len(Nk)]= Nk
-			obs[1,:len(Nk_obs)]= Nk_obs			
-			#obs= [Nk, Nk_obs]
-			#obs= [k*Nk, epos.obs_zoom['multi']['pl cnt']]
-			#print obs
-			_, gof['multi'], _, _ = chi2_contingency(obs)
-
-#			multis= multi.cdf(det_ID[ix&iy], Verbose=False)
-# 			if epos.obs_zoom['multi']['Pratio'].size > 20:
-# 				_, gof['multi']= ks_2samp(epos.obs_zoom['multi']['cdf'], multis)		
-# 			else:
-# 				# not enough statistics
-# 				nobs= epos.obs_zoom['multi']['Pratio'].size
-# 				nsim= sim_dP.size
-# 				gof['multi']= np.exp(-0.5*(nobs-nsim)**2. / nobs )
-			
-			prob*= gof['multi']
-		
-		if Verbose:
-			print '\nGoodness-of-fit'
-			print '  logp= {:.1f}'.format(np.log(prob))
-			print '  - p(x)={:.2g}'.format(gof['xvar'])
-			print '  - p(y)={:.2g}'.format(gof['yvar'])
-			print '  - p(n={})={:.2g}'.format(np.sum(ix&iy), gof['n'])
-			if epos.Multi:
-				print '  - p(multi)={:.2g}'.format(gof['multi'])
-				print '  - p(P ratio)={:.2g}'.format(gof['dP'])
-				print '  - p(P inner)={:.2g}'.format(gof['Pinner'])
-			
-
-		tgof= time.time()
-		if Verbose: print '  observation comparison in {:.3f} sec'.format(tgof-tstart)
+	tgof= time.time()
+	if Verbose: print '  observation comparison in {:.3f} sec'.format(tgof-tstart)
 
 	''' Store _systems_ with at least one detected planet '''
 	# StorePopulation
@@ -649,7 +655,8 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 				ss['multi']['PN'],ss['multi']['dPN']= multi.periodratio(
 						det_ID[ix&iy], det_P[ix&iy], N=det_N[ix&iy]) 
 		
-		epos.gof=gof
+		epos.prob=prob
+		epos.lnprob=lnprob
 		ss['P zoom']= det_P[ix&iy]
 		ss['Y zoom']= det_Y[ix&iy]
 		
@@ -666,15 +673,9 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 			epos.synthetic_survey= ss 
 	else:
 		# return probability
-		with np.errstate(divide='ignore'): 
-			lnprob= np.log(prob)
 		if np.isnan(lnprob):
-			# properly catch errors here?
-			#print 'oops III'
-			#print gof['p xvar'], gof['p yvar'], gof['p n']
-			#print allP.size, MC_P.size, det_P.size
 			return -np.inf
-		return lnprob if LogProb else prob
+		return lnprob
 
 # def draw_from_function(f, grid, ndraw, *args):
 # 	cdf= np.cumsum(f(grid, *args))
@@ -868,10 +869,31 @@ def storepopulation(allID, allP, det_ID, idetected):
 	assert np.all(IDsys[toplanet] == allID)
 	Pinner= allP[iunique] # inner if lexsorted
 	
-	idx= np.argsort(Pinner)
+	idx= np.argsort(Pinner) #[::-1]
 	rank= np.argsort(idx)
-
+	
 	#Porder= rank[toplanet]
 	Porder= 1.0 * rank[toplanet] / IDsys.size
  
 	return isysdet, isingle&idetected, imulti&idetected, Porder
+
+def _prob_ks(a,b):
+	_, prob= ks_2samp(a,b)
+	with np.errstate(divide='ignore'):
+		lnprob= np.log(prob)
+	return prob, lnprob
+
+def _prob_ad(a,b):
+	_, _, prob= anderson_ksamp([a,b])
+	with np.errstate(divide='ignore'):
+		lnprob= np.log(prob)
+	if prob > 1:
+		print
+		print anderson_ksamp([a,b])
+		print ks_2samp(a,b)
+		print
+		print a
+		print b
+		print prob, lnprob
+	return prob, lnprob
+

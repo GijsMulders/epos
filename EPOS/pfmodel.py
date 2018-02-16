@@ -131,7 +131,7 @@ def mercury(fname, istep=None, Verbose=False):
 	print '\nProcessing Mercury file'
 	flist= glob.glob(fname)
 	if len(flist)==0: raise ValueError('file not found: {}'.format(fname))
-	sma, mass, inc= [], [], []
+	sma, mass, inc, ID= [], [], [], []
 	
 	for i,fname in enumerate(flist):
 
@@ -146,24 +146,20 @@ def mercury(fname, istep=None, Verbose=False):
 		L_sma= a[1]
 		L_mass= a[7] * cgs.Msun/cgs.Mearth
 		L_inc= a[3]
-# 			Time of completion (1.e7 yrs in all)
-# 			Semi-Major axis (AU)
-# 			Eccentricity
-# 			Inclination (degrees)
-# 			Argument of Perihelion
-# 			Longitude of Ascending Node
-# 			True Anomaly at Epoch
-# 			Mass (in Solar Masses)
 		
 		# story copy(?) in list of planetary systems
-		sma.append(L_sma)
-		mass.append(L_mass)
-		inc.append(L_inc)
-			#sma0.append(L_sma0)
-			#mass0.append(L_mass0)
+		sma.extend(L_sma)
+		mass.extend(L_mass)
+		inc.extend(L_inc)
+		ID.extend([i]*len(L_sma))
+
 		if not Verbose: print '\r  [{:50s}] {:.1f}%'.format('#' * int(1 * 50), 1 * 100),
-	
-	return sma, mass, inc
+		
+	npz={'sma':np.asarray(sma), 'mass':np.asarray(mass), 
+		'inc':np.asarray(inc), 'starID':np.asarray(ID)}
+		
+	return npz
+
 
 def pa_bert(name='1Dlin', dir='PA_Bert/', Verbose=False):
 	fname= '{}/Data{}.out'.format(dir,name)

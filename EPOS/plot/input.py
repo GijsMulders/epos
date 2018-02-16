@@ -13,7 +13,7 @@ import survey, parametric, multi, massradius, helpers, model
 clrs= ['r','g','b','m'] # in epos.prep
 fmt_symbol= {'ls':'', 'marker':'o', 'mew':2, 'ms':8,'alpha':0.6}
 
-def all(epos, color=None):
+def all(epos, color=None, imin=1e-2):
 	print '\nPlotting input...'
 
 	survey.observed(epos, PlotBox=False)
@@ -39,7 +39,7 @@ def all(epos, color=None):
 			if 'model' in epos.occurrence:
 				model.panels_radius(epos, Observation=True, color=color)
 		if 'inc' in epos.pfm:
-			model.inclination(epos, color=color)
+			model.inclination(epos, color=color, imin=imin)
 		if 'dP' in epos.pfm:
 			model.periodratio(epos, color=color)
 			

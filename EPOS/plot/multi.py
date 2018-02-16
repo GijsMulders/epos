@@ -13,57 +13,6 @@ import matplotlib
 if matplotlib.__version__[0] != 2: 
 	helpers.default_pyplot2_colors(matplotlib.colors)
 
-def polar(epos):
-	'''
-	Plot planet populations as a half circle (not quite working) 
-	'''
-	# plot multiplicity
-	f, axlist = plt.subplots(2,2, subplot_kw=dict(projection='polar'))
-	
-	pop=epos.population
-
-	for ax, key in zip([axlist[0,0],axlist[0,1],axlist[1,0]],['system','single','multi']):
-		ax.set_title(key)
-		ax.set_xlabel('fraction')
-		ax.set_ylabel('P [days]')
-
-		ax.set_xlim(-0.05, 1.05)
-		ax.set_ylim(0.1, 1000) # 7.
-		ax.set_yscale('log')
-		
-		ax.set_rgrids([1, 10, 100])
-
-		try:
-			ax4.set_thetamin(0)
-			ax4.set_thetamax(90)
-		except AttributeError:
-			print 'Update pyplot'
-			raise
-		
-		ax.plot(pop[key]['order']*np.pi, pop[key]['P'],
-				ls='', marker='.', mew=0, ms=3, color='k')
-
-	ax4=axlist[1,1]
-	ax4.set_title('all')
-	ax4.set_xlabel('fraction')
-	ax4.set_ylabel('P [days]')
-
-	ax4.set_xlim(-0.05, 1.05)
-	ax4.set_ylim(0.1, 1000) # 7.
-	ax4.set_yscale('log')
-	
-	try:
-		ax4.set_thetamin(0)
-		ax4.set_thetamax(90)
-	except AttributeError:
-		print 'Update pyplot'
-		raise
-	
-	ax4.plot(pop['order']*np.pi, pop['P'],
-		ls='', marker='.', mew=0, ms=3, color='gray')
-
-	helpers.save(plt, '{}/polar_test'.format(epos.plotdir))
-
 def periodradius(epos, Nth=False, MC=True):
 
 	f, (ax, axR, axP)= helpers.make_panels(plt)
@@ -410,6 +359,14 @@ def periodinner(epos, MC=False, N=False, Input=False, MCMC=False):
 		else:
 			ax.hist(ss['multi']['Pinner'], bins=bins, 
 					color='C0', histtype='stepfilled', label=epos.name)
+			
+			# Solar system analologs (from dr25_solarsystem.py)
+			#Pcut=45
+# 			Pcut=130
+# 			print 'P_in > {} days:'.format(Pcut)
+# 			print '  obs: {}'.format((epos.obs_zoom['multi']['Pinner']>Pcut).sum())
+# 			print '  sim: {}'.format((ss['multi']['Pinner']>Pcut).sum())
+# 			print ''
 	
 		if N:
 			# Innermost is nth planet
@@ -481,3 +438,144 @@ def periodinner_cdf(epos, MC=False):
 	if MC: ax.legend(loc='lower right', shadow=False, prop={'size':14}, numpoints=1)
 		
 	helpers.save(plt, '{}{}/innerperiod.cdf'.format(epos.plotdir, prefix))	
+
+''' Plot planet population '''
+
+def inner(epos):
+	'''
+	Plot inner planet
+	'''
+	# plot multiplicity
+	f, ax = plt.subplots()
+	pop=epos.population
+		
+	ax.set_title('Simulated Systems')
+	ax.set_xlabel('Orbital Period (days)')
+	ax.set_ylabel('Fraction of stars') # 0-45 %
+
+	#ax.set_ylim(-0.05, 1.05)
+	ax.set_ylim(0, 1)
+	ax.set_xlim(0.2, 730)
+	ax.set_xscale('log')
+
+	x=np.geomspace(0.2,730)
+# 	ax.fill_between(x, 0.0, 0.159, color='g', alpha=0.2, lw=0)
+# 	ax.fill_between(x, 0.159, 0.841, color='c', alpha=0.2, lw=0)
+# 	ax.fill_between(x, 0.841, 1, color='g', alpha=0.2, lw=0)
+	ax.fill_between(x, 0.0, 0.023, color='g', alpha=0.2, lw=0)
+	ax.fill_between(x, 0.023, 0.159, color='c', alpha=0.2, lw=0)
+	ax.fill_between(x, 0.159, 0.841, color='y', alpha=0.2, lw=0)
+	ax.fill_between(x, 0.841, 0.977, color='c', alpha=0.2, lw=0)
+	ax.fill_between(x, 0.977, 1, color='g', alpha=0.2, lw=0)
+	ax.axhline(0.5, color='k', lw=1)
+	
+	xtext=0.21
+	ax.text(xtext, 0.023, '$2\sigma$', va='center',size=10)
+	ax.text(xtext, 0.159, '$1\sigma$', va='center',size=10)
+	#ax.text(xtext, 0.5, 'mean', va='center',size=8)
+	ax.text(xtext, 0.5+0.01, 'mean',size=10)
+	ax.text(xtext, 0.841, '$1\sigma$', va='center',size=10)
+	ax.text(xtext, 0.977, '$2\sigma$', va='center',size=10)
+
+	# BG all planets?
+# 	ax.plot(pop['P'], pop['order'],
+# 		ls='', marker='.', mew=0, ms=3, color='0.8')
+
+	# all multis
+	key='single'
+	ax.plot(pop[key]['P'], pop[key]['order'],
+		ls='', marker='.', mew=0, ms=3, color='b')
+
+	key='multi'
+	ax.plot(pop[key]['P'], pop[key]['order'],
+		ls='', marker='.', mew=0, ms=3, color='purple')
+	
+# 	for key in ['system','single','multi']:
+# 	ax.plot(pop['P'], pop['order'],
+# 		ls='', marker='.', mew=0, ms=3, color='gray')
+
+	# Solar System
+	#ax.plot([0.95]*4,[])
+	yss= 0.9
+	#yss= 0.1
+	ax.text(88, yss, 'M', ha='center', va='center', color='r',size=8)
+	ax.text(225, yss, 'V', ha='center', va='center', color='r',size=8)
+	ax.text(365, yss, 'E', ha='center', va='center', color='r',size=8)
+	ax.text(687, yss,'M', ha='center', va='center', color='r',size=8)
+
+	helpers.save(plt, '{}/population/inner_test'.format(epos.plotdir))
+
+def polar(epos):
+	'''
+	Plot planet populations as a half circle (not quite working) 
+	'''
+	# plot multiplicity
+	f, axlist = plt.subplots(2,2, subplot_kw=dict(projection='polar'), figsize=(10,8))
+	pop=epos.population
+	
+	# ticks not showing on log plot
+	Bugged=True
+
+	for ax, key in zip([axlist[0,0],axlist[0,1],axlist[1,0]],['system','single','multi']):
+		ax.set_title(key)
+		ax.set_xlabel('fraction')
+		ax.set_ylabel('P [days]')
+
+		ax.set_xlim(-0.05, 1.05)
+		ax.set_xticks(np.pi*np.linspace(0,1,5))
+
+		try:
+			ax.set_thetamin(0)
+			ax.set_thetamax(180)
+		except AttributeError:
+			print 'Update pyplot'
+			raise
+		
+		if Bugged:
+			ax.set_ylim(-1,3)
+			#ax.set_yticks([0,1,2,3])
+			ax.set_yticks([1])
+			ax.set_yticklabels(['10'])
+			ax.plot(pop[key]['order']*np.pi, np.log10(pop[key]['P']),
+					ls='', marker='.', mew=0, ms=3, color='k')
+			
+		else:
+			ax.set_ylim(0.1, 1000) # 7.
+			ax.set_yscale('log')
+			ax.set_yticks([1,10,100,1000])
+			#ax.set_yticks([10])
+
+			#ax.set_rlim(0.1,1000)
+			#ax.set_rscale('log')
+		
+			#ax.set_rgrids([1, 10, 100, 1000])
+			#ax.set_rticks([1, 10, 100, 1000])
+				
+			ax.plot(pop[key]['order']*np.pi, pop[key]['P'],
+					ls='', marker='.', mew=0, ms=3, color='k')
+		
+		# nope
+		#ax.set_yscale('log')
+		#ax.set_yticks([1, 10, 100, 1000])
+		
+
+	ax4=axlist[1,1]
+	ax4.set_title('all')
+	ax4.set_xlabel('fraction')
+	ax4.set_ylabel('P [days]')
+
+	ax4.set_xlim(-0.05, 1.05)
+	ax4.set_ylim(0.1, 1000) # 7.
+	ax4.set_yscale('log')
+	
+	try:
+		ax4.set_thetamin(0)
+		ax4.set_thetamax(180)
+	except AttributeError:
+		print 'Update pyplot'
+		raise
+	
+	ax4.plot(pop['order']*np.pi, pop['P'],
+		ls='', marker='.', mew=0, ms=3, color='gray')
+
+	helpers.save(plt, '{}/population/polar_test'.format(epos.plotdir))

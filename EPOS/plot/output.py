@@ -39,12 +39,6 @@ def all(epos):
 		massradius.massradius(epos, MC=True)
 		massradius.massradius(epos, MC=True, Log=True)
 
-	if not epos.Parametric:			
-		# Inclinations and period ratios of observed systems
-		# NOTE: These are not observable parameters
-		if 'all_Pratio' in epos.groups[0]: 
-			out_Pratio(epos)
-			hist_Pratio(epos)
 	else:
 		if epos.Multi and not epos.RV:
 			multi.periodratio(epos, MC=True, N=True)
