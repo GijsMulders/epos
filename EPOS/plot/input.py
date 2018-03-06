@@ -30,9 +30,19 @@ def all(epos, color=None, imin=1e-2):
 		parametric.twoD(epos)
 		parametric.panels(epos)
 	else:
-		model.panels_mass(epos, color=color)
+		if 'R' in epos.pfm:
+			model.panels_radius(epos, color=color)		
+		if 'M' in epos.pfm:
+			model.panels_mass(epos, color=color)
+			
+		model.multiplicity(epos, color=color)
 		if hasattr(epos, 'func'):
-			model.panels_mass(epos, Population=True, color=color)
+			if epos.MassRadius:
+				model.panels_mass(epos, Population=True, color=color)
+			else:
+				model.panels_radius(epos, Population=True, color=color)
+
+			
 		if hasattr(epos, 'occurrence'):
 			if 'planet' in epos.occurrence:	
 				model.panels_radius(epos, Occurrence=True, color=color)
@@ -65,7 +75,6 @@ def all(epos, color=None, imin=1e-2):
 	if epos.MassRadius: 
 		massradius.massradius(epos, MC=False)
 		massradius.massradius(epos, MC=False, Log=True)
-
 
 def input(epos, PlotBox=True):
 	assert epos.populationtype is 'model'

@@ -117,7 +117,6 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False, c
 
 	''' Posterior '''
 	if Population:
-		assert False, 'problem: same keywords as mass posterior?'
 		assert hasattr(epos, 'func')
 		fname='.pop'
 		
@@ -137,9 +136,9 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False, c
 		
 		# Side panels
 		#print 'pps model= {}'.format(eta)
-		scale=dw
+		scale=dwR
 		axP.plot(epos.MC_xvar, pdf_X*scale, marker='',ls='-',color='purple')
-		axM.plot(pdf_Y*scale, epos.in_yvar, marker='',ls='-',color='purple')
+		axR.plot(pdf_Y*scale, epos.in_yvar, marker='',ls='-',color='purple')
 	elif Observation:
 		fname='.obs'
 		ax.set_title(epos.name+': Counts')
@@ -150,8 +149,7 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False, c
 		axP.hist(epos.obs_xvar,bins=xbins,weights= weights, histtype='step', color='0.5')
 		axR.hist(epos.obs_yvar,bins=ybins,weights= weights, 
 			orientation='horizontal', histtype='step', color='0.5')
-				
-		
+					
 	elif Occurrence:
 		fname='.occ'
 		ax.set_title(epos.name+': Occurrence')
@@ -164,7 +162,8 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False, c
 		axP.hist(epos.obs_xvar[cut],bins=xbins,weights=weights,histtype='step',color='k')
 		axR.hist(epos.obs_yvar[cut],bins=ybins,weights= weights, 
 			orientation='horizontal', histtype='step', color='k')
-
+	else:
+		fname=''	
 
 	''' plot main panel'''
 	#helpers.set_axes(ax, epos, Trim=True)
@@ -217,7 +216,7 @@ def inclination(epos, color='C1', imin=1e-2):
 	axh.set_yscale('log')
 	axh.set_ylim(imin,90)
 
-	inc= np.logspace(-4,2)
+	inc= np.logspace(np.log10(imin),2)
 	axh.hist(pfm['inc'], bins=inc, orientation='horizontal', color=color) 
 	
 	#Model best-fit
@@ -316,3 +315,42 @@ def periodratio(epos, color='C1'):
 	#helpers.set_axis_size(axR, epos, Trim=True) #, In= epos.MassRadius)
 
 	helpers.save(plt, epos.plotdir+'model/Pratio-sma')
+
+def multiplicity(epos, color='C1', Planets=False, Kepler=False):
+	# plot multiplicity
+	f, ax = plt.subplots()
+	ax.set_title('Input Multi-planets {}'.format(epos.name))
+	ax.set_xlabel('planets per system')
+	ax.set_ylabel('number of planets' if Planets else 'number of systems')
+
+	if Kepler:
+		ax.set_xlim(0.5, 7.5)	
+	#else:
+		#ax.set_xlim(0.5, 10.5)
+
+	''' Model planets '''
+	_ , counts= np.unique(epos.pfm['ID'],return_counts=True)
+	#bins= np.arange(10)
+	#ax.hist(counts, bins=bins, align='left', color=color)
+
+	if Kepler:
+		bins= np.arange(1,9)
+		bins[-1]=1000
+	else:
+		bins= np.arange(20)
+	hist, bin_edges = np.histogram(counts, bins=bins)
+	ax.bar(bins[:-1], hist, width=1, color=color)
+
+	''' Kepler '''
+# 	intrinsic= np.zeros_like(hist)
+# 	intrinsic[0]= 0.5*epos.pfm['ns']
+# 	intrinsic[-1]= 0.5*epos.pfm['ns']
+# 	#intrinsic=np.arange(len(hist))
+# 	ax.bar(bins[:-1], intrinsic, width=1, color='', ec='k')
+	
+	#ax.plot(, drawstyle='steps-mid', 
+	#	ls='--', marker='', color='gray', label='Kepler all')
+
+	ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
+
+	helpers.save(plt, epos.plotdir+'model/multi')

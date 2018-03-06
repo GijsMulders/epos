@@ -62,6 +62,28 @@ def lognormal_size(x, y, xp, p1, p2, y0, dy):
 	return brokenpowerlaw1D(x, xp, p1, p2) * \
 			scipy.stats.norm.pdf(np.log10(y), loc=np.log10(y0), scale=dy)
 
+def schechter1D(x, xp, p1):
+	''' Schechter function normalized to p break'''
+	return (x/xp)**p1 * np.exp(-x/xp)
+
+def schechter_size(x, y, xp, p1, p2, yp, p3):
+	'''
+	Schechter distribution in planet size `y` and a broken power law in distance `x` 
+	
+	Args:
+		x(np.array): x
+		y(np.array): y
+		xp(float): break in x
+		p1(float): power law index at x<xp
+		p2(float): power law index at x>xp
+		y(float): mean of y
+		dy(flat): dispersion of y, in dex	
+	Note:		
+		Only works with support for a non-separable function in x and y
+	'''	
+	return brokenpowerlaw1D(x, xp, p1, p2) * \
+			schechter1D(y,yp,p3)
+
 def bimodal2D(x, y, rp0, rxp, rp1, rp2, ry, ryw, gxp, gp1, gp2, gy, gyw):
 	''' Bimodal distribution where each component (r,g) is a broken power law in `x` 
 	and a lognormal in `y`

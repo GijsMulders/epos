@@ -62,7 +62,8 @@ def once(epos, fac=1.0, Extra=None, goftype='KS'):
 		else:
 			# set defaults for planet formation models here
 			# epos.fitpars.default
-			assert epos.MassRadius, 'set mass-to-radius function'
+			if not epos.MassRadius and not 'R' in epos.pfm:
+				raise ValueError('Supply radii or a mass-radius relation')
 		
 		# prep the detection efficiency / observations
 		if not epos.Range: epos.set_ranges()
@@ -623,12 +624,14 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		pop= epos.population={}
 		pop['order']= order
 		pop['P']= allP
+		pop['k']= allN
 		for key, subset in zip(['system', 'single', 'multi'],[isysdet, isingle, imulti]):
 			pop[key]={}
 			pop[key]['Y']= allY[subset] # R? M?
 			pop[key]['P']= allP[subset]
 			pop[key]['order']= order[subset]
-		
+	
+	''' Store detectable planet population '''	
 	if Store:
 		ss={}
 		ss['P']= det_P # MC_P[idet]

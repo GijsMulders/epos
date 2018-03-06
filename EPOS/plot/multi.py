@@ -228,7 +228,7 @@ def periodratio(epos, MC=False, N=False, Input=False, MCMC=False):
 				#ax.hist(ss['multi']['Pratio'], bins=bins, color='b', alpha=1./len(epos.ss_sample))
 		else:
 			ax.hist(ss['multi']['Pratio'], bins=bins, 
-					color='C0', histtype='step', label=epos.name)
+					color='C0', histtype='stepfilled', label=epos.name)
 	
 		if N:
 			# planets inbetween?
@@ -355,7 +355,8 @@ def periodinner(epos, MC=False, N=False, Input=False, MCMC=False):
 		if MCMC:
 			for ss in epos.ss_sample:
 				ax.hist(ss['multi']['Pinner'], bins=bins, 
-						color='b', alpha=0.1, histtype='step')			
+						color='b', alpha=0.1, histtype='step')
+						
 		else:
 			ax.hist(ss['multi']['Pinner'], bins=bins, 
 					color='C0', histtype='stepfilled', label=epos.name)
@@ -367,7 +368,19 @@ def periodinner(epos, MC=False, N=False, Input=False, MCMC=False):
 # 			print '  obs: {}'.format((epos.obs_zoom['multi']['Pinner']>Pcut).sum())
 # 			print '  sim: {}'.format((ss['multi']['Pinner']>Pcut).sum())
 # 			print ''
-	
+
+		#if False:
+		if hasattr(epos, 'ss_extra'):
+			# advance color cycle
+			# ax._get_lines.get_next_color()
+			ax.plot([], [])
+			ax.plot([], [])
+		
+			# plot extra epos runs
+			for ss in epos.ss_extra:
+				ax.hist(ss['multi']['Pinner'], bins=bins, 
+					histtype='step', label=ss['name'])
+							
 		if N:
 			# Innermost is nth planet
 			#ax.hist(ss['multi']['PN'][0], bins=bins, 

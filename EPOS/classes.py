@@ -465,7 +465,7 @@ Plots the exoplanet survey: observed planets and completeness
 		self.spacing= spacing # None, brokenpowerlaw, dimensionless
 	
 	def set_population(self, name, sma, mass, 
-					inc=None, starID=None, tag=None, Verbose=False):
+					radius=None, inc=None, starID=None, tag=None, Verbose=False):
 		# tag is fit parameter, i.e. metallicity, surface density, or model #
 
 		if hasattr(self, 'pfm'):
@@ -492,6 +492,8 @@ Plots the exoplanet survey: observed planets and completeness
 		pfm['sma']= np.asarray(sma)
 		pfm['M']= np.asarray(mass)
 		pfm['ID']= np.arange(len(sma)) if starID is None else np.asarray(starID)
+		if radius is not None:
+			pfm['R']= np.asarray(radius)		
 		if tag is not None:
 			pfm['tag']= np.asarray(tag)		
 		if inc is None:
@@ -525,6 +527,9 @@ Plots the exoplanet survey: observed planets and completeness
 # 			print pfm['P'][1:6]
 # 			print pfm['dP'] # not ok?
 
+			# innermost planet in multi
+			pfm['Pin']= np.squeeze(pfm['P'][np.array(multis[1])-1])
+
 		pfm['M limits']=[np.min(pfm['M']),np.max(pfm['M'])]
 		pfm['P limits']=[np.min(pfm['P']),np.max(pfm['P'])]
 		
@@ -537,7 +542,6 @@ Plots the exoplanet survey: observed planets and completeness
 		self.mod_ylim=[ymin/dy, ymax*dy]
 # 		self.mod_xlim=[min(xmin/dx, self.mod_xlim[0]),max(xmax*dx, self.mod_xlim[1])]
 # 		self.mod_ylim=[min(ymin/dy, self.mod_ylim[0]),max(ymax*dy, self.mod_ylim[1])]
-		
 	
 	def set_massradius(self, MR, name, masslimits= [0.01,1e3]):
 		print '\nMass-Radius relation from {}'.format(name)
