@@ -152,7 +152,7 @@ def multiplicity(epos, MC=False, Planets=False, MCMC=False):
 	
 		# observations in same region 
 		ax.step(epos.obs_zoom['multi']['bin'], epos.obs_zoom['multi'][key], 
-			where='mid', color='C1', label='Kepler subset')
+			where='mid', color='C1', label='Kepler')
 
 	else:
 		# observations
@@ -192,7 +192,7 @@ def multiplicity_cdf(epos, MC=False):
 		cdf= np.arange(bincounts.size, dtype=float)/bincounts.size
 		ax.plot(bincounts, cdf,  
 			drawstyle='steps-mid', 
-			ls='-', marker='', color='k', label='Kepler subset')
+			ls='-', marker='', color='k', label='Kepler')
 
 	# observations
 	#ax.plot(epos.multi['bin'], epos.multi['count'], drawstyle='steps-mid', 
@@ -207,8 +207,9 @@ def multiplicity_cdf(epos, MC=False):
 def periodratio(epos, MC=False, N=False, Input=False, MCMC=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
-	ax.set_title('period ratio adjacent planets')
-	ax.set_xlabel('period outer/inner')
+	ax.set_title('Period Ratio of Adjacent Planets')
+#	ax.set_xlabel('period outer/inner')
+	ax.set_xlabel('$\mathcal{P}$ = Period Outer/Inner')
 	ax.set_ylabel('PDF')
 
 	ax.set_xlim(1, 10)
@@ -228,7 +229,7 @@ def periodratio(epos, MC=False, N=False, Input=False, MCMC=False):
 				#ax.hist(ss['multi']['Pratio'], bins=bins, color='b', alpha=1./len(epos.ss_sample))
 		else:
 			ax.hist(ss['multi']['Pratio'], bins=bins, 
-					color='C0', histtype='stepfilled', label=epos.name)
+					color='C0', histtype='stepfilled', label='Observable') #epos.name)
 	
 		if N:
 			# planets inbetween?
@@ -236,7 +237,7 @@ def periodratio(epos, MC=False, N=False, Input=False, MCMC=False):
 			#	bins=bins, ec='k', histtype='step', label='Adjacent planet')
 			ax.hist(np.concatenate(ss['multi']['dPN'][1:]), 
 				bins=bins, hatch='xx',
-				histtype='stepfilled', label='Planet inbetween') # ec, color
+				histtype='stepfilled', label='Planet Inbetween') # ec, color
 		else:
 			#ax.axvline(np.median(ss['multi']['Pratio']), color='C0', ls='--')
 			pass
@@ -264,12 +265,12 @@ def periodratio(epos, MC=False, N=False, Input=False, MCMC=False):
 		Pgrid= np.logspace(0,1)
 		pdf, _= draw_dP(epos, Pgrid=Pgrid)
 		pdf*= 0.95* ax.get_ylim()[1] / max(pdf)	
-		ax.plot(Pgrid, pdf, marker='', ls='-', color='r',label='input')
+		ax.plot(Pgrid, pdf, marker='', ls='-', color='r',label='Intrinsic')
 
 	elif epos.Zoom:
 		# Observed zoom
 		ax.hist(epos.obs_zoom['multi']['Pratio'], \
-			bins=bins, ec='C1', histtype='step', label='Kepler subset')
+			bins=bins, ec='C1', histtype='step', label='Kepler')
 		if not MCMC:
 			ax.axvline(np.median(epos.obs_zoom['multi']['Pratio']), color='C1', ls='--')
 	
@@ -287,7 +288,8 @@ def periodratio_cdf(epos, Input=True, MC=False):
 	# plot multiplicity CDF
 	f, ax = plt.subplots()
 	ax.set_title('period ratio adjacent planets')
-	ax.set_xlabel('period outer/inner')
+	#ax.set_xlabel('period outer/inner')
+	ax.set_xlabel('$\mathcal{P}$ = Period Outer/Inner')
 	ax.set_ylabel('CDF')
 
 	ax.set_xlim(1, 10)
@@ -305,7 +307,7 @@ def periodratio_cdf(epos, Input=True, MC=False):
 		# Observed zoom
 		Psort= np.sort(epos.obs_zoom['multi']['Pratio'])
 		cdf= np.arange(Psort.size, dtype=float)/Psort.size
-		ax.plot(Psort, cdf, color='k', label='Kepler subset')
+		ax.plot(Psort, cdf, color='k', label='Kepler')
 
 	else:
 		for resonance in [2./1., 3./2.]: ax.axvline(resonance, ls=':', color='g')
@@ -319,7 +321,7 @@ def periodratio_cdf(epos, Input=True, MC=False):
 # 	if Input and epos.Parametric:
 # 		Pgrid= np.logspace(0,1)
 # 		_, cdf= draw_dP(epos, Pgrid=Pgrid)
-# 		ax.plot(Pgrid, cdf, marker='', ls='-', color='r',label='input')
+# 		ax.plot(Pgrid, cdf, marker='', ls='-', color='r',label='Intrinsic')
 # 	
 # 	# HZ
 # 	ax.axvline(2.6, ls=':',label='Hab zone width')
@@ -336,7 +338,7 @@ def periodratio_cdf(epos, Input=True, MC=False):
 def periodinner(epos, MC=False, N=False, Input=False, MCMC=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
-	ax.set_title('Period innermost planet')
+	ax.set_title('Period of the Innermost Planet')
 	ax.set_xlabel('Orbital Period [days]')
 	ax.set_ylabel('PDF')
 
@@ -359,7 +361,7 @@ def periodinner(epos, MC=False, N=False, Input=False, MCMC=False):
 						
 		else:
 			ax.hist(ss['multi']['Pinner'], bins=bins, 
-					color='C0', histtype='stepfilled', label=epos.name)
+					color='C0', histtype='stepfilled', label='Observable') #epos.name)
 			
 			# Solar system analologs (from dr25_solarsystem.py)
 			#Pcut=45
@@ -387,7 +389,7 @@ def periodinner(epos, MC=False, N=False, Input=False, MCMC=False):
 			#		ec='k', histtype='step', label='actual inner planet')
 			# Not actual inner planet
 			ax.hist(np.concatenate(ss['multi']['PN'][1:]), bins=bins, 
-					color='r', histtype='stepfilled', label='not inner planet')
+					color='r', histtype='stepfilled', label='Not Inner Planet')
 
 	else:
 		# observed all
@@ -397,11 +399,11 @@ def periodinner(epos, MC=False, N=False, Input=False, MCMC=False):
 	if Input and epos.Parametric:
 		_, _, pdf0_X, _= draw_PR(epos, Init=True, ybin=epos.yzoom)
 		norm= 0.95* ax.get_ylim()[1] / max(pdf0_X)
-		ax.plot(epos.MC_xvar, pdf0_X*norm, marker='',ls='-',color='r',label='input')
+		ax.plot(epos.MC_xvar, pdf0_X*norm, marker='',ls='-',color='r',label='Intrinsic')
 				
 	elif epos.Zoom and not N:
 		ax.hist(epos.obs_zoom['multi']['Pinner'], bins=bins, 
-			ec='C1', histtype='step', label='Kepler subset')
+			ec='C1', histtype='step', label='Kepler')
 	
 	prefix= 'output' if MC else 'survey'
 	suffix= '.index' if N else '' 
@@ -439,7 +441,7 @@ def periodinner_cdf(epos, MC=False):
 		# Observed zoom
 		Psort= np.sort(epos.obs_zoom['multi']['Pinner'])
 		cdf= np.arange(Psort.size, dtype=float)/Psort.size
-		ax.plot(Psort, cdf, color='k', label='Kepler subset')
+		ax.plot(Psort, cdf, color='k', label='Kepler')
 	else:
 		# observed all
 		Psort= np.sort(epos.multi['Pinner'])

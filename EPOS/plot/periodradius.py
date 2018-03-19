@@ -29,14 +29,8 @@ def periodradius(epos, SNR=True, Parametric=False):
 	''' plot R(P), main panel'''
 	ax.set_title(title)
 	helpers.set_axes(ax, epos, Trim=True)
-	if Parametric or len(epos.groups)==1:
-		if SNR: ax.plot(transit['P'], transit['Y'], ls='', marker='.', color='C6')
-		ax.plot(sim['P'], sim['Y'], ls='', marker='.', color='C0')
-	else:
-		# ??
-		for k, sg in enumerate(epos.groups):
-			subset= sim['i sg']==k
-			ax.plot(sim['P'][subset], sim['Y'][subset], ls='', marker='.', mew=0, ms=5.0, color=clrs[k % 4], label=sg['name'])
+	if SNR: ax.plot(transit['P'], transit['Y'], ls='', marker='.', color='C6')
+	ax.plot(sim['P'], sim['Y'], ls='', marker='.', color='C0')
 
 	''' Period side panel '''
 	helpers.set_axis_distance(axP, epos, Trim=True)
@@ -165,28 +159,29 @@ def pdf_3d(epos):
 	sim=epos.synthetic_survey
 	
 	# PDF, individual contributions
-	if epos.populationtype is 'model':
-		for k, sg in enumerate(epos.groups):
-			subset= sim['i sg']==k
-			P= sim['P'][subset]
-			R= sim['Y'][subset]
-			ax.plot(np.log10(P),np.log10(R), zs=0,zdir='z',
-				ls='',marker='.',mew=0,ms=5.0,color=clrs[k % 4])
-				
-			xgrid= np.logspace(*np.log10(epos.xtrim))
-			pdf= regression.sliding_window_log(P, None, xgrid) #, width=2. )
-			ax.plot(np.log10(xgrid), pdf, zs=yplane,zdir='y', 
-				ls='-', marker='', color=clrs[k % 4],
-				label='{} x{:.3f}'.format(sg['name'], sg['weight']))
+# 	if epos.populationtype is 'model':
+# 		for k, sg in enumerate(epos.groups):
+# 			subset= sim['i sg']==k
+# 			P= sim['P'][subset]
+# 			R= sim['Y'][subset]
+# 			ax.plot(np.log10(P),np.log10(R), zs=0,zdir='z',
+# 				ls='',marker='.',mew=0,ms=5.0,color=clrs[k % 4])
+# 				
+# 			xgrid= np.logspace(*np.log10(epos.xtrim))
+# 			pdf= regression.sliding_window_log(P, None, xgrid) #, width=2. )
+# 			ax.plot(np.log10(xgrid), pdf, zs=yplane,zdir='y', 
+# 				ls='-', marker='', color=clrs[k % 4],
+# 				label='{} x{:.3f}'.format(sg['name'], sg['weight']))
+# 
+# 			ygrid= np.logspace(*np.log10(epos.ytrim))
+# 			pdf= regression.sliding_window_log(R, None, ygrid) #, width=2. )
+# 			ax.plot(np.log10(ygrid), pdf, zs=xplane, zdir='x', 
+# 				ls='-', marker='', color=clrs[k % 4])
+# 	else:
 
-			ygrid= np.logspace(*np.log10(epos.ytrim))
-			pdf= regression.sliding_window_log(R, None, ygrid) #, width=2. )
-			ax.plot(np.log10(ygrid), pdf, zs=xplane, zdir='x', 
-				ls='-', marker='', color=clrs[k % 4])
-	else:
-		# top left panel (P,R)
-		ax.plot(np.log10(sim['P']), np.log10(sim['Y']),zs=0,zdir='z', 
-				ls='', marker='.', mew=0, ms=5.0, color='k')
+	# top left panel (P,R)
+	ax.plot(np.log10(sim['P']), np.log10(sim['Y']),zs=0,zdir='z', 
+			ls='', marker='.', mew=0, ms=5.0, color='k')
 		
 	# PDF, all combined, 2 panels
 	xgrid= np.logspace(*np.log10(epos.xtrim))

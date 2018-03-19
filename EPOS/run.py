@@ -61,7 +61,12 @@ def once(epos, fac=1.0, Extra=None, goftype='KS'):
 
 		else:
 			# set defaults for planet formation models here
-			# epos.fitpars.default
+			epos.fitpars.default('eta',0.5)
+			epos.fitpars.default('f_cor',0.5)
+			epos.fitpars.default('f_iso',0.5)
+			epos.fitpars.default('f_inc',1.0)
+			epos.fitpars.default('f_dP',1.0)
+
 			if not epos.MassRadius and not 'R' in epos.pfm:
 				raise ValueError('Supply radii or a mass-radius relation')
 		
@@ -279,7 +284,6 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 	''' construct 1D arrays allP, allR or allM
 	dimension equal to sample size * planets_per_star
 	also keeping track of:
-		SG: subgroup
 		ID: star identifier
 		I: inc
 		N: Nth planet in system
@@ -361,75 +365,54 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		else:		allR= allY
 				
 	else:
-		''' Fit parameters (redo) '''
-		f_cor= 0.5 # doesn't seem to be well-constrained, light degenracy with f_inc
-		
-		if len(fpara) is len(epos.groups):
-			''' Draw systems from subgroups, array with length survey size '''
-			weight= fpara
-			f_iso= 0.0 # 0.6 is best fit?
-			f_dP= 1.0
-			f_inc= 1.0
-			if hasattr(epos,'p0'): 
-				weight= [epos.p0[0]]
-				#f_iso, f_dP, f_inc, f_cor= epos.p0[1:]
-				f_iso, f_dP, f_inc= epos.p0[1:]
-		else:
-			try:
-				weight= [fpara[0]]
-				f_iso= fpara[1]
-				f_dP= fpara[2]
-				f_inc= fpara[3]
-				#f_cor= fpara[4]
-			except:
-				raise ValueError('\Wrong number of parameters ({})'.format(len(fpara)))
+		pfm= epos.pfm
 			
-			if not (0<=f_iso<=1) or not (0 <= weight[0] <= 1) or not (0 <= f_cor <= 1) \
-				or not (0<=f_dP<=10) or not (0 <= f_inc < 3):
-				if Store: raise ValueError('parameters out of bounds')
-				return -np.inf		
-		
-		'''
-		Draw from subgroups 
-		'''
-		L_P, L_M, L_R, L_I= [], [], [], []
-		L_SG=[] # keep track of subgroup
-		L_ID=[] # keep track of multis
-		L_dP=[] # Period ratios (input)
-		IDstart=0
-		for i, sg in enumerate(epos.groups):
-			ndraw= int(round(1.*epos.nstars*weight[i]/sg['n']))
-			# note: do a proper calc with // and % for low weights
-			if Verbose: 
-				print '  {} planets in subgroup {} with {} simulations'.format(
-					sg['all_P'].size, sg['name'], sg['n'])
-				print '  {} stars in survey, {} draws from subgroup (w={:.3f})'.format(
-					epos.nstars, ndraw, weight[i])
-			L_P.append(np.tile(sg['all_P'], ndraw))
-			L_M.append(np.tile(sg['all_mass'], ndraw))
-			L_SG.append(np.full_like(L_M[-1],i))
-			for j in range(ndraw):
-				L_ID.append(sg['all_ID']+ IDstart)
-				IDstart= L_ID[-1][-1]
-			
-			# set allN, Nth planet is system
-			
-			if 'all_Pratio' in sg: L_dP.append(np.tile(sg['all_Pratio'], ndraw))
-			if 'all_R' in sg: L_R.append(np.tile(sg['all_R'], ndraw))
+		''' parameters within bounds? '''
+		# move out of loop?
+		try:
+			epos.fitpars.checkbounds(fpara)
+		except ValueError as message:
+			if Store: raise
+			else:
+				logging.debug(message)
+				return -np.inf
+				
+		''' Fit parameters'''
+		pps= epos.fitpars.getmc('eta', fpara)
 
-			if epos.Multi: L_I.append(np.tile(sg['all_inc'], ndraw))
-
+		f_cor= epos.fitpars.getmc('f_cor', fpara)
+		f_iso= epos.fitpars.getmc('f_iso', fpara)
+		f_inc= epos.fitpars.getmc('f_inc', fpara)
+		f_dP= epos.fitpars.getmc('f_dP', fpara)
+					
+		# need this here?
+		if not (0<=f_iso<=1) or not (0 <= pps <= 1) or not (0 <= f_cor <= 1) \
+				or not (0<=f_dP<=10) or not (0 <= f_inc < 10):
+			if Store: raise ValueError('parameters out of bounds')
+			return -np.inf
+		
+		''' 
+		Draw from all
+		'''
+		ndraw= int(round(1.*epos.nstars*pps/pfm['ns']))
+		if Verbose: 
+			print '  {} planets in {} simulations'.format(pfm['np'],pfm['ns'])
+			print '  {} stars in survey, {} draws, eta={:.2g}'.format(epos.nstars, ndraw, pps)
+		
+		allP= np.tile(pfm['P'], ndraw)
+		allM= np.tile(pfm['M'], ndraw)
+		allY= allM
+		if 'R' in pfm:
+			allR= np.tile(pfm['R'], ndraw)
+		
+		if epos.Multi:
+			allI= np.tile(pfm['inc'], ndraw)
+			allN= np.tile(pfm['kth'], ndraw)
+			
+			allID= np.tile(pfm['ID'], ndraw) \
+					+ np.repeat(np.arange(ndraw)*pfm['ns'], pfm['np'])
+			
 		dInc=False # Isotropic inclinations not implemented
-
-		allP=np.concatenate(L_P)
-		allM=np.concatenate(L_M)
-		allSG=np.concatenate(L_SG)
-		allID=np.concatenate(L_ID)
-		if epos.Multi: allI=np.concatenate(L_I)
-		if 'all_Pratio' in sg: alldP=np.concatenate(L_dP)
-		if 'all_R' in sg: allR=np.concatenate(L_R)
-		#print len(np.unique(L_allID))/ndraw # == sg['n']
-	#if Verbose: print '{:.3f} sec'.format(time.time()-tstart)
 			
 	''' 
 	Identify transiting planets (itrans is a T/F array)
@@ -461,9 +444,8 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		if epos.Parametric:
 			MC_N= allN[itrans] # also for PFM?
 		else:
-			MC_P*= (1.+0.1*np.random.normal(size=MC_M.size) )
-			MC_SG= allSG[itrans]
-			if 'all_Pratio' in sg: MC_dP= alldP[itrans]
+			#MC_P*= (1.+0.1*np.random.normal(size=MC_ID.size) )
+			MC_R*= (1.+0.3*np.random.normal(size=MC_ID.size) )
 
 	'''
 	Set the observable MC_Y (R or Msin i) 
@@ -485,11 +467,8 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 	'''
 	if Store:
 		tr= epos.transit={}
-
 		tr['P']= MC_P
 		tr['Y']= MC_Y
-		if not epos.Parametric:
-			tr['i sg']= MC_SG
 	
 	'''
 	Identify detectable planets based on SNR (idet is a T/F array)
@@ -520,8 +499,8 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 	det_Y= MC_Y[idet]
 
 	#if len(alldP)>0: 
-	if not epos.Parametric and 'all_Pratio' in sg: 
-		det_dP= MC_dP[idet]
+# 	if not epos.Parametric and 'all_Pratio' in sg: 
+# 		det_dP= MC_dP[idet]
 
 	if Verbose and epos.Multi: 		
 		print '  {} transiting planets, {} detectable'.format(idet.size, idet.sum())
@@ -567,11 +546,23 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		''' Multi-planet frequency, pearson chi_squared '''
 		k, Nk= multi.frequency(det_ID[ix&iy])
 		Nk_obs= epos.obs_zoom['multi']['count']
+		ncont= max(len(Nk),len(Nk_obs))
+		
 		# pad with zeros
-		obs= np.zeros((2,max(len(Nk),len(Nk_obs))), dtype=int)
+		obs= np.zeros((2,ncont), dtype=int)
 		obs[0,:len(Nk)]= Nk
-		obs[1,:len(Nk_obs)]= Nk_obs			
-		_, prob['Nk'], _, _ = chi2_contingency(obs)
+		obs[1,:len(Nk_obs)]= Nk_obs
+		# remove double zero frequencies
+		obs=obs[:, ~((obs[0,:] == 0) & (obs[1,:]==0))]
+		
+		try:	
+			_, prob['Nk'], _, _ = chi2_contingency(obs)
+		except ValueError:
+			#print Nk
+			#print Nk_obs
+			#print obs
+			raise
+			
 		with np.errstate(divide='ignore'): lnp['Nk']= np.log(prob['Nk'])			
 		
 		''' Period ratio, innermost planet '''
@@ -636,10 +627,6 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		ss={}
 		ss['P']= det_P # MC_P[idet]
 		ss['Y']= det_Y
-		if not epos.Parametric:
-			ss['i sg']= MC_SG[idet]
-			if 'all_Pratio' in sg:
-				ss['dP']= det_dP
 		if epos.MassRadius:
 			# or if has mass and radius
 			ss['M']= MC_M[idet]

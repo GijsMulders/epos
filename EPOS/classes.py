@@ -491,7 +491,13 @@ Plots the exoplanet survey: observed planets and completeness
 		# lexsort?
 		pfm['sma']= np.asarray(sma)
 		pfm['M']= np.asarray(mass)
-		pfm['ID']= np.arange(len(sma)) if starID is None else np.asarray(starID)
+		
+		# ID is array 0...ns
+		if starID is None:
+			pfm['ID']= np.arange(len(sma))
+		else:
+			_, pfm['ID']= np.unique(starID, return_inverse=True)
+			
 		if radius is not None:
 			pfm['R']= np.asarray(radius)		
 		if tag is not None:
@@ -501,7 +507,7 @@ Plots the exoplanet survey: observed planets and completeness
 		else:
 			self.Multi= True
 			pfm['inc']= np.asarray(inc)
-		
+				
 		pfm['P']= pfm['sma']**1.5 * 365.25 # update
 		#pfm['dP']= ??
 		
@@ -517,15 +523,21 @@ Plots the exoplanet survey: observed planets and completeness
 			EPOS.multi.indices(pfm['ID'], Verbose=True)
 			EPOS.multi.frequency(pfm['ID'], Verbose=True)
 			
+			# period ratio, multi-planet index
 			single, multi, ksys, multis= EPOS.multi.nth_planet(pfm['ID'],pfm['P'])
 			pfm['dP']=np.ones_like(pfm['P'])
+			pfm['kth']=np.zeros_like(pfm['P'], dtype=int)
+
 			pfm['dP'][single]= 0 #np.nan
-			for km in multis[1:]:
+			for k, km in enumerate(multis[1:]):
 				# 2nd, 3rd, 4th??
 				pfm['dP'][km]= pfm['P'][km]/pfm['P'][np.array(km)-1]
+				pfm['kth'][km]= k+1
 # 			print pfm['ID'][1:6]
 # 			print pfm['P'][1:6]
 # 			print pfm['dP'] # not ok?
+#			for a,b in zip(pfm['ID'], pfm['kth']):
+#				print a,b
 
 			# innermost planet in multi
 			pfm['Pin']= np.squeeze(pfm['P'][np.array(multis[1])-1])

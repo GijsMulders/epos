@@ -24,11 +24,11 @@ def all(epos):
 		multi.multiplicity(epos, MC=True, Planets=True)
 		multi.multiplicity_cdf(epos, MC=True)
 		multi.periodratio(epos, MC=True)
-		if epos.spacing is not None:
+		if epos.Parametric and epos.spacing is not None:
 			multi.periodratio(epos, MC=True, Input=True)
 		multi.periodratio_cdf(epos, MC=True)
 		multi.periodinner(epos, MC=True)
-		if epos.spacing is not None:
+		if epos.Parametric and epos.spacing is not None:
 			multi.periodinner(epos, MC=True, Input=True)
 		multi.periodinner_cdf(epos, MC=True)
 		# pdf per subgroup
@@ -40,7 +40,7 @@ def all(epos):
 		massradius.massradius(epos, MC=True, Log=True)
 
 	else:
-		if epos.Multi and not epos.RV:
+		if epos.Parametric and epos.Multi and not epos.RV:
 			multi.periodratio(epos, MC=True, N=True)
 			if epos.spacing is not None:
 				multi.periodratio(epos, MC=True, N=True, Input=True)
