@@ -2,7 +2,8 @@ import numpy as np
 import scipy.stats # norm
 import EPOS.fitfunctions
 
-def periodradius(epos, Init=False, fpara=None, FromFit=True, xbin=None, ybin=None, xgrid=None, ygrid=None):
+def periodradius(epos, Init=False, fpara=None, fdet=None, 
+			xbin=None, ybin=None, xgrid=None, ygrid=None):
 	''' return the period-radius distribution'''
 	if fpara is None:
 		pps= epos.pdfpars.get('pps',Init=Init)
@@ -14,6 +15,10 @@ def periodradius(epos, Init=False, fpara=None, FromFit=True, xbin=None, ybin=Non
 	
 	_pdf= epos.func(epos.X_in, epos.Y_in, *fpar2d)
 	_pdf_X, _pdf_Y= np.sum(_pdf, axis=1), np.sum(_pdf, axis=0)
+	
+	if fdet is not None:
+		det_pdf= epos.func(epos.X_in, epos.Y_in, *fpar2d)*fdet
+		det_pdf_X, det_pdf_Y= np.sum(_pdf*fdet, axis=1), np.sum(_pdf*fdet, axis=0)
 	
 	# calculate pdf on different grid?
 	if xbin is not None:
@@ -42,10 +47,16 @@ def periodradius(epos, Init=False, fpara=None, FromFit=True, xbin=None, ybin=Non
 		pdf_Y= np.average(pdf, axis=0) * dlnx
 
 	else:
-		# normalized in units dlnx, dlny, and dlnxdlny
-		pdf_X= pps* _pdf_X/np.sum(_pdf_X) * epos.scale_x
-		pdf_Y= pps* _pdf_Y/np.sum(_pdf_Y) * epos.scale_in_y
-		pdf= pps* _pdf/np.sum(_pdf)* epos.scale
+		if fdet is None:
+			# normalized in units dlnx, dlny, and dlnxdlny
+			pdf_X= pps* _pdf_X/np.sum(_pdf_X) * epos.scale_x
+			pdf_Y= pps* _pdf_Y/np.sum(_pdf_Y) * epos.scale_in_y
+			pdf= pps* _pdf/np.sum(_pdf)* epos.scale
+		else:
+			# normalized in total counts
+			pdf_X= pps* det_pdf_X/np.sum(_pdf_X) * epos.scale_x *epos.nstars
+			pdf_Y= pps* det_pdf_Y/np.sum(_pdf_Y) * epos.scale_in_y *epos.nstars
+			pdf= pps* det_pdf/np.sum(_pdf)* epos.scale * epos.nstars
 	
 	return pps, pdf, pdf_X, pdf_Y
 

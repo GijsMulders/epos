@@ -10,9 +10,13 @@ def all(epos):
 
 	print '\nPlotting output...'
 	
-	periodradius.periodradius(epos, Parametric=epos.Parametric, SNR=False)
-	periodradius.periodradius(epos, Parametric=epos.Parametric, SNR=True)
-	
+	if epos.MonteCarlo:
+		periodradius.periodradius(epos, Parametric=epos.Parametric, SNR=False)
+		periodradius.periodradius(epos, Parametric=epos.Parametric, SNR=True)
+	else:
+		# plot period-radius for non-MC
+		pass
+		
 	periodradius.cdf(epos)
 	periodradius.panels(epos)
 	

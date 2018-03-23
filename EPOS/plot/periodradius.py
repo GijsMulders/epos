@@ -74,7 +74,11 @@ def panels(epos, MCMC=False):
 	''' plot R(P), main panel'''
 	ax.set_title('detectable planets')
 	helpers.set_axes(ax, epos, Trim=True)
-	ax.plot(sim['P'], sim['Y'], ls='', marker='.', color=clr_bf if MCMC else 'C0')
+	if epos.MonteCarlo:
+		ax.plot(sim['P'], sim['Y'], ls='', marker='.', color=clr_bf if MCMC else 'C0')
+	else:
+		levels= np.linspace(0,np.max(sim['pdf']))		
+		ax.contourf(epos.MC_xvar, epos.MC_yvar, sim['pdf'].T, cmap='Blues', levels=levels)
 
 	''' Period side panel '''
 	helpers.set_axis_distance(axP, epos, Trim=True)
@@ -105,18 +109,31 @@ def panels(epos, MCMC=False):
 	except:
 		xbins= np.logspace(*np.log10(epos.xzoom), num=20)
 		ybins= np.logspace(*np.log10(epos.yzoom), num=10)
-	
+	xscale= np.log(xbins[1]/xbins[0])
+	yscale= np.log(ybins[1]/ybins[0])
+
 	if MCMC:
+		histkeys= {'color':'b', 'alpha':0.1}
 		for ss in epos.ss_sample:
-			axP.hist(ss['P zoom'], bins=xbins, histtype='step', color='b', alpha=0.1)
-			axR.hist(ss['Y zoom'], bins=ybins, orientation='horizontal', \
-				histtype='step', color='b', alpha=0.1)
-		axP.hist(sim['P zoom'], bins=xbins, histtype='step', color=clr_bf)
-		axR.hist(sim['Y zoom'], bins=ybins, orientation='horizontal', \
-			histtype='step', color=clr_bf)
+			if epos.MonteCarlo:
+				axP.hist(ss['P zoom'], bins=xbins, histtype='step', **histkeys)
+				axR.hist(ss['Y zoom'], bins=ybins, orientation='horizontal', \
+					histtype='step', **histkeys)
+			else:
+				axP.plot(ss['P zoom'], ss['P zoom pdf']*xscale, 
+					marker='', ls='-', **histkeys)
+				axR.plot(ss['Y zoom pdf']*yscale, ss['Y zoom'], 
+					marker='', ls='-', **histkeys)
+		histdict= {'histtype':'step', 'color':clr_bf}
 	else:
-		axP.hist(sim['P zoom'], bins=xbins)
-		axR.hist(sim['Y zoom'], bins=ybins, orientation='horizontal')
+		histdict={}
+	
+	if epos.MonteCarlo:
+		axP.hist(sim['P zoom'], bins=xbins, **histdict)
+		axR.hist(sim['Y zoom'], bins=ybins, orientation='horizontal', **histdict)
+	else:
+		axP.plot(sim['P zoom'], sim['P zoom pdf']*xscale, marker='', ls='-')
+		axR.plot(sim['Y zoom pdf']*yscale, sim['Y zoom'], marker='', ls='-')
 
 	''' Observations'''
 	axP.hist(epos.obs_zoom['x'], bins=xbins,histtype='step', color='C1')
@@ -311,11 +328,15 @@ def cdf(epos):
 	''' 
 	top left: synthetic obsservation
 	'''
-	sim= epos.synthetic_survey	
-	ax1.set_title('Synthetic ({})'.format(sim['P zoom'].size))
+	sim= epos.synthetic_survey
 	helpers.set_axes(ax1, epos, Trim=True)
-	ax1.plot(sim['P'], sim['Y'], ls='', marker='.', mew=0, ms=5.0, color='r', alpha=0.5)
-		
+	ax1.set_title('Synthetic ({})'.format(sim['nobs']))
+	if epos.MonteCarlo:
+		ax1.plot(sim['P'], sim['Y'], ls='', marker='.', mew=0, ms=5.0, color='r', alpha=0.5)
+	else:
+		levels= np.linspace(0,np.max(sim['pdf']))		
+		ax1.contourf(epos.MC_xvar, epos.MC_yvar, sim['pdf'].T, cmap='Reds', levels=levels)
+	
 	if epos.Zoom:
 		ax1.add_patch(patches.Rectangle( (epos.xzoom[0],epos.yzoom[0]), 
 			epos.xzoom[1]-epos.xzoom[0], epos.yzoom[1]-epos.yzoom[0],fill=False, zorder=1) )
@@ -342,9 +363,12 @@ def cdf(epos):
 
 	ax3.set_xlim(*epos.xzoom)
 
-	#model histogram x
-	P= sim['P zoom']
-	ax3.plot(np.sort(P), np.arange(P.size, dtype=float)/P.size, ls='-', marker='', color='r')
+	if epos.MonteCarlo:
+		#model histogram x
+		P= sim['P zoom']
+		ax3.plot(np.sort(P), np.arange(P.size, dtype=float)/P.size, ls='-', marker='', color='r')
+	else:
+		ax3.plot(sim['P zoom'], sim['P zoom cdf'], ls='-', marker='', color='r')
 	
 	#obs histogram x
 	P= epos.obs_zoom['x']
@@ -364,9 +388,12 @@ def cdf(epos):
 	ax4.set_xticks(epos.yticks)
 	ax4.get_xaxis().set_major_formatter(tck.ScalarFormatter())
 
-	#model histogram x
-	R= sim['Y zoom']
-	ax4.plot(np.sort(R), np.arange(R.size, dtype=float)/R.size, ls='-', marker='', color='r')
+	if epos.MonteCarlo:
+		#model histogram x
+		R= sim['Y zoom']
+		ax4.plot(np.sort(R), np.arange(R.size, dtype=float)/R.size, ls='-', marker='', color='r')
+	else:
+		ax4.plot(sim['Y zoom'], sim['Y zoom cdf'], ls='-', marker='', color='r')
 
 	#obs histogram x
 	R= epos.obs_zoom['y']

@@ -1,6 +1,6 @@
 import numpy as np
 from scipy import interpolate
-from scipy.stats import ks_2samp, anderson_ksamp, norm, chi2_contingency
+from scipy.stats import ks_2samp, anderson_ksamp, norm, chi2_contingency, kstest
 import os, sys, logging, time
 from functools import partial
 
@@ -84,7 +84,8 @@ def once(epos, fac=1.0, Extra=None, goftype='KS'):
 	else:
 		print '\nStarting extra MC run {}'.format(Extra)
 	tstart=time.time()
-	MC(epos, fpara, Store=True, Extra=Extra)
+	runonce= MC if epos.MonteCarlo else noMC
+	runonce(epos, fpara, Store=True, Extra=Extra)
 	tMC= time.time()
 	print 'Finished one MC in {:.3f} sec'.format(tMC-tstart)
 	epos.tMC= tMC-tstart
@@ -93,6 +94,8 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1, npos=30):
 	if not 'emcee' in sys.modules:
 		raise ImportError('You need to install emcee')
 	assert epos.Prep
+	
+	runonce= MC if epos.MonteCarlo else noMC
 	
 	''' set starting parameters '''
 	fpara= epos.fitpars.getfit(Init=True)
@@ -152,7 +155,7 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1, npos=30):
 		logging.info('MCMC with random seed {}'.format(epos.seed))
 		
 		''' Wrap function '''
-		lnmc= partial(MC, epos, Verbose=False)
+		lnmc= partial(runonce, epos, Verbose=False)
 	
 		''' Set up the MCMC walkers '''
 		#p0 = [np.array(fpara)*np.random.uniform(1.-dx,1+dx,len(fpara)) 
@@ -208,7 +211,8 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1, npos=30):
 		print '\nMC-ing the {} samples to plot'.format(npos)
 		epos.ss_sample=[]
 		for fpara in epos.plotsample:
-			epos.ss_sample.append(MC(epos, fpara, Store=True, Sample=True, Verbose=False))
+			epos.ss_sample.append(\
+				runonce(epos, fpara, Store=True, Sample=True, Verbose=False))
 		# parallel
 		# return & store in structure
 	
@@ -236,7 +240,7 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1, npos=30):
 		print '  {}= {:.3g} +{:.3g} -{:.3g}'.format(pname,*fpar)
 
 	print '\nStarting the best-fit MC run'	
-	MC(epos, np.array([p[0] for p in fitpars]), Store=True)
+	runonce(epos, np.array([p[0] for p in fitpars]), Store=True)
 	
 def prep_obs(epos):
 	# occurrence pdf on sma from plot_input_diag?
@@ -649,6 +653,7 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		epos.lnprob=lnprob
 		ss['P zoom']= det_P[ix&iy]
 		ss['Y zoom']= det_Y[ix&iy]
+		ss['nobs']= ss['P zoom'].size
 		
 		# Store as an extra model 
 		if Sample:
@@ -666,6 +671,123 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		if np.isnan(lnprob):
 			return -np.inf
 		return lnprob
+
+def noMC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None, 
+		Verbose=True):
+	''' 
+	Do the Simulations without Monte Carlo
+	'''	
+	if Verbose: tstart=time.time()
+	#if not Store: logging.debug(' '.join(['{:.3g}'.format(fpar) for fpar in fpara]))
+
+	if epos.Multi: raise ValueError('Multi-planets need Monte Carlo (?)')
+	if not epos.Parametric: 
+		raise ValueError('Planet Formation models need Monte Carlo (?)')
+		
+	''' parameters within bounds? '''
+	try:
+		epos.pdfpars.checkbounds(fpara)
+	except ValueError as message:
+		if Store: raise
+		else:
+			logging.debug(message)
+			return -np.inf
+
+	''' Generate period-radius distribution '''
+	if epos.MassRadius:
+		raise ValueError('Generate pdf on radius grid here')
+	else:
+		pps, pdf, pdf_X, pdf_Y= periodradius(epos, fpara=fpara, fdet=epos.f_det)
+
+	'''
+	Probability that simulated data matches observables
+	'''
+	tstart=time.time()
+	prob={}
+	lnp={}
+	
+	pdf_x= np.interp(epos.noMC_zoom_x, epos.MC_xvar, pdf_X)
+	pdf_y= np.interp(epos.noMC_zoom_y, epos.MC_yvar, pdf_Y)
+	cdf_x= np.cumsum(pdf_x)
+	cdf_y= np.cumsum(pdf_y)
+	cdf_x/= cdf_x[-1]
+	cdf_y/= cdf_y[-1] 
+	
+	''' Wrap functions '''
+	func_cdf_X= partial(np.interp, xp=epos.noMC_zoom_x, fp=cdf_x, left=0, right=0)
+	func_cdf_Y= partial(np.interp, xp=epos.noMC_zoom_y, fp=cdf_y, left=0, right=0)
+		 	
+	prob['xvar'], lnp['xvar']= _prob_ks_func(epos.obs_zoom['x'], func_cdf_X)
+	prob['yvar'], lnp['yvar']= _prob_ks_func(epos.obs_zoom['y'], func_cdf_Y)
+
+	#nobs= int(pdf[epos.trim_to_zoom].sum())
+	nobs_x=int(np.sum(pdf_x)/epos.noMC_scale_x)
+	nobs_y=int(np.sum(pdf_y)/epos.noMC_scale_y)
+	nobs= int(np.sqrt(nobs_x*nobs_y))
+	if Verbose: print 'nobs={} (x:{},y:{})'.format(nobs,nobs_x,nobs_y)
+
+	chi2= (epos.obs_zoom['x'].size-nobs)**2. / epos.obs_zoom['x'].size
+	lnp['N']= -0.5* chi2
+	prob['N']= np.exp(-0.5* chi2)
+		
+	prob_keys= ['N','xvar','yvar']
+
+	# combine with Fischer's rule:
+	lnprob= np.sum([lnp[key] for key in prob_keys])
+	#dof= len(prob_keys)
+	chi_fischer= -2. * lnprob
+	
+	
+	if Verbose:
+		print '\nGoodness-of-fit'
+		print '  logp= {:.1f}'.format(lnprob)
+		print '  - p(n={})={:.2g}'.format(nobs, prob['N'])
+		print '  - p(x)={:.2g}'.format(prob['xvar'])
+		print '  - p(y)={:.2g}'.format(prob['yvar'])
+		
+	tgof= time.time()
+	if Verbose: print '  observation comparison in {:.3f} sec'.format(tgof-tstart)
+
+	''' Store detectable planet population '''	
+	if Store:
+		ss={}
+		ss['nobs']= nobs
+		
+		ss['pdf']= pdf
+
+		ss['P']= epos.MC_xvar
+		ss['P pdf']= pdf_X
+		
+		ss['Y']= epos.MC_yvar
+		ss['Y pdf']= pdf_Y
+		
+		ss['P zoom']= epos.noMC_zoom_x
+		ss['P zoom pdf']= pdf_x # /scale?
+		ss['P zoom cdf']= cdf_x
+
+		ss['Y zoom']= epos.noMC_zoom_y
+		ss['Y zoom pdf']= pdf_y # /scale?
+		ss['Y zoom cdf']= cdf_y
+		
+		epos.prob=prob
+		epos.lnprob=lnprob
+
+		if Sample:
+			return ss
+		elif Extra is not None:
+			ss['name']=Extra
+			if not hasattr(epos,'ss_extra'):
+				epos.ss_extra=[]
+			epos.ss_extra.append(ss)
+			#print 'saving extra {}'.format(Extra)
+		else:
+			epos.synthetic_survey= ss
+	else:
+		''' return probability '''
+		if np.isnan(lnprob):
+			return -np.inf
+		return lnprob
+
 
 # def draw_from_function(f, grid, ndraw, *args):
 # 	cdf= np.cumsum(f(grid, *args))
@@ -866,6 +988,12 @@ def storepopulation(allID, allP, det_ID, idetected):
 	Porder= 1.0 * rank[toplanet] / IDsys.size
  
 	return isysdet, isingle&idetected, imulti&idetected, Porder
+
+def _prob_ks_func(a,func):
+	_, prob= kstest(a,func)
+	with np.errstate(divide='ignore'):
+		lnprob= np.log(prob)
+	return prob, lnprob
 
 def _prob_ks(a,b):
 	_, prob= ks_2samp(a,b)

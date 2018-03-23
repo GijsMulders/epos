@@ -142,12 +142,13 @@ Plots the exoplanet survey: observed planets and completeness
 		Debug(bool): Verbose logging
 		seed(int): Random seed, int or None
     """
-	def __init__(self, name, RV=False, Debug=False, seed=True, Norm=False):
+	def __init__(self, name, RV=False, Debug=False, seed=True, Norm=False, MC=True):
 		"""
 		Initialize the class
 		"""
 		self.name=name
 		self.plotdir='png/{}/'.format(name)
+		self.jsondir='json/{}/'.format(name)
 		self.RV= RV
 
 		self.Multi=False
@@ -157,6 +158,8 @@ Plots the exoplanet survey: observed planets and completeness
 		#self.populationtype=None # ['parametric','model']
 		#self.Parametric=None
 
+		self.MonteCarlo= MC
+		
 		# Seed for the random number generator
 		if seed is None: self.seed= None
 		else:
@@ -244,7 +247,8 @@ Plots the exoplanet survey: observed planets and completeness
 		assert self.eff_2D.ndim == 2, 'Detection efficiency must by a 2dim array'
 		if self.eff_2D.shape != (self.eff_xvar.size, self.eff_yvar.size):
 			raise ValueError('Mismatching detection efficiency'
-			'\n: nx={}, ny={}, (nx,ny)=({},{})'.format(self.eff_xvar.size, self.eff_yvar.size, *self.eff_2D.shape))
+			'\n: nx={}, ny={}, (nx,ny)=({},{})'.format(self.eff_xvar.size, 
+				self.eff_yvar.size, *self.eff_2D.shape))
 	
 		self.eff_xlim= [min(self.eff_xvar),max(self.eff_xvar)]
 		self.eff_ylim= [min(self.eff_yvar),max(self.eff_yvar)]
@@ -304,10 +308,13 @@ Plots the exoplanet survey: observed planets and completeness
 		else:
 			self.Zoom=True
 		
-		''' Prep the grid for the observable'''
+		''' 
+		Prep the Monte Carlo grid for the observable
+		'''
 		# make sure range _encompasses_ trim
 		ixmin,ixmax= _trimarray(self.eff_xvar, self.xtrim)
 		iymin,iymax= _trimarray(self.eff_yvar, self.ytrim)
+		self.trim_to_zoom= (slice(ixmin,ixmax),slice(iymin,iymax))
 	
 		self.MC_xvar= self.eff_xvar[ixmin:ixmax]
 		self.MC_yvar= self.eff_yvar[iymin:iymax]
@@ -326,6 +333,20 @@ Plots the exoplanet survey: observed planets and completeness
 		self.scale= self.scale_x * self.scale_y
 		
 		self.X, self.Y= np.meshgrid(self.MC_xvar, self.MC_yvar, indexing='ij')
+		
+		''' Transit probability '''
+		self.f_geo= self.fgeo_prefac *self.X**self.Pindex
+		self.f_det= self.f_geo * self.MC_eff
+		
+		'''
+		Prep the grid for the non-MC simulation
+		'''
+		if not self.MonteCarlo:
+			self.noMC_zoom_x=np.geomspace(self.xzoom[0],self.xzoom[-1])
+			self.noMC_zoom_y=np.geomspace(self.yzoom[0],self.yzoom[-1])
+			self.noMC_scale_x= self.noMC_zoom_x.size/ np.log(self.xzoom[-1]/self.xzoom[0])
+			self.noMC_scale_y= self.noMC_zoom_y.size/ np.log(self.yzoom[-1]/self.yzoom[0])
+			self.noMC_scale= self.noMC_scale_x * self.noMC_scale_y
 		
 		''' Prep the grid for the PDF, if using a mass-radius conversion'''
 		if self.PDF:
