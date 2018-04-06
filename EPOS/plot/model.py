@@ -92,7 +92,7 @@ def panels_mass(epos, Population=False, color='C1'):
 	
 	helpers.save(plt, '{}model/input.mass{}'.format(epos.plotdir, fname))
 	
-def panels_radius(epos, Population=False, Occurrence=False, Observation=False, color='C1'):
+def panels_radius(epos, Population=False, Occurrence=False, Observation=False, Tag=False, color='C1'):
 	f, (ax, axR, axP)= helpers.make_panels(plt)
 	pfm=epos.pfm
 	eta= epos.modelpars.get('eta',Init=True)
@@ -100,22 +100,46 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False, c
 	if not 'R' in pfm:
 		pfm['R'], _= epos.MR(pfm['M'])
 
+	if Tag:
+		# function that return a simulation subset based on the tag
+		subset={'Fe/H<=0': lambda tag: tag<=0,
+			'Fe/H>0': lambda tag: tag>0}
+
 	''' Bins '''
 	dwR=0.2 # bin width in ln space
 	dwP=0.5
 	xbins= np.exp(np.arange(np.log(epos.xzoom[0]),np.log(epos.xzoom[-1])+dwP,dwP))
 	ybins= np.exp(np.arange(np.log(epos.yzoom[0]),np.log(epos.yzoom[-1])+dwR,dwR))
 
+	''' Plot model occurrence or observed counts'''
 	if Observation:
 		# plot model planets * completeness
 		weights= eta *epos.occurrence['model']['completeness'] / pfm['ns']
 	else:
 		weights=np.full(pfm['np'], eta/pfm['ns'])
-	axP.hist(pfm['P'], bins=xbins, weights=weights, color=color)
-	axR.hist(pfm['R'], bins=ybins, orientation='horizontal', weights=weights, color=color)
-
-
-	''' Posterior '''
+	
+	if 'draw prob' in pfm and not Tag:
+		prob= pfm['draw prob'][pfm['ID']] 
+		weights*= prob*pfm['ns'] # system weights sum up to 1
+		#nonzero= np.where(prob>0, 1., 0.)
+		#weights*= nonzero*(pfm['np']/nonzero.sum())
+	
+	# histograms
+	if Tag:
+		for key, f in subset.iteritems():
+			toplot= f(pfm['tag'])
+#			weights= eta*epos.occurrence['model']['completeness'] \
+#					*np.where(toplot,1.,0.)/f(pfm['system tag']).sum()
+			weights= np.where(toplot,eta,0.)/f(pfm['system tag']).sum()
+			axP.hist(pfm['P'], bins=xbins, weights=weights, histtype='step', label=key)
+			axR.hist(pfm['R'], bins=ybins, orientation='horizontal',
+				weights=weights, histtype='step')
+	else:
+		axP.hist(pfm['P'], bins=xbins, weights=weights, color=color)
+		axR.hist(pfm['R'], bins=ybins, orientation='horizontal', weights=weights, 
+					color=color)
+				 
+	''' Overplot observations? '''
 	if Population:
 		assert hasattr(epos, 'func')
 		fname='.pop'
@@ -162,6 +186,16 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False, c
 		axP.hist(epos.obs_xvar[cut],bins=xbins,weights=weights,histtype='step',color='k')
 		axR.hist(epos.obs_yvar[cut],bins=ybins,weights= weights, 
 			orientation='horizontal', histtype='step', color='k')
+			
+	elif Tag:
+		fname='.tag'
+		ax.set_title(epos.name+': Tag')
+		
+		axP.legend(frameon=False, fontsize='small')
+# 		for k, tag in enumerate(subset):
+# 			axP.text(0.98,0.95-0.05*k,tag,ha='right',va='top',color='C1', 
+# 				transform=axP.transAxes)
+		
 	else:
 		fname=''	
 
@@ -169,7 +203,17 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False, c
 	#helpers.set_axes(ax, epos, Trim=True)
 
 	helpers.set_axes(ax, epos, Trim=True)
-	ax.plot(pfm['P'],pfm['R'], color=color, **fmt_symbol)
+	if Tag:
+		for key, f in subset.iteritems():
+			todraw= f(pfm['tag'])
+			ax.plot(pfm['P'][todraw],pfm['R'][todraw], **fmt_symbol)	
+	elif 'draw prob' in pfm:
+		#fmt_symbol['alpha']= 0.6*pfm['draw prob'][pfm['ID']] # alpha can't be array
+		todraw= pfm['draw prob'][pfm['ID']]>0
+		ax.plot(pfm['P'][todraw],pfm['R'][todraw], color=color, **fmt_symbol)
+	else:
+		ax.plot(pfm['P'],pfm['R'], color=color, **fmt_symbol)
+
 	
 	''' Period side panel '''
 	#axP.yaxis.tick_right()
@@ -354,3 +398,57 @@ def multiplicity(epos, color='C1', Planets=False, Kepler=False):
 	ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
 
 	helpers.save(plt, epos.plotdir+'model/multi')
+
+def period(epos, Population=False, Occurrence=False, Observation=False, Tag=False, color='C1'):
+	''' Model occurrence as function of orbital period'''
+	f, ax = plt.subplots()
+	helpers.set_axis_distance(ax, epos, Trim=True)
+	ax.set_xlim(0.5,200)
+	
+	ax.set_ylabel(r'Planet Occurrence 1-4 $R_\bigoplus$')
+	ax.set_yscale('log')
+	
+	pfm=epos.pfm
+	eta= epos.modelpars.get('eta',Init=True)
+	
+	if not 'R' in pfm:
+		pfm['R'], _= epos.MR(pfm['M'])
+
+	if Tag:
+		# function that return a simulation subset based on the tag
+		subset={'Fe/H<=0': lambda tag: tag<=0,
+			'Fe/H>0': lambda tag: tag>0}
+
+	''' Bins '''
+	#xbins= np.geomspace(1,1000,10)/(10.**(1./3.))
+	xbins= np.geomspace(0.5,200,15)
+
+
+	''' Plot model occurrence or observed counts'''
+	weights=np.full(pfm['np'], eta/pfm['ns'])
+	
+	if 'draw prob' in pfm and not Tag:
+		prob= pfm['draw prob'][pfm['ID']] 
+		weights*= prob*pfm['ns'] # system weights sum up to 1
+	
+	# histograms
+	if Tag:
+		for key, f in subset.iteritems():
+			toplot= f(pfm['tag']) #& (pfm['R']>1.)
+			weights= np.where(toplot,eta,0.)/f(pfm['system tag']).sum()			
+
+			ax.hist(pfm['P'], bins=xbins, weights=weights, histtype='step', label=key,
+				color='#88CCEE' if key=='Fe/H<=0' else '#332288')
+	else:
+		ax.hist(pfm['P'], bins=xbins, weights=weights, color=color)
+				 
+			
+	if Tag:
+		fname='.tag'
+		ax.set_title(epos.name+': Disk Fe/H')
+		ax.legend(fontsize='small', loc='lower right')		
+	else:
+		fname=''	
+
+	
+	helpers.save(plt, '{}model/input.period{}'.format(epos.plotdir, fname))

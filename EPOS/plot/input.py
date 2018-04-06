@@ -34,6 +34,8 @@ def all(epos, color=None, imin=1e-2):
 			model.panels_radius(epos, color=color)		
 		if 'M' in epos.pfm:
 			model.panels_mass(epos, color=color)
+		
+		model.period(epos)
 			
 		model.multiplicity(epos, color=color)
 		if hasattr(epos, 'func'):
@@ -42,12 +44,16 @@ def all(epos, color=None, imin=1e-2):
 			else:
 				model.panels_radius(epos, Population=True, color=color)
 
-			
 		if hasattr(epos, 'occurrence'):
 			if 'planet' in epos.occurrence:	
 				model.panels_radius(epos, Occurrence=True, color=color)
 			if 'model' in epos.occurrence:
 				model.panels_radius(epos, Observation=True, color=color)
+
+		if 'tag' in epos.pfm:
+			model.panels_radius(epos, Tag=True)
+			model.period(epos, Tag=True)
+			
 		if 'inc' in epos.pfm:
 			model.inclination(epos, color=color, imin=imin)
 		if 'dP' in epos.pfm:

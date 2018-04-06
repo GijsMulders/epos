@@ -476,6 +476,7 @@ Plots the exoplanet survey: observed planets and completeness
 		self.Parametric= True
 		self.PDF=True	
 		self.fitpars=self.pdfpars
+		self.summarystatistic= ['N','xvar','yvar']
 		
 	def set_multi(self, spacing=None):
 		if not self.Parametric:
@@ -484,6 +485,9 @@ Plots the exoplanet survey: observed planets and completeness
 		
 		self.RandomPairing= (spacing==None)
 		self.spacing= spacing # None, brokenpowerlaw, dimensionless
+
+		# skipping yvar here
+		self.summarystatistic= ['N','xvar','Nk','dP','Pin']
 	
 	def set_population(self, name, sma, mass, 
 					radius=None, inc=None, starID=None, tag=None, Verbose=False):
@@ -495,6 +499,8 @@ Plots the exoplanet survey: observed planets and completeness
 		self.Parametric=False
 		self.modelpars= fitparameters()
 		self.fitpars= self.modelpars
+		
+		self.summarystatistic= ['N','Nk','dP'] #,'Pin']
 		
 		# length checks
 		try:
@@ -513,7 +519,7 @@ Plots the exoplanet survey: observed planets and completeness
 		pfm['sma']= np.asarray(sma)
 		pfm['M']= np.asarray(mass)
 		
-		# ID is array 0...ns
+		# ID is array 0...ns with np elements
 		if starID is None:
 			pfm['ID']= np.arange(len(sma))
 		else:
@@ -534,9 +540,10 @@ Plots the exoplanet survey: observed planets and completeness
 		
 		pfm['np']= pfm['ID'].size
 		pfm['ns']= np.unique(pfm['ID']).size
-
+		
 		''' If multiple planets per stars: Lexsort, period ratio'''
 		if pfm['np'] > pfm['ns']:
+			
 			order= np.lexsort((pfm['sma'],pfm['ID'])) # sort by ID, then sma
 			for key in ['ID','sma','M','P','inc','tag']:
 				if key in pfm: pfm[key]=pfm[key][order]
@@ -562,6 +569,15 @@ Plots the exoplanet survey: observed planets and completeness
 
 			# innermost planet in multi
 			pfm['Pin']= np.squeeze(pfm['P'][np.array(multis[1])-1])
+
+			pfm['system index']= np.arange(pfm['ns']) # 0...ns with ns elements
+			pfm['planet index']= np.arange(pfm['np']) # 0...np with np elements
+
+			if 'tag' in pfm:
+				_, index= np.unique(starID, return_index=True)
+				pfm['system tag']= pfm['tag'][index]
+			#pfm['tag'] == pfm['system tag'][pfm['ID']]
+
 
 		pfm['M limits']=[np.min(pfm['M']),np.max(pfm['M'])]
 		pfm['P limits']=[np.min(pfm['P']),np.max(pfm['P'])]

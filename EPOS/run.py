@@ -398,23 +398,52 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		''' 
 		Draw from all
 		'''
-		ndraw= int(round(1.*epos.nstars*pps/pfm['ns']))
-		if Verbose: 
-			print '  {} planets in {} simulations'.format(pfm['np'],pfm['ns'])
-			print '  {} stars in survey, {} draws, eta={:.2g}'.format(epos.nstars, ndraw, pps)
+		if not 'draw prob' in pfm:
+			ndraw= int(round(1.*epos.nstars*pps/pfm['ns']))
+			if Verbose: 
+				print '  {} planets in {} simulations'.format(pfm['np'],pfm['ns'])
+				print '  {} stars in survey, {} draws, eta={:.2g}'.format(epos.nstars, ndraw, pps)
 		
-		allP= np.tile(pfm['P'], ndraw)
-		allM= np.tile(pfm['M'], ndraw)
-		allY= allM
-		if 'R' in pfm:
-			allR= np.tile(pfm['R'], ndraw)
+			allP= np.tile(pfm['P'], ndraw)
+			allM= np.tile(pfm['M'], ndraw)
+			if 'R' in pfm:
+				allR= np.tile(pfm['R'], ndraw)
 		
-		if epos.Multi:
-			allI= np.tile(pfm['inc'], ndraw)
-			allN= np.tile(pfm['kth'], ndraw)
+			if epos.Multi:
+				allI= np.tile(pfm['inc'], ndraw)
+				allN= np.tile(pfm['kth'], ndraw)
+				
+				# ID or system index?
+				allID= np.tile(pfm['ID'], ndraw) \
+						+ np.repeat(np.arange(ndraw)*pfm['ns'], pfm['np'])
+		else:
+			'''
+			Draw from some distributions according to 'tag' parameter
+			TODO: functions to calculate draw probability from tag
+			'''
+			#draw planetary systems from simulations
+			ndraw= int(round(1.*epos.nstars*pps))
+			if Verbose: print '\nDraw {} systems'.format(ndraw) 
+			system_index= np.random.choice(pfm['system index'], size=ndraw, 
+							p=pfm['draw prob'])
 			
-			allID= np.tile(pfm['ID'], ndraw) \
-					+ np.repeat(np.arange(ndraw)*pfm['ns'], pfm['np'])
+			#create a list of planets
+			indexlist= [pfm['planet index'][pfm['ID']==i] for i in system_index]
+			starIDlist= [np.full((pfm['ID']==i).sum(),ID) 
+							for ID,i in enumerate(system_index)]
+			
+			planets= np.concatenate(indexlist)
+			allID= np.concatenate(starIDlist)
+			allP= pfm['P'][planets]
+			allM= pfm['M'][planets]
+			allR= pfm['R'][planets]
+			allI= pfm['inc'][planets]
+			allN= pfm['kth'][planets]
+			#allID= pfm['ID'][planets]
+			
+			if Verbose: print '  {} planets'.format(allP.size)
+		
+		allY= allM
 			
 		dInc=False # Isotropic inclinations not implemented
 			
@@ -449,7 +478,7 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 			MC_N= allN[itrans] # also for PFM?
 		else:
 			#MC_P*= (1.+0.1*np.random.normal(size=MC_ID.size) )
-			MC_R*= (1.+0.3*np.random.normal(size=MC_ID.size) )
+			pass
 
 	'''
 	Set the observable MC_Y (R or Msin i) 
@@ -464,7 +493,10 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		if epos.MassRadius:
 			mean, dispersion= epos.MR(MC_M)
 			MC_R= mean+ dispersion*np.random.normal(size=MC_M.size)
-		MC_Y=MC_R
+		
+		''' assume 30% uncertainty in stellar radius'''
+		MC_Y=MC_R * (1.+0.3*np.random.normal(size=MC_R.size) )
+
 	
 	'''
 	Store (transiting) planet sample for verification plot
@@ -538,13 +570,16 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 	else:
 		raise ValueError('{} not a goodness-of-fit type (KS, AD)'.format(epos.goftype))
 
-	prob['xvar'], lnp['xvar']=  prob_2samp(epos.obs_zoom['x'], det_P[ix&iy])
-	prob['yvar'], lnp['yvar']=  prob_2samp(epos.obs_zoom['y'], det_Y[ix&iy])
+	if 'xvar' in epos.summarystatistic:
+		prob['xvar'], lnp['xvar']=  prob_2samp(epos.obs_zoom['x'], det_P[ix&iy])
+	if 'yvar' in epos.summarystatistic:
+		prob['yvar'], lnp['yvar']=  prob_2samp(epos.obs_zoom['y'], det_Y[ix&iy])
 
-	# chi^2: (np-nobs)/nobs**0.5 -> p: e^-0.5 x^2
-	chi2= (epos.obs_zoom['x'].size-np.sum(ix&iy))**2. / epos.obs_zoom['x'].size
-	lnp['N']= -0.5* chi2
-	prob['N']= np.exp(-0.5* chi2)
+	if 'N' in epos.summarystatistic:
+		# chi^2: (np-nobs)/nobs**0.5 -> p: e^-0.5 x^2
+		chi2= (epos.obs_zoom['x'].size-np.sum(ix&iy))**2. / epos.obs_zoom['x'].size
+		lnp['N']= -0.5* chi2
+		prob['N']= np.exp(-0.5* chi2)
 	
 	if epos.Multi:
 		''' Multi-planet frequency, pearson chi_squared '''
@@ -579,16 +614,10 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		else:
 			logging.debug('no multi-planet statistics, {}'.format(len(sim_dP)))
 			prob['dP'], prob['Pin']= 0, 0 
-		
-		# skipping N, yvar here
-		prob_keys= ['N','xvar','Nk','dP','Pin']
-	
-	else:
-	
-		prob_keys= ['N','xvar','yvar']
+			lnp['dP'], lnp['Pin']= -np.inf, -np.inf
 
 	# combine with Fischer's rule:
-	lnprob= np.sum([lnp[key] for key in prob_keys])
+	lnprob= np.sum([lnp[key] for key in epos.summarystatistic])
 	#dof= len(prob_keys)
 	chi_fischer= -2. * lnprob
 	
@@ -597,13 +626,11 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		print '\nGoodness-of-fit'
 		print '  logp= {:.1f}'.format(lnprob)
 		print '  - p(n={})={:.2g}'.format(np.sum(ix&iy), prob['N'])
-		print '  - p(x)={:.2g}'.format(prob['xvar'])
-		if not epos.Multi:
-			print '  - p(y)={:.2g}'.format(prob['yvar'])
-		else:
-			print '  - p(N_k)={:.2g}'.format(prob['Nk'])
-			print '  - p(P ratio)={:.2g}'.format(prob['dP'])
-			print '  - p(P inner)={:.2g}'.format(prob['Pin'])
+		if 'xvar' in prob:	print '  - p(x)={:.2g}'.format(prob['xvar'])
+		if 'yvar' in prob:	print '  - p(y)={:.2g}'.format(prob['yvar'])
+		if 'Nk' in prob:	print '  - p(N_k)={:.2g}'.format(prob['Nk'])
+		if 'dP' in prob:	print '  - p(P ratio)={:.2g}'.format(prob['dP'])
+		if 'Pin' in prob:	print '  - p(P inner)={:.2g}'.format(prob['Pin'])
 		
 	tgof= time.time()
 	if Verbose: print '  observation comparison in {:.3f} sec'.format(tgof-tstart)

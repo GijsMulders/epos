@@ -48,7 +48,10 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True):
 	ax.set_xlim(epos.xtrim)
 	if Log:
 		ax.set_yscale('log')
-		ax.set_ylim([1e-3,1e1])
+		if 'occrange' in epos.plotpars:
+			ax.set_ylim(epos.plotpars['occrange'])
+		else:	
+			ax.set_ylim([1e-3,1e1])
 	else:
 		ax.set_ylim([0,0.45])
 	
@@ -83,7 +86,7 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True):
 		xx=np.geomspace(20,400)
 		ax.plot(xx, 0.2* (xx/10.)**0.1, marker='', ls='-', color='g', label='all planets')
 
-	if Occ or MCMC:
+	if MCMC:
 		ax.legend(loc='upper right')
     
 	helpers.save(plt, epos.plotdir+fname+'_x')
@@ -131,7 +134,10 @@ def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False):
 	ax.set_xscale('log')
 	ax.set_yscale('log')
 	ax.set_xlim(np.array(epos.in_ytrim) * (M_to_q if PlotQ else 1.))
-	ax.set_ylim([1e-3,1e1])
+	if 'occrange' in epos.plotpars:
+		ax.set_ylim(epos.plotpars['occrange'])
+	else:	
+		ax.set_ylim([1e-3,1e1])
 	
 	yvar= epos.in_yvar * (M_to_q if PlotQ else 1.)
 	

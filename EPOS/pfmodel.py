@@ -201,7 +201,7 @@ def mordasini(name='syntheticpopmordasini1MsunJ31', dir='Mordasini', cutoff=np.i
 	header= np.genfromtxt(fname, max_rows=1, dtype=str)
 	print header
 	a= np.loadtxt(fname, unpack=True, skiprows=1, usecols=(1,2,3,4,6,7))
-	include= a[1]<cutoff
+	include= (a[1]<cutoff) & (a[3]>1)
 	ID= a[0][include]
 	sma= a[1][include]
 	mass= a[2][include]
