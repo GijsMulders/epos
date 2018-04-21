@@ -144,16 +144,23 @@ def mercury(fname, istep=None, Verbose=False):
 			print '\r  [{:50s}] {:5.1f}%'.format('#' * int(amtDone * 50), amtDone * 100),
 			sys.stdout.flush() 
 		
-		a= np.loadtxt(fname, unpack=True,ndmin=2) # ndmin to guarantee lists
-		L_sma= a[1]
-		L_mass= a[7] * cgs.Msun/cgs.Mearth
-		L_inc= a[3]
+		try:
+			a= np.loadtxt(fname, unpack=True,ndmin=2) # ndmin to guarantee lists
+
+			L_sma= a[1]
+			L_mass= a[7] * cgs.Msun/cgs.Mearth
+			L_inc= a[3]
 		
-		# story copy(?) in list of planetary systems
-		sma.extend(L_sma)
-		mass.extend(L_mass)
-		inc.extend(L_inc)
-		ID.extend([i]*len(L_sma))
+			# story copy(?) in list of planetary systems
+			sma.extend(L_sma)
+			mass.extend(L_mass)
+			inc.extend(L_inc)
+			ID.extend([i]*len(L_sma))
+
+		except ValueError:
+			print '\n(skipping {})\n'.format(fname)
+
+		except: raise
 
 		if not Verbose: print '\r  [{:50s}] {:.1f}%'.format('#' * int(1 * 50), 1 * 100),
 		

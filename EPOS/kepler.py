@@ -42,7 +42,7 @@ def eff_Q16(subsample='all'):
 	eff= np.load('files/completeness.Q16.epos.{}.npz'.format(subsample))
 	return eff['x'], eff['y'], eff['fsnr']
 
-def dr25(subsample='all', score=0.9, Huber=True):
+def dr25(subsample='all', score=0.9, Huber=True, Vetting=False):
 	'''
 	Generates Kepler DR25 planet population and detection efficiency
 	
@@ -74,7 +74,7 @@ def dr25(subsample='all', score=0.9, Huber=True):
 				'koi_steff', 'koi_slogg','koi_pdisposition','koi_score'] }
 		np.savez(fkoi, **koi)
 
-	''' Select reliable candidates, remove giant stars'''
+	''' Remove giant stars'''
 	if Huber:
 		isdwarf= koi['koi_slogg'] > 1./4.671 * \
 					np.arctan((koi['koi_steff']-6300.)/-67.172)+ 3.876
@@ -86,6 +86,7 @@ def dr25(subsample='all', score=0.9, Huber=True):
 		isdwarf= koi['koi_slogg']>4.2
 		suffix='logg42'
 	
+	''' Select reliable candidates '''
 	iscandidate= koi['koi_pdisposition']=='CANDIDATE'
 	isreliable= koi['koi_score']>score # removes rolling band, ~ 500 planets
 	print '  {}/{} dwarfs'.format(isdwarf.sum(), isdwarf.size)
@@ -97,6 +98,7 @@ def dr25(subsample='all', score=0.9, Huber=True):
 	isall= isdwarf & isreliable # reliability score cuts out false positives
 #	isall= isdwarf & iscandidate & isreliable
 
+	''' Select a spectral type sub-smaple'''
 	if subsample=='all':
 		slice=isall
 	elif subsample in ['M','K','G','F']:
@@ -115,6 +117,7 @@ def dr25(subsample='all', score=0.9, Huber=True):
 		'yvar':koi['koi_prad'][slice], 
 		'starID':koi['kepid'][slice]}
 	
+	''' Load pre-calculated detection efficiencies '''
 	# from dr25_epos.py
 	sfile= 'dwarfs' if subsample=='all' else subsample
 	eff= np.load('files/completeness.dr25.{}.{}.npz'.format(sfile, suffix))
@@ -122,5 +125,20 @@ def dr25(subsample='all', score=0.9, Huber=True):
 	survey= {'xvar':eff['P'], 'yvar':eff['Rp'], 'eff_2D':eff['fsnr'], 
 			'Mstar': eff['Mst'], 'Rstar':eff['Rst']}
 	obs['nstars']= eff['n']
+  	
+	''' Add vetting completeness '''
+	if Vetting:
+		if subsample=='all' and score == 0.9:
+			X,Y= np.meshgrid(eff['P'], eff['Rp'], indexing='ij')
+			#vet_2D= fbpl2d( (X,Y), 0.9, 46., -0.053, -0.37, 5.6, 0.19, -2.3)
+			vet_2D= fbpl2d( (X,Y), 0.9, 46., -0.053, -0.37, 5.6, 0.19, 0.19)
+			survey['vet_2D']= vet_2D
+			assert vet_2D.shape == eff['fsnr'].shape
+		else:
+			print 'no vetting completeness for {} with score={}'.format(score, subsample)
 	
 	return obs, survey
+	
+def fbpl2d((x,y), a, b, c, d, e, f, g):
+	bpl= a* (x/b)**np.where(x<b, c, d) * (y/e)**np.where(y<e, f,g)
+	return np.maximum(0.2, np.minimum(bpl, 1))

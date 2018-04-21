@@ -930,7 +930,7 @@ def draw_multi(epos, sysX, sysY, npl, dInc, dR, fpara, Store):
 		#np.random.uniform(dP-0.7, dP+0.7, im.size)
 		#print allX[:3]
 		#np.random.norm()
-		allY[im+(i-1)]= allY[im+(i-2)]* np.random.normal(1, dR, im.size)
+		allY[im+(i-1)]= allY[im+(i-2)]* 10.**np.random.normal(0, dR, im.size)
 		
 		# nth planet in system (zoom range)
 		#allN[im+(i-1)]= allN[im+(i-2)]+1

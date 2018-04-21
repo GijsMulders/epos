@@ -226,7 +226,7 @@ Plots the exoplanet survey: observed planets and completeness
 			EPOS.multi.periodratio(self.obs_starID, self.obs_xvar, Verbose=True)
 		epos.multi['cdf']= EPOS.multi.cdf(self.obs_starID, Verbose=True)	
 		
-	def set_survey(self, xvar, yvar, eff_2D, Rstar=1.0, Mstar=1.0):
+	def set_survey(self, xvar, yvar, eff_2D, Rstar=1.0, Mstar=1.0, vet_2D=None):
 		'''Survey detection efficiency (completeness)
 		Args:
 			xvar: planet orbital period grid [list]'
@@ -246,7 +246,7 @@ Plots the exoplanet survey: observed planets and completeness
 		assert self.eff_xvar.ndim == self.eff_yvar.ndim == 1, 'only 1D arrays'
 		assert self.eff_2D.ndim == 2, 'Detection efficiency must by a 2dim array'
 		if self.eff_2D.shape != (self.eff_xvar.size, self.eff_yvar.size):
-			raise ValueError('Mismatching detection efficiency'
+			raise ValueError('Mismatching detection efficiency'+
 			'\n: nx={}, ny={}, (nx,ny)=({},{})'.format(self.eff_xvar.size, 
 				self.eff_yvar.size, *self.eff_2D.shape))
 	
@@ -263,7 +263,18 @@ Plots the exoplanet survey: observed planets and completeness
 			self.fgeo_prefac= self.Rstar*cgs.Rsun * fourpi2_GM**(1./3.) / cgs.day**(2./3.)
 			#print self.fgeo_prefac
 			P, R= np.meshgrid(self.eff_xvar, self.eff_yvar, indexing='ij')
+			
 			self.completeness= self.eff_2D * self.fgeo_prefac*P**self.Pindex
+		
+		if vet_2D is not None:
+			self.vetting= np.asarray(vet_2D)
+			
+			if self.eff_2D.shape != (self.eff_xvar.size, self.eff_yvar.size):
+				raise ValueError('Mismatching vetting efficiency'+
+					'\n: (nx,ny)={}, (nx,ny={})'.format(self.eff_2D.shape,
+								self.vetting.shape))
+
+			self.completeness*= self.vetting
 
 		self.DetectionEfficiency=True
 	
@@ -319,6 +330,8 @@ Plots the exoplanet survey: observed planets and completeness
 		self.MC_xvar= self.eff_xvar[ixmin:ixmax]
 		self.MC_yvar= self.eff_yvar[iymin:iymax]
 		self.MC_eff= self.eff_2D[ixmin:ixmax,iymin:iymax]
+		if hasattr(self,'vetting'):
+			self.MC_eff*= self.vetting[ixmin:ixmax,iymin:iymax]
 		
 		# scale factor to multiply pdf such that occurrence in units of dlnR dlnP
 		if LogArea:

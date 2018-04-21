@@ -87,3 +87,47 @@ def completeness(epos, PlotBox=False, Transit=False):
 
 	helpers.save(plt, epos.plotdir+'survey/'+('efficiency' if Transit else 'completeness')+ \
 				fname)
+
+def vetting(epos, PlotBox=False):
+	assert hasattr(epos, 'vetting')
+
+	f, (ax, axb) = plt.subplots(1,2, gridspec_kw = {'width_ratios':[20, 1]})
+	f.subplots_adjust(wspace=0)
+	#f.set_size_inches(7, 5)
+
+	ax.set_title('Vetting Efficiency [%]')
+	helpers.set_axes(ax, epos, Trim=False, Eff=True)
+	
+
+	''' color map and ticks'''
+	cmap = 'plasma'
+	levels=np.linspace(0,1, 256)
+	ticks= np.array([0.0,0.25,0.5,0.75,1.0])
+	ticks_percent=['0','25','50','75','100']
+
+	cs= ax.contourf(epos.eff_xvar, epos.eff_yvar,epos.vetting.T, cmap=cmap, levels=levels)
+
+	cbar= f.colorbar(cs, cax=axb, ticks=ticks)
+	axb.set_yticklabels(ticks_percent)
+	axb.tick_params(axis='y', direction='out')
+	axb.set_title('%')
+	
+	''' Plot the zoom box or a few black contours'''	
+	if PlotBox:
+		fname='.box'
+		assert epos.Range
+		ax.add_patch(patches.Rectangle( (epos.xtrim[0],epos.ytrim[0]), 
+			epos.xtrim[1]-epos.xtrim[0], epos.ytrim[1]-epos.ytrim[0],fill=False, zorder=1, ls='--') )
+		if epos.Zoom:
+			ax.add_patch(patches.Rectangle( (epos.xzoom[0],epos.yzoom[0]), 
+				epos.xzoom[1]-epos.xzoom[0], epos.yzoom[1]-epos.yzoom[0],fill=False, zorder=1) )
+	else:
+	
+		cs= ax.contour(epos.eff_xvar, epos.eff_yvar, epos.vetting.T, 
+			colors='k', levels=ticks)
+		fmt_percent= lambda x: '{:g} %'.format(100.*x)
+		plt.clabel(cs, cs.levels, inline=True, fmt=fmt_percent)
+
+		fname=''
+
+	helpers.save(plt, epos.plotdir+'survey/vetting'+ fname)

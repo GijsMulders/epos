@@ -76,29 +76,51 @@ def periodradius(epos, Nth=False, MC=True):
 	
 	ax.plot(P[single], Y[single], ls='', marker='.', \
 			color='0.7', label=label_single)
+
+	''' Multiplanets with colors'''
+	Stacked=True
+	plist=[]; ylist=[]; colors=[]
+	CDF= False
+	#stacked histogram
 			
 	for k, subset in zip(ksys, multis):
 		ht, = ax.plot(P[subset], Y[subset], ls='', marker='.', \
 			label=k)
 		
-		if True:
+		if not CDF:
+			if Stacked:
+				plist.insert(0,P[subset])
+				ylist.insert(0,Y[subset])
+				colors.insert(0, ht.get_color())	
 			# pdf
-			axP.hist(P[subset], bins=epos.MC_xvar, 
-				color=ht.get_color(), histtype='step') #, cumulative=True, normed=1)
-			if k==ksys[-1]:
-				axP.hist(P[single], bins=epos.MC_xvar, color='0.7', histtype='step') 	
+			else:
+				axP.hist(P[subset], bins=epos.MC_xvar, 
+					color=ht.get_color(), histtype='step')
+				if k==ksys[-1]:
+					axP.hist(P[single],bins=epos.MC_xvar,color='0.7',histtype='step')	
 		else:
 			# cumulative
 			Plist= np.sort(P[subset])
 			axP.step(Plist,np.arange(Plist.size,dtype=float)/Plist.size )
 
-	#axR.hist(Y,orientation='horizontal', bins=epos.MC_yvar, color='0.7')
-	axR.hist(Y,orientation='horizontal', bins=epos.MC_yvar, color='k',histtype='step')
-	axR.hist(Y[single],orientation='horizontal', bins=epos.MC_yvar, color='0.7')
+	if Stacked:
+		plist.append(P[single])
+		ylist.append(Y[single])
+		colors.append('0.7')
+		axP.hist(plist, bins=epos.MC_xvar, 
+			color=colors, histtype='barstacked')
+		axR.hist(ylist, bins=epos.MC_yvar, orientation='horizontal',
+			color=colors, histtype='barstacked')
+		
+	else:
+		#axR.hist(Y,orientation='horizontal', bins=epos.MC_yvar, color='0.7')
+		axR.hist(Y,orientation='horizontal', bins=epos.MC_yvar, color='k',histtype='step')
+		axR.hist(Y[single],orientation='horizontal', bins=epos.MC_yvar, color='0.7')
 
 	
 	#ax.legend(loc='lower left', shadow=False, prop={'size':14}, numpoints=1)
-	ax.legend(bbox_to_anchor=(1.0, 1.0), markerscale=3)
+	ax.legend(bbox_to_anchor=(1.0, 1.0), markerscale=2, frameon=True, 
+		borderpad=0.2, handlelength=1, handletextpad=0.2)
 
 	helpers.save(plt, '{}{}/PR.multi{}'.format(epos.plotdir, outdir, suffix))
 

@@ -39,6 +39,27 @@ def brokenpowerlaw2D_yonly(x, y, p1, yp, p3, p4):
 
 def brokenpowerlaw2D_symmetric(x, y, xp, p1, yp, p3, p4):
 	return brokenpowerlaw2D(x, y, xp, p1, -p1, yp, p3, p4)
+
+def doublebrokenpowerlaw2D(x, y, xp, p1, p2, yp, p3, p4, yr, yrp, p5, p6):
+	''' Broken powerlaw in x, double broken power-law in y
+	
+	Args:
+		x(np.array): x
+		y(np.array): y
+		xp(float): break in x
+		p1(float): power law index at x<xp
+		p2(float): power law index at x>xp
+		yp(float): break in y
+		p3(float): power law index at y<yp
+		p4(float): power law index at y>yp
+		yr(float): ratio between power-law normalizations
+		yrp(float): break in y
+		p5(float): power law index at y<yp
+		p6(float): power law index at y>yp		
+	'''
+	xfunc= brokenpowerlaw1D(x, xp, p1, p2)
+	yfunc= brokenpowerlaw1D(y, yp, p3, p4) + yr* brokenpowerlaw1D(y, yrp, p5, p6) 
+	return xfunc* yfunc
 	
 def brokenpowerlaw1D(x, xp, p1, p2):
 	# normalized to 1 at x=xp
