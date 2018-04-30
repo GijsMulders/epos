@@ -88,15 +88,17 @@ def dr25(subsample='all', score=0.9, Huber=True, Vetting=False):
 	
 	''' Select reliable candidates '''
 	iscandidate= koi['koi_pdisposition']=='CANDIDATE'
-	isreliable= koi['koi_score']>score # removes rolling band, ~ 500 planets
+	isreliable= koi['koi_score']>=score # removes rolling band, ~ 500 planets
 	print '  {}/{} dwarfs'.format(isdwarf.sum(), isdwarf.size)
 	print '  {} candidates, {} false positives'.format((isdwarf&iscandidate).sum(), 
 				(isdwarf&~iscandidate).sum() )
 	print '  {}+{} with score > {:.2f}'.format((isdwarf&iscandidate&isreliable).sum(), 
 				(isdwarf&~iscandidate&isreliable).sum(),score )
 
-	isall= isdwarf & isreliable # reliability score cuts out false positives
-#	isall= isdwarf & iscandidate & isreliable
+	if score >= 0.5:
+		isall= isdwarf & isreliable # reliability score cuts out false positives
+	else:
+		isall= isdwarf & iscandidate & isreliable
 
 	''' Select a spectral type sub-smaple'''
 	if subsample=='all':
@@ -131,7 +133,7 @@ def dr25(subsample='all', score=0.9, Huber=True, Vetting=False):
 		if subsample=='all' and score == 0.9:
 			X,Y= np.meshgrid(eff['P'], eff['Rp'], indexing='ij')
 			#vet_2D= fbpl2d( (X,Y), 0.9, 46., -0.053, -0.37, 5.6, 0.19, -2.3)
-			vet_2D= fbpl2d( (X,Y), 0.9, 46., -0.053, -0.37, 5.6, 0.19, 0.19)
+			vet_2D= fbpl2d( (X,Y), 0.88, 53., -0.07, -0.39, 5.7, 0.19, 0.19)
 			survey['vet_2D']= vet_2D
 			assert vet_2D.shape == eff['fsnr'].shape
 		else:

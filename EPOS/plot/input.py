@@ -18,14 +18,25 @@ def all(epos, color=None, imin=1e-2):
 
 	survey.observed(epos, PlotBox=False)
 	survey.completeness(epos, PlotBox=False)
-	if not epos.RV: survey.completeness(epos, PlotBox=False, Transit=True)
-	if hasattr(epos, 'vetting'): survey.vetting(epos, PlotBox=False)
+	if not epos.RV: 
+		survey.completeness(epos, PlotBox=False, Transit=True)
+		if hasattr(epos, 'vetting'):
+			survey.completeness(epos, PlotBox=False, Transit=True, Vetting=False)
+		
+	if hasattr(epos, 'vetting'): 
+		survey.vetting(epos, PlotBox=False)
+		survey.completeness(epos, PlotBox=False, Vetting=False)
 	
 	if epos.Range and epos.Zoom:
 		survey.observed(epos, PlotBox=True)
 		survey.completeness(epos, PlotBox=True)
-		if not epos.RV: survey.completeness(epos, PlotBox=True, Transit=True)
-		if hasattr(epos, 'vetting'): survey.vetting(epos, PlotBox=True)
+		if not epos.RV: 
+			survey.completeness(epos, PlotBox=True, Transit=True)
+			if hasattr(epos, 'vetting'):
+				survey.completeness(epos, PlotBox=True, Transit=True)
+		if hasattr(epos, 'vetting'): 
+			survey.vetting(epos, PlotBox=True)
+			survey.completeness(epos, PlotBox=True, Vetting=False)
 	
 	if epos.Parametric:
 		parametric.oneD(epos)

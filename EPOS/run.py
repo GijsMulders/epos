@@ -305,7 +305,7 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 				return -np.inf
 				
 		''' Draw (inner) planet from distribution '''
-		pps= epos.fitpars.getmc('pps', fpara)
+		pps= epos.fitpars.getpps_fromlist(fpara)
 		fpar2d= epos.fitpars.get2d_fromlist(fpara)
 		npl= epos.fitpars.getmc('npl', fpara) if epos.RandomPairing else 1
 		
@@ -382,7 +382,7 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 				return -np.inf
 				
 		''' Fit parameters'''
-		pps= epos.fitpars.getmc('eta', fpara)
+		pps= epos.fitpars.getpps(fpara)
 
 		f_cor= epos.fitpars.getmc('f_cor', fpara)
 		f_iso= epos.fitpars.getmc('f_iso', fpara)
@@ -494,8 +494,8 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 			mean, dispersion= epos.MR(MC_M)
 			MC_R= mean+ dispersion*np.random.normal(size=MC_M.size)
 		
-		''' assume 30% uncertainty in stellar radius'''
-		MC_Y=MC_R * (1.+0.3*np.random.normal(size=MC_R.size) )
+		''' uncertainty in stellar radius? '''
+		MC_Y=MC_R * (1.+epos.radiusError*np.random.normal(size=MC_R.size) )
 
 	
 	'''

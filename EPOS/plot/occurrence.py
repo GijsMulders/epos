@@ -106,7 +106,7 @@ def integrated(epos, MCMC=False, Planets=False):
 	sy= 'M' if (epos.MassRadius or epos.RV) else 'R'
 	ax.set_title('Occurrence'+ (' (dln'+sy+' dlnP)' if MCMC else ' (Initial Guess)'))
 	
-	helpers.set_axes(ax, epos, Trim=True, In=True)
+	helpers.set_axes(ax, epos, Trim=True, In=epos.MassRadius)
 	
 	''' color scale? '''
 	cmap='jet' # cool, spring

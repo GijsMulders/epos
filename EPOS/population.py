@@ -6,10 +6,10 @@ def periodradius(epos, Init=False, fpara=None, fdet=None,
 			xbin=None, ybin=None, xgrid=None, ygrid=None):
 	''' return the period-radius distribution'''
 	if fpara is None:
-		pps= epos.pdfpars.get('pps',Init=Init)
+		pps= epos.pdfpars.getpps(Init=Init)
 		fpar2d= epos.pdfpars.get2d(Init=Init)
 	else:
-		pps= epos.pdfpars.getmc('pps',fpara)
+		pps= epos.pdfpars.getpps_fromlist(fpara)
 		fpar2d= epos.pdfpars.get2d_fromlist(fpara)
 		#print fpara
 	

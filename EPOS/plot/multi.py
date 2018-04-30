@@ -23,13 +23,13 @@ def periodradius(epos, Nth=False, MC=True):
 		P= sim['P']
 		Y= sim['Y']
 		outdir='output'
-		title= 'detectable planets'
+		title= 'Simulated Detections'
 	else:
 		ID= epos.obs_starID
 		P= epos.obs_xvar
 		Y= epos.obs_yvar
 		outdir='survey'
-		title= 'detected planets'
+		title= 'Planet Candidates (score$\geq$0.9)'
 	
 	''' plot R(P), main panel'''
 	ax.set_title(title)
@@ -127,9 +127,9 @@ def periodradius(epos, Nth=False, MC=True):
 def multiplicity(epos, MC=False, Planets=False, MCMC=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
-	ax.set_title('planet multiplicity')
-	ax.set_xlabel('planets per system')
-	ax.set_ylabel('number of planets' if Planets else 'number of systems')
+	ax.set_title('Multi-Planet Frequency')
+	ax.set_xlabel('Planets per System')
+	ax.set_ylabel('Planet Counts' if Planets else 'System Counts')
 
 	ax.set_xlim(0.5, 7.5)
 	if not Planets:
@@ -143,13 +143,13 @@ def multiplicity(epos, MC=False, Planets=False, MCMC=False):
 	if MC or MCMC:
 		ss=epos.synthetic_survey
 		if Planets:
-			ax.bar(ss['multi']['bin'], ss['multi'][key], color='C0',label=epos.name, width=1)
+			ax.bar(ss['multi']['bin'], ss['multi'][key], color='C0',label='Simulated', width=1)
 
 			f_iso= epos.fitpars.get('f_iso')
 			if f_iso > 0:
 				fsingle= np.sum(ss['multi']['count'])*f_iso
 				ax.bar(1, fsingle, bottom= ss['multi'][key][0]-fsingle, 
-					color='',label='dichotomy', width=1, hatch='xx') #, ec='k')
+					color='',label='Single Planets', width=1, hatch='xx') #, ec='k')
 				#ax.plot(1, ss['multi'][key][0]-fsingle, marker='+', ms=10, ls='', color='k', label='no dichotomy')
 		elif MCMC:
 			for ss in epos.ss_sample:
@@ -232,7 +232,7 @@ def periodratio(epos, MC=False, N=False, Input=False, MCMC=False):
 	ax.set_title('Period Ratio of Adjacent Planets')
 #	ax.set_xlabel('period outer/inner')
 	ax.set_xlabel('$\mathcal{P}$ = Period Outer/Inner')
-	ax.set_ylabel('PDF')
+	ax.set_ylabel('Planet Counts')
 
 	ax.set_xlim(1, 10)
 	ax.set_xscale('log')
@@ -251,7 +251,7 @@ def periodratio(epos, MC=False, N=False, Input=False, MCMC=False):
 				#ax.hist(ss['multi']['Pratio'], bins=bins, color='b', alpha=1./len(epos.ss_sample))
 		else:
 			ax.hist(ss['multi']['Pratio'], bins=bins, 
-					color='C0', histtype='stepfilled', label='Observable') #epos.name)
+					color='C0', histtype='stepfilled', label='Simulated') #epos.name)
 	
 		if N:
 			# planets inbetween?
@@ -361,11 +361,12 @@ def periodinner(epos, MC=False, N=False, Input=False, MCMC=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
 	ax.set_title('Period of the Innermost Planet')
-	ax.set_xlabel('Orbital Period [days]')
-	ax.set_ylabel('PDF')
+	#ax.set_xlabel('Orbital Period [days]')
+	ax.set_ylabel('Planet Counts')
 
-	ax.set_xscale('log')
-	ax.set_xlim(epos.xtrim)
+	#ax.set_xscale('log')
+	#ax.set_xlim(epos.xtrim)
+	helpers.set_axis_distance(ax, epos, Trim=True)
 		
 	#bins= np.geomspace(*epos.xtrim)
 	bins= epos.MC_xvar
@@ -383,7 +384,7 @@ def periodinner(epos, MC=False, N=False, Input=False, MCMC=False):
 						
 		else:
 			ax.hist(ss['multi']['Pinner'], bins=bins, 
-					color='C0', histtype='stepfilled', label='Observable') #epos.name)
+					color='C0', histtype='stepfilled', label='Simulated') #epos.name)
 			
 			# Solar system analologs (from dr25_solarsystem.py)
 			#Pcut=45
@@ -419,9 +420,10 @@ def periodinner(epos, MC=False, N=False, Input=False, MCMC=False):
 
 	''' Initial distribution or zoomed observations '''
 	if Input and epos.Parametric:
-		_, _, pdf0_X, _= draw_PR(epos, Init=True, ybin=epos.yzoom)
+		Pingrid= np.geomspace(*epos.xtrim)
+		_, _, pdf0_X, _= draw_PR(epos, Init=True, ybin=epos.yzoom, xgrid=Pingrid)
 		norm= 0.95* ax.get_ylim()[1] / max(pdf0_X)
-		ax.plot(epos.MC_xvar, pdf0_X*norm, marker='',ls='-',color='r',label='Intrinsic')
+		ax.plot(Pingrid, pdf0_X*norm, marker='',ls='-',color='r',label='Intrinsic')
 				
 	elif epos.Zoom and not N:
 		ax.hist(epos.obs_zoom['multi']['Pinner'], bins=bins, 

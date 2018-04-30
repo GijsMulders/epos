@@ -35,22 +35,26 @@ def observed(epos, PlotBox=True):
 
 	helpers.save(plt, epos.plotdir+'survey/planets'+fname)
 	
-def completeness(epos, PlotBox=False, Transit=False):
+def completeness(epos, PlotBox=False, Transit=False, Vetting=True):
 	assert epos.DetectionEfficiency
 
 	f, (ax, axb) = plt.subplots(1,2, gridspec_kw = {'width_ratios':[20, 1]})
 	f.subplots_adjust(wspace=0)
 	#f.set_size_inches(7, 5)
 
-	ax.set_title('Detection Efficiency [%]' if Transit else 'Completeness [%]')
+	ax.set_title('Detection Efficiency' if Transit else 'Survey Completeness')
 	helpers.set_axes(ax, epos, Trim=False, Eff=True)
 	
 	toplot= epos.eff_2D if Transit else epos.completeness
+	if not Vetting: toplot/= epos.vetting
 	with np.errstate(divide='ignore'): log_completeness=  np.log10(toplot)
 	
 	''' color map and ticks'''
-	cmap = 'PuRd'
-	vmin, vmax= -5, 0
+	cmap = 'YlOrBr' if Transit else 'PuRd'
+	#cmap = 'rainbow' if Transit else 'PuRd'
+
+	vmin, vmax= -4, 0
+	if Transit: vmin=-3
 	ticks=np.linspace(vmin, vmax, (vmax-vmin)+1)
 	levels=np.linspace(vmin, vmax, 256)
 
@@ -71,13 +75,16 @@ def completeness(epos, PlotBox=False, Transit=False):
 			ax.add_patch(patches.Rectangle( (epos.xzoom[0],epos.yzoom[0]), 
 				epos.xzoom[1]-epos.xzoom[0], epos.yzoom[1]-epos.yzoom[0],fill=False, zorder=1) )
 	else: 
+		ax.set_xlim(*epos.xtrim)
+		ax.set_ylim(*epos.ytrim)
+		
 		if epos.RV:
 			levels= [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
 			labels= ['10','20','30','40','50','60','70','80','90']
 			cs= ax.contour(epos.eff_xvar, epos.eff_yvar, toplot.T,\
 					levels= levels, colors = 'k', linewidths=2.)
 		else:
-			levels= [1e-4, 1e-3, 0.01, 0.1, 0.5, 0.9] if Transit else 10.**ticks
+			levels= [1e-3, 0.01, 0.1, 0.5, 0.9] if Transit else 10.**ticks
 			cs= ax.contour(epos.eff_xvar, epos.eff_yvar, toplot.T, 
 				colors='k', levels=levels)
 			fmt_percent= lambda x: '{:g} %'.format(100.*x)
@@ -85,6 +92,7 @@ def completeness(epos, PlotBox=False, Transit=False):
 
 		fname=''
 
+	if not Vetting: fname+= '.novet'
 	helpers.save(plt, epos.plotdir+'survey/'+('efficiency' if Transit else 'completeness')+ \
 				fname)
 
@@ -95,7 +103,7 @@ def vetting(epos, PlotBox=False):
 	f.subplots_adjust(wspace=0)
 	#f.set_size_inches(7, 5)
 
-	ax.set_title('Vetting Efficiency [%]')
+	ax.set_title('Vetting Efficiency')
 	helpers.set_axes(ax, epos, Trim=False, Eff=True)
 	
 
@@ -129,5 +137,8 @@ def vetting(epos, PlotBox=False):
 		plt.clabel(cs, cs.levels, inline=True, fmt=fmt_percent)
 
 		fname=''
+		
+		ax.set_xlim(*epos.xtrim)
+		ax.set_ylim(*epos.ytrim)
 
 	helpers.save(plt, epos.plotdir+'survey/vetting'+ fname)

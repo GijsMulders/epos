@@ -20,6 +20,9 @@ def set_axis_distance(ax, epos, Trim=False, Eff=False, In=False, IsX=True):
 			ax.set_xlim(epos.obs_xlim)
 		
 		ax.set_xscale('log')
+		ax.set_xticks(epos.xticks)
+		ax.set_xticklabels(epos.xticklabels)
+	
 	else:
 		ax.set_ylabel('Orbital Period [days]')
 		if Trim:
@@ -30,18 +33,23 @@ def set_axis_distance(ax, epos, Trim=False, Eff=False, In=False, IsX=True):
 			ax.set_ylim(epos.obs_xlim)
 		
 		ax.set_yscale('log')
-
-	#xticks=[3, 10, 30, 100, 300]
-	#ax.set_xticks(xticks)
-	#ax.set_xticklabels(xticks)
-	
-	pass
+		ax.set_yticks(epos.xticks)
+		ax.set_yticklabels(epos.xticklabels)
 
 def set_axis_size(ax, epos, Trim=False, Eff=False, In=False, IsY=True):
 
-	if In:			label= r'M [M$_\bigoplus$]'
-	elif epos.RV:	label= r'M sin i [M$_\bigoplus$]'
-	else:			label= r'Planet Radius [R$_\bigoplus$]'
+	if In:
+		label= r'M [M$_\bigoplus$]'
+		ticks= epos.y_inticks
+		ticklabels= epos.y_inticklabels
+	elif epos.RV:
+		label= r'M sin i [M$_\bigoplus$]'
+		ticks= epos.yticks
+		ticklabels= epos.yticklabels
+	else:
+		label= r'Planet Radius [R$_\bigoplus$]'
+		ticks= epos.yticks
+		ticklabels= epos.yticklabels
 
 	if IsY:
 		ax.set_ylabel(label)
@@ -54,6 +62,9 @@ def set_axis_size(ax, epos, Trim=False, Eff=False, In=False, IsY=True):
 			ax.set_ylim(epos.obs_ylim)
 		
 		ax.set_yscale('log')
+		ax.set_yticks(ticks)
+		ax.set_yticklabels(ticklabels)
+		
 	else:
 		ax.set_xlabel(label)
 
@@ -65,14 +76,13 @@ def set_axis_size(ax, epos, Trim=False, Eff=False, In=False, IsY=True):
 			ax.set_xlim(epos.obs_ylim)
 		
 		ax.set_xscale('log')
-
-	ax.set_yticks(epos.yticks)
-	ax.set_yticklabels(epos.yticks)
+		ax.set_xticks(ticks)
+		ax.set_xticklabels(ticklabels)
 
 def make_panels(plt):
 	gs = gridspec.GridSpec(2, 2,
-                       width_ratios=[6, 20],
-                       height_ratios=[10, 4]
+                       width_ratios=[4, 20],
+                       height_ratios=[10, 3]
                        )
 	f= plt.figure()
 	f.subplots_adjust(wspace=0, hspace=0)
@@ -80,8 +90,8 @@ def make_panels(plt):
 	ax = plt.subplot(gs[0, 1])	
 	#axb = plt.subplot(gs[0, 2])	
 
-	axR = plt.subplot(gs[0, 0])
-	axP = plt.subplot(gs[1, 1])
+	axR = plt.subplot(gs[0, 0], sharey=ax)
+	axP = plt.subplot(gs[1, 1], sharex=ax)
 	
 	ax.tick_params(direction='in', which='both', top=True, right=True, 
 		bottom=False, left=False)
@@ -90,8 +100,8 @@ def make_panels(plt):
 
 def make_panels_right(plt):
 	gs = gridspec.GridSpec(2, 2,
-                       width_ratios=[20, 6],
-                       height_ratios=[10, 4]
+                       width_ratios=[20, 4],
+                       height_ratios=[10, 3]
                        )
 	f= plt.figure()
 	f.subplots_adjust(wspace=0, hspace=0)
@@ -99,8 +109,8 @@ def make_panels_right(plt):
 	ax = plt.subplot(gs[0, 0])	
 	#axb = plt.subplot(gs[0, 2])	
 
-	axR = plt.subplot(gs[0, 1])
-	axP = plt.subplot(gs[1, 0])
+	axR = plt.subplot(gs[0, 1], sharey=ax)
+	axP = plt.subplot(gs[1, 0], sharex=ax)
 
 	ax.tick_params(direction='in', which='both', top=True)
 	ax.tick_params(direction='out', which='both', left=True, top=False)
@@ -113,8 +123,8 @@ def make_panels_right(plt):
 
 def make_panels_clrbar(plt):
 	gs = gridspec.GridSpec(2, 3,
-                       width_ratios=[6, 20, 1],
-                       height_ratios=[10, 4]
+                       width_ratios=[4, 20, 1],
+                       height_ratios=[10, 3]
                        )
 	f= plt.figure()
 	f.subplots_adjust(wspace=0, hspace=0)
@@ -122,16 +132,16 @@ def make_panels_clrbar(plt):
 	ax = plt.subplot(gs[0, 1])	
 	axb = plt.subplot(gs[0, 2])	
 
-	axR = plt.subplot(gs[0, 0])
-	axP = plt.subplot(gs[1, 1])
+	axR = plt.subplot(gs[0, 0], sharey=ax)
+	axP = plt.subplot(gs[1, 1], sharex=ax)
 
 	return f, (ax, axb, axR, axP)
 
 def set_pyplot_defaults():
 	from matplotlib import rcParams
 	#print rcParams
-	rcParams.update({'font.size': 16})
-	rcParams.update({'legend.fontsize': 'medium'})
+	rcParams.update({'font.size': 14}) # 16
+	rcParams.update({'legend.fontsize': 12}) # medium
 	rcParams.update({'axes.linewidth': 2.0})
 	rcParams.update({'lines.linewidth': 2.0})
 	rcParams.update({'patch.linewidth': 2.0})

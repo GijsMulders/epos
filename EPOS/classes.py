@@ -18,9 +18,10 @@ class fitparameters:
 		self.keysall=[]
 		self.keysfit=[]
 		self.keys2d=[]
+		self.keypps='pps'
 	
 	def add(self, key, value, fixed=False, min=-np.inf, max=np.inf, 
-				dx=None, text=None, is2D=False):
+				dx=None, text=None, is2D=False, isnorm=False):
 		'''Add a fit parameter
 		
 		Args:
@@ -38,6 +39,7 @@ class fitparameters:
 		# list of keys
 		self.keysall.append(key)
 		if is2D: self.keys2d.append(key)
+		if isnorm: self.keypps=key
 		if not fixed: self.keysfit.append(key)
 		
 		fp['key']= key
@@ -81,11 +83,19 @@ class fitparameters:
 	def get2d(self, Init=False):
 		# returns the values for the 2D distribution
 		return [self.get(key, Init=Init) for key in self.keys2d]
+
+	def getpps(self, Init=False):
+		# returns the normalization for the 2D distribution
+		return self.get(self.keypps, Init=Init)
+
+	def getpps_fromlist(self, parlist):
+		return self.getmc(self.keypps, parlist)
 	
 	def getfit(self, Init=True, attr=None): 
 		return [self.get(key, Init=Init, attr=attr) for key in self.keysfit]
 
 	def getmc(self, key, parlist):
+				
 		# returns value for an mc run
 		if self.fitpars[key]['fixed']:
 			return self.fitpars[key]['value_init']
@@ -182,7 +192,7 @@ Plots the exoplanet survey: observed planets and completeness
 		
 		self.plotpars={} # dictionary to hold some customization keywords
 		
-	def set_observation(self, xvar, yvar, starID, nstars=1.6862e5):
+	def set_observation(self, xvar, yvar, starID, nstars=1.6862e5, radiusError=0.1):
 		''' Observed planet population
 		
 		Args:
@@ -213,6 +223,7 @@ Plots the exoplanet survey: observed planets and completeness
 		self.obs_ylim=[ymin/dy,ymax*dy]
 		
 		self.Observation=True
+		self.radiusError= radiusError
 		
 		# print some stuff
 		print '\nObservations:\n  {} stars'.format(int(nstars))
@@ -336,10 +347,10 @@ Plots the exoplanet survey: observed planets and completeness
 		# scale factor to multiply pdf such that occurrence in units of dlnR dlnP
 		if LogArea:
 			area= np.log10
-			self.plotpars['area']= 'd log'
+			self.plotpars['area']= 'dlog'
 		else:
 			area= np.log
-			self.plotpars['area']= 'd ln'
+			self.plotpars['area']= 'dln'
 
 		self.scale_x= self.MC_xvar.size/area(self.MC_xvar[-1]/self.MC_xvar[0])
 		self.scale_y= self.MC_yvar.size/area(self.MC_yvar[-1]/self.MC_yvar[0])
@@ -348,8 +359,9 @@ Plots the exoplanet survey: observed planets and completeness
 		self.X, self.Y= np.meshgrid(self.MC_xvar, self.MC_yvar, indexing='ij')
 		
 		''' Transit probability '''
-		self.f_geo= self.fgeo_prefac *self.X**self.Pindex
-		self.f_det= self.f_geo * self.MC_eff
+		if not self.RV:
+			self.f_geo= self.fgeo_prefac *self.X**self.Pindex
+			self.f_det= self.f_geo * self.MC_eff
 		
 		'''
 		Prep the grid for the non-MC simulation
@@ -378,12 +390,40 @@ Plots the exoplanet survey: observed planets and completeness
 				self.X_in, self.Y_in= self.X, self.Y
 			
 		''' plot ticks '''
+		yr= 365.24
+		Pticks=np.array([1,10,100, yr, 10.*yr])
+		Pticklabels= np.array(['1','10','100','1yr','10yr'])
+		xrange= (self.xtrim[0]<=Pticks) & (Pticks<=self.xtrim[1])
+		self.xticks= Pticks[xrange]
+		self.xticklabels= Pticklabels[xrange]
+		
+		Mjup= cgs.Mjup/cgs.Mearth
+		Mticks= np.array([0.1,1,10,100, Mjup, 10.*Mjup, 100.*Mjup])
+		Mticklabels= np.array(['0.1','1','10','100', '$M_J$', '$10 M_J$', '$100 M_J$'])
+		
+		if self.MassRadius:
+			yinrange= (self.in_ytrim[0]<=Mticks) & (Mticks<=self.in_ytrim[1])
+			self.y_inticks= Mticks[yinrange]
+			self.y_inticklabels= Mticklabels[yinrange]
+
 		if self.RV:
-			self.xticks= [1,10,100]
-			self.yticks= [1,10,100,1000]
-		else:
-			self.xticks= [1,10,100,1000]
-			self.yticks= [0.5,1,2, 4,10]
+			yrange= (self.ytrim[0]<=Mticks) & (Mticks<=self.ytrim[1])
+			self.yticks= Mticks[yrange]
+			self.yticklabels= Mticklabels[yrange]
+
+		else:			
+			Rticks= np.array([0.25,0.5,1,2, 4, 10])
+			Rticklabels= np.array(['0.25','0.5','1','2', '4','10'])
+			yrange= (self.ytrim[0]<=Rticks) & (Rticks<=self.ytrim[1])			
+			self.yticks= Rticks[yrange]
+			self.yticklabels= Rticklabels[yrange]
+				
+# 		if self.RV:
+# 			self.xticks= [1,10,100]
+# 			self.yticks= [1,10,100,1000]
+# 		else:
+# 			self.xticks= [1,10,100,1000]
+# 			self.yticks= [0.5,1,2, 4,10]
 			
 		self.Range=True
 		

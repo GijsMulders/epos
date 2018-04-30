@@ -51,24 +51,33 @@ def chain(epos):
 	for axl in axlist[-1]:
 		axl.set_xlabel('Step number')
 	
-	# loop over existing axes only
-	for k, (xlabel, ax) in enumerate(zip(epos.fitpars.keysfit,axlist.flatten())):
-		ax.set_ylabel(xlabel)
+	# loop over all axes
+	for k, ax in enumerate(axlist.flatten()):
+		
+		try:
+			ax.set_ylabel(epos.fitpars.keysfit[k])
+			#ax.set_xlim(1, 10)
 	
-		#ax.set_xlim(1, 10)
+			#plot each walker
+			for i in range(nwalker):
+				ax.plot(epos.chain[i,:,k],color='r',alpha=10./nwalker)
 	
-		#plot each walker
-		for i in range(nwalker):
-			ax.plot(epos.chain[i,:,k],color='r',alpha=10./nwalker)
-	
-		ax.axvline(epos.burnin, ls='--', color='k')
+			ax.axvline(epos.burnin, ls='--', color='k')
+		except : 	
+			ax.set_visible(False)
+
 	
 	f.subplots_adjust(hspace=0.15, wspace=0.4)
 			
 	helpers.save(plt, '{}mcmc/chain'.format(epos.plotdir))	
 
 def corners(epos):
-	fig = corner.corner(epos.samples, labels=epos.fitpars.keysfit,
+	if hasattr(epos.fitpars,'latexkeys'):
+		labels= [epos.fitpars.latexkeys[key] if key in epos.fitpars.latexkeys else key for key in epos.fitpars.keysfit]
+	else:
+		labels=epos.fitpars.keysfit
+		
+	fig = corner.corner(epos.samples, labels=labels,
                       truths=epos.fitpars.getfit(Init=True), 
                       quantiles=[0.16, 0.5, 0.84], show_titles=True)
 	fig.savefig('{}mcmc/triangle.png'.format(epos.plotdir))

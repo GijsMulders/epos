@@ -18,12 +18,12 @@ def periodradius(epos, SNR=True, Parametric=False):
 	f, (ax, axR, axP)= helpers.make_panels(plt)
 	
 	sim=epos.synthetic_survey
-	title='detectable planets'
+	title='Simulated Detections'
 	fsuffix='detect'
 
 	if SNR:
 		transit=epos.transit
-		title= 'transiting planets'
+		title= 'Simulated Transiting Planets'
 		fsuffix='transit'
 	
 	''' plot R(P), main panel'''
@@ -33,7 +33,8 @@ def periodradius(epos, SNR=True, Parametric=False):
 	ax.plot(sim['P'], sim['Y'], ls='', marker='.', color='C0')
 
 	''' Period side panel '''
-	helpers.set_axis_distance(axP, epos, Trim=True)
+	#helpers.set_axis_distance(axP, epos, Trim=True)
+	axP.set_xlabel(ax.get_xlabel())
 	#axP.set_yscale('log')
 	#axP.set_ylim([2e-3,5])	
 	#axP.set_yticks([0.01,0.1,1])
@@ -46,7 +47,8 @@ def periodradius(epos, SNR=True, Parametric=False):
 	axP.hist(sim['P'], bins=epos.MC_xvar)
 
 	''' Radius side panel'''
-	helpers.set_axis_size(axR, epos, Trim=True, In= epos.MassRadius)
+	#helpers.set_axis_size(axR, epos, Trim=True, In= epos.MassRadius)
+	axR.set_ylabel(ax.get_ylabel())
 
 	#axR.set_xscale('log')
 	#axR.set_xlim([2e-3,5])
@@ -60,6 +62,13 @@ def periodradius(epos, SNR=True, Parametric=False):
 	if SNR: axR.hist(transit['Y'],orientation='horizontal', bins=epos.MC_yvar, color='C6')
 	axR.hist(sim['Y'],orientation='horizontal', bins=epos.MC_yvar)
 	
+	# labels
+	if SNR:
+		xpos= epos.MC_xvar[-1]
+		ypos= axP.get_ylim()[-1]/1.05
+		axP.text(xpos, ypos, 'Detected ', color='C0', ha='right', va='top')
+		axP.text(xpos, ypos/1.3, 'Undetected ', color='C6', ha='right', va='top')
+	
 	#ax.legend(loc='lower left', shadow=False, prop={'size':14}, numpoints=1)
 	helpers.save(plt, '{}output/periodradius.{}'.format(epos.plotdir,fsuffix))
 
@@ -72,7 +81,7 @@ def panels(epos, MCMC=False):
 	clr_bf= 'g'
 		
 	''' plot R(P), main panel'''
-	ax.set_title('detectable planets')
+	ax.set_title('Simulated Detections')
 	helpers.set_axes(ax, epos, Trim=True)
 	if epos.MonteCarlo:
 		ax.plot(sim['P'], sim['Y'], ls='', marker='.', color=clr_bf if MCMC else 'C0')

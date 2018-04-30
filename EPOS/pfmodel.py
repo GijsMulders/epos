@@ -229,3 +229,33 @@ def mordasini(name='syntheticpopmordasini1MsunJ31', dir='Mordasini', cutoff=np.i
 		'inc':inc[order], 'starID':ID[order], 'tag':FeH[order]}
 		
 	return npz
+
+def mordasini_ext(name='syntheticpopmordasini1MsunJ31extended', dir='Mordasini', cutoff=np.inf,
+		Verbose=False):
+	fname= '{}/{}.dat'.format(dir,name)
+	header= np.genfromtxt(fname, max_rows=1, dtype=str)
+	print header
+	a= np.loadtxt(fname, unpack=True, skiprows=1, usecols=(1,2,3,4,6,7,10))
+	include= (a[1]<cutoff) #& (a[3]>1)
+	ID= a[0][include]
+	sma= a[1][include]
+	mass= a[2][include]
+	radius= a[3][include]
+	inc=a[4][include]
+	FeH= a[5][include]
+	sma0= a[6][include]
+
+	print '\nLoad population synthesis model {}'.format(name)
+	print '  sma:  	 {:.2e} ... {:.1f}'.format(min(sma), max(sma))
+	print '  sma0: 	 {:.2e} ... {:.1f}'.format(min(sma0), max(sma0))
+	print '  mass:   {:.2e} ... {:.1f}'.format(min(mass), max(mass))
+	print '  radius: {:.2f} ... {:.1f}'.format(min(radius), max(radius))
+	print '  inc:    {:.2e} ... {:.1f}'.format(min(inc), max(inc))
+	print '  Fe/H:   {:.2f} ... {:.2f}'.format(min(FeH), max(FeH))
+	
+	order= np.lexsort((sma,ID)) 
+	
+	npz={'sma':sma[order], 'mass':mass[order], 'radius':radius[order], 
+		'inc':inc[order], 'starID':ID[order], 'tag':FeH[order], 'sma0':sma0[order]}
+		
+	return npz

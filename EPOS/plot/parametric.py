@@ -21,7 +21,7 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True):
 	if Occ:
 		fname= 'occurrence/posterior' if MCMC else 'occurrence/input'
 		ybin= epos.yzoom
-		title= r'Planet occurrence ({:.1f}-{:.0f} $R_\bigoplus$)'.format(*epos.yzoom)
+		title= r'Planet Occurrence ({:.1f}-{:.0f} $R_\bigoplus$)'.format(*epos.yzoom)
 	else:	
 		fname= 'mcmc/posterior' if MCMC else 'input/parametric_initial'
 		ybin=None
@@ -42,10 +42,13 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True):
 	''' Orbital Period '''
 	f, ax = plt.subplots()
 	ax.set_title(title)
-	ax.set_xlabel('Orbital Period [days]')
-	ax.set_ylabel('Occurrence / {} P'.format(epos.plotpars['area']))
-	ax.set_xscale('log')
-	ax.set_xlim(epos.xtrim)
+	ax.set_ylabel('Occurrence / {}P'.format(epos.plotpars['area']))
+
+	#ax.set_xlabel('Orbital Period [days]')
+	#ax.set_xscale('log')
+	#ax.set_xlim(epos.xtrim)
+	helpers.set_axis_distance(ax, epos, Trim=True)
+	
 	if Log:
 		ax.set_yscale('log')
 		if 'occrange' in epos.plotpars:
@@ -61,9 +64,9 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True):
 			ax.plot(epos.MC_xvar, xpdf, color='b', alpha=0.1)
 						
 		ax.plot(epos.MC_xvar, pdf0_X, marker='',ls=':',color='k',
-					label='starting guess')
+					label='Starting Guess')
 		ax.plot(epos.MC_xvar, pdf_X, marker='',ls='-',color='k',
-					label='best fit')
+					label='Best Fit')
 	else:
 		if 'P break' in epos.fitpars.keys2d:
 			ax.axvline(epos.fitpars.get('P break', Init=True), ls='-', color='gray')
@@ -84,10 +87,13 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True):
 
 	if not Log:
 		xx=np.geomspace(20,400)
-		ax.plot(xx, 0.2* (xx/10.)**0.1, marker='', ls='-', color='g', label='all planets')
+		ax.plot(xx, 0.25* (xx/10.)**0.1, marker='', ls='-', color='g', 
+			label='All Planets')
+		if 'Pinner ylim' in epos.plotpars:
+			ax.set_ylim(epos.plotpars['Pinner ylim'])
 
 	if MCMC:
-		ax.legend(loc='upper right')
+		ax.legend(loc='upper left')
     
 	helpers.save(plt, epos.plotdir+fname+'_x')
 	#print epos.plotdir+fname+'_x'
@@ -118,16 +124,16 @@ def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False):
 	ax.set_title(title)
 	if PlotQ:
 		ax.set_xlabel(r'Planet Mass Ratio')
-		ax.set_ylabel('Occurrence / {} q d log a'.format(epos.plotpars['area']))
+		ax.set_ylabel('Occurrence / {}q dloga'.format(epos.plotpars['area']))
 		area= 2./3.* np.log10(epos.MC_xvar[-1]/epos.MC_xvar[0])
 		yscale= 1. /area
 	elif epos.RV or epos.MassRadius:	
 		ax.set_xlabel(r'Planet Mass [M$_\bigoplus$]')
-		ax.set_ylabel('Occurrence / {} M'.format(epos.plotpars['area']))
+		ax.set_ylabel('Occurrence / {}M'.format(epos.plotpars['area']))
 		yscale= 1.
 	else:
 		ax.set_xlabel(r'Planet Radius [R$_\bigoplus$]')
-		ax.set_ylabel('Occurrence / {} R'.format(epos.plotpars['area']))
+		ax.set_ylabel('Occurrence / {}R'.format(epos.plotpars['area']))
 		yscale= 1.
 	
 	M_to_q= 1./(epos.Mstar*cgs.Msun/cgs.Mearth)
@@ -219,15 +225,17 @@ def panels(epos, PlotZoom=False, MCMC=False):
 	pps, pdf, pdf_X, pdf_Y= periodradius(epos, Init= not MCMC)
 	pdflog= np.log10(pdf) # in %
 		
-	ax.set_title('Occurrence [%] / d ln p d ln '+('M' if epos.MassRadius else 'R'))
+	ax.set_title('Planet Occurrence / dlnP dln'+('M' if epos.MassRadius else 'R'))
 	helpers.set_axes(ax, epos, Trim=True, In= epos.MassRadius)
 
 	# Side panels
 	axP.plot(epos.MC_xvar, pdf_X, marker='',ls='-',color='k')
 	axR.plot(pdf_Y, epos.in_yvar, marker='',ls='-',color='k')
 
-	helpers.set_axis_distance(axP, epos, Trim=True)
-	helpers.set_axis_size(axR, epos, Trim=True, In= epos.MassRadius)
+	#helpers.set_axis_distance(axP, epos, Trim=True)
+	#helpers.set_axis_size(axR, epos, Trim=True, In= epos.MassRadius)
+	axP.set_xlabel(ax.get_xlabel())
+	axR.set_ylabel(ax.get_ylabel())
 
 	axP.set_yscale('log')
 	axP.set_ylim([2e-3,5])	
@@ -243,6 +251,7 @@ def panels(epos, PlotZoom=False, MCMC=False):
 	axR.set_xticklabels(['1%','10%','100%'], rotation=70)
 	axR.tick_params(axis='x', which='minor',top='off',bottom='off')
 	axP.tick_params(axis='y', which='minor',left='off',right='off')
+	axP.tick_params(axis='y', which='major',left='off',right='on')
 
 	''' color scale? '''
 	cmap='jet'
@@ -257,5 +266,6 @@ def panels(epos, PlotZoom=False, MCMC=False):
                                 orientation='vertical') # horizontal
 	axb.set_yticklabels(100*10.**ticks)
 	axb.tick_params(axis='y', direction='out')
+	axb.set_title('%')
 	
 	helpers.save(plt, epos.plotdir+'input/panels')
