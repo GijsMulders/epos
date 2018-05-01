@@ -24,10 +24,10 @@ epos.fitpars.add('P1',0.3, is2D=True)
 epos.fitpars.add('P2',-0.2, dx=0.1, is2D=True)
 
 ''' define the simulated range (trim) and the range compared to observations (zoom) '''
-epos.set_ranges(xtrim=[10,730],ytrim=[0.5,12.],xzoom=[20,300],yzoom=[0.7,3])
+epos.set_ranges(xtrim=[10,730],ytrim=[0.5,4.],xzoom=[20,300],yzoom=[0.7,3])
 
 ''' Run the Monte Carlo Simulation once '''
-EPOS.run.once(epos) # == prep
+EPOS.run.once(epos)
 
 ''' run a longer MCMC chain on multiple cores '''
 EPOS.run.mcmc(epos, nMC=1000, nwalkers=100, nburn=200, threads=8, Saved=False) # ~10 mins

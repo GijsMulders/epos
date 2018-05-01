@@ -27,7 +27,7 @@ epos.fitpars.add('P2',-0.2, dx=0.1, is2D=True)
 epos.set_ranges(xtrim=[10,730],ytrim=[0.5,12.],xzoom=[50,200],yzoom=[0.7,3])
 
 ''' Run the Monte Carlo Simulation once '''
-EPOS.run.once(epos) # == prep
+EPOS.run.once(epos)
 
 ''' plot parameteric distribution and simulated output '''
 EPOS.plot.input.all(epos)

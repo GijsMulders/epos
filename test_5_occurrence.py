@@ -23,13 +23,13 @@ epos.fitpars.add('P1',0.3, is2D=True)
 epos.fitpars.add('P2',-0.2, dx=0.1, is2D=True)
 
 ''' define the simulated range (trim) and the range compared to observations (zoom) '''
-epos.set_ranges(xtrim=[10,730],ytrim=[0.5,12.],xzoom=[20,300],yzoom=[0.7,3], Occ=True)
+epos.set_ranges(xtrim=[10,730],ytrim=[0.5,4.],xzoom=[20,300],yzoom=[0.7,3], Occ=True)
 
 ''' define bins where occurrence is calculated'''
 epos.set_bins(xbins=[[20,300],[0.9*365,2.2*365]], ybins=[[0.7,3],[0.7,1.5]]) # eta_zoom, eta_earth
 
 ''' Run the Monte Carlo Simulation once '''
-EPOS.run.once(epos) # == prep
+EPOS.run.once(epos)
 
 ''' Calculate the occurrence rates '''
 EPOS.occurrence.all(epos)

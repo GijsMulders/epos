@@ -21,7 +21,8 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True):
 	if Occ:
 		fname= 'occurrence/posterior' if MCMC else 'occurrence/input'
 		ybin= epos.yzoom
-		title= r'Planet Occurrence ({:.1f}-{:.0f} $R_\bigoplus$)'.format(*epos.yzoom)
+		unit= r'$M_\bigoplus$' if epos.RV else r'$R_\bigoplus$'
+		title= r'Planet Occurrence ({1:.1f}-{2:.0f} {0})'.format(unit, *epos.yzoom)
 	else:	
 		fname= 'mcmc/posterior' if MCMC else 'input/parametric_initial'
 		ybin=None

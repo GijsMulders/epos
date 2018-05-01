@@ -436,16 +436,21 @@ Plots the exoplanet survey: observed planets and completeness
 			if not hasattr(self,'occurrence'):
 				self.occurrence={}
 			focc= self.occurrence			
-	
+			
+			if self.RV:
+				xgrid= np.geomspace(self.MC_xvar[0], self.MC_xvar[-1], num=20)
+				ygrid= np.geomspace(self.MC_yvar[0], self.MC_yvar[-1], num=20)
+			else:
+				xgrid= self.MC_xvar
+				ygrid= self.MC_yvar	
+			
 			focc['xzoom']={}
 			#ygrid= np.exp(np.arange(np.log(self.MC_yvar[0]),np.log(self.MC_yvar[-1])+0))
-			ygrid= self.MC_yvar
 			focc['xzoom']['x']= [self.xzoom]* (ygrid.size-1)
 			focc['xzoom']['y']= [[i,j] for i,j in zip(ygrid[:-1],ygrid[1:])]
 
 			focc['yzoom']={}
 			#xgrid= np.exp(np.arange(np.log(self.MC_xvar[0]),np.log(self.MC_xvar[-1])+0))
-			xgrid= self.MC_xvar
 			focc['yzoom']['x']= [[i,j] for i,j in zip(xgrid[:-1],xgrid[1:])]
 			focc['yzoom']['y']= [self.yzoom]* (xgrid.size-1)
 			
