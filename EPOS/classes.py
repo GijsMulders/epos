@@ -285,6 +285,7 @@ Plots the exoplanet survey: observed planets and completeness
 					'\n: (nx,ny)={}, (nx,ny={})'.format(self.eff_2D.shape,
 								self.vetting.shape))
 
+			self.completeness_novet= self.completeness
 			self.completeness*= self.vetting
 
 		self.DetectionEfficiency=True

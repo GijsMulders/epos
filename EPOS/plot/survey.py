@@ -5,20 +5,40 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.colorbar as clrbar
-from mpl_toolkits.mplot3d import Axes3D
 
-from EPOS import regression
 import helpers
 
-clrs= ['r','g','b','m'] # in epos.prep
-fmt_symbol= {'ls':'', 'marker':'o', 'mew':2, 'ms':8,'alpha':0.6}
+def all(epos):
+	print '\nPlotting survey...'
+
+	observed(epos, PlotBox=False)
+	completeness(epos, PlotBox=False)
+	if not epos.RV: 
+		completeness(epos, PlotBox=False, Transit=True)
+		if hasattr(epos, 'vetting'):
+			completeness(epos, PlotBox=False, Transit=True, Vetting=False)
+		
+	if hasattr(epos, 'vetting'): 
+		vetting(epos, PlotBox=False)
+		completeness(epos, PlotBox=False, Vetting=False)
+	
+	if epos.Range and epos.Zoom:
+		observed(epos, PlotBox=True)
+		completeness(epos, PlotBox=True)
+		if not epos.RV: 
+			completeness(epos, PlotBox=True, Transit=True)
+			if hasattr(epos, 'vetting'):
+				completeness(epos, PlotBox=True, Transit=True)
+		if hasattr(epos, 'vetting'): 
+			vetting(epos, PlotBox=True)
+			completeness(epos, PlotBox=True, Vetting=False)
 
 def observed(epos, PlotBox=True):
 	assert epos.Observation
 	f, ax = plt.subplots()
 	ax.set_title('Observed Population')
 	
-	helpers.set_axes(ax, epos, Trim=True)
+	helpers.set_axes(ax, epos, Trim=epos.Range)
 	
 	ax.plot(epos.obs_xvar, epos.obs_yvar, ls='', marker='.', mew=0, ms=5.0, color='k')
 	# add multis? 
@@ -45,8 +65,12 @@ def completeness(epos, PlotBox=False, Transit=False, Vetting=True):
 	ax.set_title('Detection Efficiency' if Transit else 'Survey Completeness')
 	helpers.set_axes(ax, epos, Trim=False, Eff=True)
 	
-	toplot= epos.eff_2D if Transit else epos.completeness
-	if not Vetting: toplot/= epos.vetting
+	if Transit:
+		toplot= epos.eff_2D
+		if Vetting: toplot*= epos.vetting
+	else:
+		toplot= epos.completeness if Vetting else epos.completeness_novet
+	
 	with np.errstate(divide='ignore'): log_completeness=  np.log10(toplot)
 	
 	''' color map and ticks'''
@@ -58,7 +82,7 @@ def completeness(epos, PlotBox=False, Transit=False, Vetting=True):
 	ticks=np.linspace(vmin, vmax, (vmax-vmin)+1)
 	levels=np.linspace(vmin, vmax, 256)
 
-	cs= ax.contourf(epos.eff_xvar, epos.eff_yvar,log_completeness.T, cmap=cmap, levels=levels)
+	cs= ax.contourf(epos.eff_xvar, epos.eff_yvar,log_completeness.T, cmap=cmap, levels=levels, vmin=vmin, vmax=vmax)
 
 	cbar= f.colorbar(cs, cax=axb, ticks=ticks)
 	axb.set_yticklabels(100*10.**ticks)
@@ -74,9 +98,10 @@ def completeness(epos, PlotBox=False, Transit=False, Vetting=True):
 		if epos.Zoom:
 			ax.add_patch(patches.Rectangle( (epos.xzoom[0],epos.yzoom[0]), 
 				epos.xzoom[1]-epos.xzoom[0], epos.yzoom[1]-epos.yzoom[0],fill=False, zorder=1) )
-	else: 
-		ax.set_xlim(*epos.xtrim)
-		ax.set_ylim(*epos.ytrim)
+	else:
+		if hasattr(epos, 'xtrim'):
+			ax.set_xlim(*epos.xtrim)
+			ax.set_ylim(*epos.ytrim)
 		
 		if epos.RV:
 			levels= [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
@@ -137,8 +162,8 @@ def vetting(epos, PlotBox=False):
 		plt.clabel(cs, cs.levels, inline=True, fmt=fmt_percent)
 
 		fname=''
-		
-		ax.set_xlim(*epos.xtrim)
-		ax.set_ylim(*epos.ytrim)
+		if hasattr(epos, 'xtrim'):		
+			ax.set_xlim(*epos.xtrim)
+			ax.set_ylim(*epos.ytrim)
 
 	helpers.save(plt, epos.plotdir+'survey/vetting'+ fname)

@@ -20,8 +20,9 @@ def set_axis_distance(ax, epos, Trim=False, Eff=False, In=False, IsX=True):
 			ax.set_xlim(epos.obs_xlim)
 		
 		ax.set_xscale('log')
-		ax.set_xticks(epos.xticks)
-		ax.set_xticklabels(epos.xticklabels)
+		if hasattr(epos,'xticks'):
+			ax.set_xticks(epos.xticks)
+			ax.set_xticklabels(epos.xticklabels)
 	
 	else:
 		ax.set_ylabel('Orbital Period [days]')
@@ -33,23 +34,27 @@ def set_axis_distance(ax, epos, Trim=False, Eff=False, In=False, IsX=True):
 			ax.set_ylim(epos.obs_xlim)
 		
 		ax.set_yscale('log')
-		ax.set_yticks(epos.xticks)
-		ax.set_yticklabels(epos.xticklabels)
+		if hasattr(epos,'xticks'):
+			ax.set_yticks(epos.xticks)
+			ax.set_yticklabels(epos.xticklabels)
 
 def set_axis_size(ax, epos, Trim=False, Eff=False, In=False, IsY=True):
 
 	if In:
 		label= r'M [M$_\bigoplus$]'
-		ticks= epos.y_inticks
-		ticklabels= epos.y_inticklabels
+		if hasattr(epos,'y_inticks'):
+			ticks= epos.y_inticks
+			ticklabels= epos.y_inticklabels
 	elif epos.RV:
 		label= r'M sin i [M$_\bigoplus$]'
-		ticks= epos.yticks
-		ticklabels= epos.yticklabels
+		if hasattr(epos,'yticks'):
+			ticks= epos.yticks
+			ticklabels= epos.yticklabels
 	else:
 		label= r'Planet Radius [R$_\bigoplus$]'
-		ticks= epos.yticks
-		ticklabels= epos.yticklabels
+		if hasattr(epos,'yticks'):
+			ticks= epos.yticks
+			ticklabels= epos.yticklabels
 
 	if IsY:
 		ax.set_ylabel(label)
@@ -62,8 +67,9 @@ def set_axis_size(ax, epos, Trim=False, Eff=False, In=False, IsY=True):
 			ax.set_ylim(epos.obs_ylim)
 		
 		ax.set_yscale('log')
-		ax.set_yticks(ticks)
-		ax.set_yticklabels(ticklabels)
+		if hasattr(epos,'yticks'):
+			ax.set_yticks(ticks)
+			ax.set_yticklabels(ticklabels)
 		
 	else:
 		ax.set_xlabel(label)
@@ -76,8 +82,9 @@ def set_axis_size(ax, epos, Trim=False, Eff=False, In=False, IsY=True):
 			ax.set_xlim(epos.obs_ylim)
 		
 		ax.set_xscale('log')
-		ax.set_xticks(ticks)
-		ax.set_xticklabels(ticklabels)
+		if hasattr(epos,'yticks'):
+			ax.set_xticks(ticks)
+			ax.set_xticklabels(ticklabels)
 
 def make_panels(plt):
 	gs = gridspec.GridSpec(2, 2,

@@ -90,7 +90,7 @@ def once(epos, fac=1.0, Extra=None, goftype='KS'):
 	print 'Finished one MC in {:.3f} sec'.format(tMC-tstart)
 	epos.tMC= tMC-tstart
 	
-def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1, npos=30):
+def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1, npos=30, Saved=True):
 	if not 'emcee' in sys.modules:
 		raise ImportError('You need to install emcee')
 	assert epos.Prep
@@ -108,10 +108,10 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1, npos=30):
 	
 	# store, npy is uncompressed, savez returns as dict instead of array
 	dir= 'chain/{}'.format(epos.name)
-	#fname= '{}/{}x{}x{}.npy'.format(dir, nwalkers, nMC, ndim)
 	fname= '{}/{}x{}x{}.npz'.format(dir, nwalkers, nMC, ndim)
 	if not os.path.exists(dir): os.makedirs(dir)
-	if os.path.isfile(fname):
+	
+	if os.path.isfile(fname) and Saved:
 		print '\nLoading saved status from {}'.format(fname)
 		npz= np.load(fname)
 		

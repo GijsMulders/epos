@@ -143,4 +143,4 @@ def dr25(subsample='all', score=0.9, Huber=True, Vetting=False):
 	
 def fbpl2d((x,y), a, b, c, d, e, f, g):
 	bpl= a* (x/b)**np.where(x<b, c, d) * (y/e)**np.where(y<e, f,g)
-	return np.maximum(0.2, np.minimum(bpl, 1))
+	return np.maximum(0.2, np.minimum(bpl, 1.))
