@@ -11,10 +11,10 @@ Subpackages
 Submodules
 ----------
 
-EPOS\.OLDfitfunctions module
-----------------------------
+EPOS\.analytics module
+----------------------
 
-.. automodule:: EPOS.OLDfitfunctions
+.. automodule:: EPOS.analytics
     :members:
     :undoc-members:
     :show-inheritance:
@@ -91,10 +91,10 @@ EPOS\.pfmodel module
     :undoc-members:
     :show-inheritance:
 
-EPOS\.readme module
--------------------
+EPOS\.population module
+-----------------------
 
-.. automodule:: EPOS.readme
+.. automodule:: EPOS.population
     :members:
     :undoc-members:
     :show-inheritance:
@@ -119,6 +119,14 @@ EPOS\.rv module
 ---------------
 
 .. automodule:: EPOS.rv
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+EPOS\.save module
+-----------------
+
+.. automodule:: EPOS.save
     :members:
     :undoc-members:
     :show-inheritance:

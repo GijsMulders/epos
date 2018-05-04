@@ -1,7 +1,7 @@
-EPOS introduction
-=================
+EPOS API
+========
 
-This generates the API, showing only documented functions
+This generates the API, showing some documented functions
 
 (this is a link to :class:`EPOS.epos`)
 

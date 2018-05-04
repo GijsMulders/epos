@@ -33,6 +33,7 @@ class fitparameters:
 			dx(float): initial dispersion for MCMC
 			text(str): plot safe name?
 			is2D(bool): use this parameter in the 2D parametric :meth:`EPOS.fitfunctions`
+			isnorm(bool): this parameter is the normalization factor for the number of planet per star :meth:`EPOS.fitfunctions`
 		'''
 		fp=self.fitpars[key]= {}
 		

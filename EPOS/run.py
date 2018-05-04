@@ -382,7 +382,7 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 				return -np.inf
 				
 		''' Fit parameters'''
-		pps= epos.fitpars.getpps(fpara)
+		pps= epos.fitpars.getpps_fromlist(fpara)
 
 		f_cor= epos.fitpars.getmc('f_cor', fpara)
 		f_iso= epos.fitpars.getmc('f_iso', fpara)

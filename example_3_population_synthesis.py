@@ -5,7 +5,8 @@ import sys
 import EPOS
 
 '''
-This example shows how to use EPOS with a planet formation model
+This example shows how to use EPOS with a planet populations synthesis model.
+The model used here if from the review by Mordasini et al. 2018, Handbook of Exoplanets
 
 You can replace EPOS.pfmodel.mordasini with a module that returns a dictionary with 
 planet properties as numpy arrays. Planets with the same starID are assumed to be in 
@@ -19,7 +20,7 @@ tag:	tag for simulation initial conditions such as Fe/H, optional
 '''
 
 ''' initialize the EPOS class '''
-epos= EPOS.classes.epos(name='ExamplePlanetFormation')
+epos= EPOS.classes.epos(name='example_3')
 
 ''' Load the Kepler planet list and detection efficiency '''
 obs, survey= EPOS.kepler.dr25()
@@ -33,13 +34,14 @@ epos.pdfpars.add('P break', 10., is2D=True)
 epos.pdfpars.add('P1',1.5, is2D=True)
 epos.pdfpars.add('P2',0.0, is2D=True)
 epos.pdfpars.add('R break',3.3, is2D=True) 
-epos.pdfpars.add('R1',-0.3, is2D=True)
-epos.pdfpars.add('R2',-5.4, is2D=True)
+epos.pdfpars.add('R1',-0.5, is2D=True)
+epos.pdfpars.add('R2',-6.0, is2D=True)
 
 ''' Load the planet formation model '''
-pfm= EPOS.pfmodel.mordasini(name='example3', dir='.', cutoff= 1.,Verbose=True)
-epos.set_population('mordasini', **pfm)
-epos.fitpars.add('eta', 0.2) # fraction of stars with simulated planets
+pfm= EPOS.pfmodel.mordasini(name='syntheticpopmordasini1MsunJ31', dir='files', 
+	cutoff= 1.,Verbose=True)
+epos.set_population('Mordasini 2018', **pfm)
+epos.fitpars.add('eta', 0.2, isnorm=True) # fraction of stars with simulated planets
 epos.fitpars.add('f_iso', 0) # fraction of systems with isotropic orbits
 epos.fitpars.add('f_inc', 1.0) # fudge factor for the inclinations
 epos.fitpars.add('f_dP', 1.0) # fudge factor for the period ratios

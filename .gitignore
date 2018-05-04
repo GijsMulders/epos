@@ -4,8 +4,9 @@ chain/
 log/
 *.pyc
 .sync
-_docs
 Makefile
 make.bat
-_build/doctrees/
-_build/singlehtml/
+.build/
+.static/
+.templates/
+_build/

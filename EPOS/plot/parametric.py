@@ -87,9 +87,11 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True):
 	#ax.plot(epos.MC_xvar, gauss, ls='-', marker='', color='r')
 
 	if not Log:
-		xx=np.geomspace(20,400)
-		ax.plot(xx, 0.25* (xx/10.)**0.1, marker='', ls='-', color='g', 
-			label='All Planets')
+		if 'Pinner all' in epos.plotpars:
+			xx=np.geomspace(20,400)
+			a,b,c= epos.plotpars['Pinner all']
+			ax.plot(xx, a* (xx/b)**c, marker='', ls='-', color='g', 
+				label='All Planets')
 		if 'Pinner ylim' in epos.plotpars:
 			ax.set_ylim(epos.plotpars['Pinner ylim'])
 

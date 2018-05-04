@@ -1,21 +1,22 @@
-.. EPOS documentation master file, created by
-   sphinx-quickstart on Thu Nov  9 20:02:40 2017.
+.. epos documentation master file, created by
+   sphinx-quickstart on Thu May  3 14:58:08 2018.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to EPOS's documentation!
+Welcome to epos's documentation!
 ================================
 
-This is heavily under construction...
+This is an autosphinx generated document
 
-.. this is a comment
 
-Contents:
+
 
 .. toctree::
    :maxdepth: 2
-   
+   :caption: Contents:
+
    api
+
 
 Indices and tables
 ==================
@@ -23,4 +24,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

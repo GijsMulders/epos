@@ -19,7 +19,7 @@ epos.set_parametric(EPOS.fitfunctions.brokenpowerlaw2D)
 Note: 
 	- brokenpowerlaw2D uses 6 parameters, indicated with the is2D keyword
 	- 'pps' is a normalization factor for the planet occurrence rate (planets-per-star)
-	- parameter b_R is not fitted
+	- parameters a_M and b_M are not fitted
 	- dx is the range in walker initial positions for parameters that change sign (+/-)
 '''
 epos.fitpars.add('pps',		2.0, 	min=0)

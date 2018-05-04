@@ -52,6 +52,14 @@ EPOS\.plot\.mcmc module
     :undoc-members:
     :show-inheritance:
 
+EPOS\.plot\.model module
+------------------------
+
+.. automodule:: EPOS.plot.model
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 EPOS\.plot\.multi module
 ------------------------
 
