@@ -145,9 +145,7 @@ class epos:
 		plotdir(str): plot directory
 		RV(bool): Compare to Radial Velocity instead of transit data
 		Multi(bool): Do multi-planet statistics
-		RandomPairing(bool): multis are randomly paired'''
-Plots the exoplanet survey: observed planets and completeness
-'''
+		RandomPairing(bool): multis are randomly paired
 		Isotropic(bool): Assume isotropic mutual inclinations
 		Parametric(bool): parametric planet population?
 		Debug(bool): Verbose logging

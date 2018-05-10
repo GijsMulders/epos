@@ -42,12 +42,16 @@ def eff_Q16(subsample='all'):
 	eff= np.load('files/completeness.Q16.epos.{}.npz'.format(subsample))
 	return eff['x'], eff['y'], eff['fsnr']
 
-def dr25(subsample='all', score=0.9, Huber=True, Vetting=False):
+def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 	'''
 	Generates Kepler DR25 planet population and detection efficiency
 	
 	Args:
 		subsample(str):	Subsample, choose from 'all', 'M', 'K', 'G', or 'F'
+		score(float): Disposition score, 0-1, default 0.9
+		Gaia(bool): Use Gaia data (Stellar radii from Berger+ 2018)
+		Huber(bool): Use logg cut from Huber+ 2016
+		Vetting(bool): include vetting completeness
 		
 	Returns:
 		tuple: two dictionaries
@@ -60,22 +64,85 @@ def dr25(subsample='all', score=0.9, Huber=True, Vetting=False):
 		survey(dict):
 			the grid is in xvar,yvar, the detection efficiency in eff_2D 
 	'''
-	fkoi= 'files/q1_q17_dr25_koi.npz'
+	if Gaia:
+		fkoi= 'files/q1_q17_dr25-gaia-r1_koi.npz'
+	else:
+		fkoi= 'files/q1_q17_dr25_koi.npz'
+		
 	if os.path.isfile(fkoi):
 		print '\nLoading planets from {}'.format(fkoi)
 		koi= np.load(fkoi)
 	else:
-		print '\nReading planets from IPAC file' 
+		print '\nReading planet candidates from IPAC file' 
 		try:
 			ipac=Table.read('files/q1_q17_dr25_koi.tbl',format='ipac')
 		except NameError:
 			raise ImportError('You need to install astropy for this step')
+		#print ipac.keys()
 		koi= {key: np.array(ipac[key]) for key in ['kepid','koi_prad','koi_period',
-				'koi_steff', 'koi_slogg','koi_pdisposition','koi_score'] }
+				'koi_steff', 'koi_slogg', 'koi_srad', 'koi_depth',
+				'koi_pdisposition','koi_score'] }
+#		isnan= ~(koi['koi_srad']>0)
+# 		print isnan.size
+# 		print koi['kepid'][isnan]
+# 		print koi['koi_srad'][isnan]
+# 		print koi['koi_pdisposition'][isnan]
+# 		print koi['koi_prad'][isnan]
+
+		if Gaia:
+			# Stellar radius table from Berger+ in prep.
+			fgaia= 'files/DR2PapTable1.txt'
+			a=np.loadtxt(fgaia, delimiter='&', unpack=True, skiprows=1, comments='\\')
+			
+			# sort stars by ID for easy matching
+			order= a[0].argsort()
+			a= a[:,order]
+			assert np.all(np.sort(a[0])==a[0]), 'Whoops II'
+			
+			common= np.intersect1d(koi['kepid'], a[0], assume_unique=False)
+			print '  {} common out {} kois and {} stars in gaia'.format(common.size, 
+							koi['kepid'].size, a[0].size)
+			
+			# remove kois w/ no gaia data
+			koi_in_gaia= np.in1d(koi['kepid'], a[0])
+			for key in koi:
+				koi[key]= koi[key][koi_in_gaia]
+			print '  {} stars, {} kois in gaia'.format(koi['kepid'].size, 
+				np.unique(koi['kepid']).size)
+			
+			# remove gaia data w/ no koi
+			gaia_in_koi= np.in1d(a[0], koi['kepid'])
+			gaia=dict(starID= a[0][gaia_in_koi],
+					  Teff=a[2][gaia_in_koi],
+					  Rst= a[7][gaia_in_koi],
+					  giantflag= a[11][gaia_in_koi])
+			print '  {} gaia stars that are kois'.format(gaia['starID'].size)
+			assert gaia['starID'].size == np.unique(koi['kepid']).size
+			
+			# stars w/ multiple planet candidates		
+			_, st_to_pl= np.unique(koi['kepid'], return_inverse=True)
+			assert np.all(gaia['starID'][st_to_pl]==koi['kepid'])
+			
+			# update radii
+			with np.errstate(divide='ignore'):
+				increase= np.nanmedian(gaia['Rst'][st_to_pl]/ koi['koi_srad'])-1.
+			print '  KOI radii increased by {:.1%}'.format(increase)
+			
+			koi['koi_steff']= gaia['Teff'][st_to_pl]
+			with np.errstate(divide='ignore', invalid='ignore'):
+				koi['koi_prad']*= gaia['Rst'][st_to_pl]/ koi['koi_srad']
+			#koi['d']=a[4][gaia_in_koi]
+			koi['giantflag']= gaia['giantflag'][st_to_pl]
+
+			#print np.nanmedian((koi['koi_srad']*koi['koi_depth']**0.5)/ koi['koi_prad'])
+		
 		np.savez(fkoi, **koi)
 
 	''' Remove giant stars'''
-	if Huber:
+	if Gaia:
+		isdwarf= koi['giantflag'] == 0
+		suffix='gaia-r1'
+	elif Huber:
 		isdwarf= koi['koi_slogg'] > 1./4.671 * \
 					np.arctan((koi['koi_steff']-6300.)/-67.172)+ 3.876
 		isgiant= koi['koi_slogg'] < np.where(koi['koi_steff']>5000, 
