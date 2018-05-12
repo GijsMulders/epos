@@ -79,7 +79,11 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 		except NameError:
 			raise ImportError('You need to install astropy for this step')
 		#print ipac.keys()
-		koi= {key: np.array(ipac[key]) for key in ['kepid','koi_prad','koi_period',
+		nonzero= (ipac['koi_srad']>0)
+		nremove= ipac['koi_srad'].size- ipac['koi_srad'][nonzero].size
+		print '  removed {} planets with no stellar radii'.format(nremove)
+		koi= {key: np.array(ipac[key][nonzero]) for key in 
+				['kepid','koi_prad','koi_period',
 				'koi_steff', 'koi_slogg', 'koi_srad', 'koi_depth',
 				'koi_pdisposition','koi_score'] }
 #		isnan= ~(koi['koi_srad']>0)
@@ -114,6 +118,7 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 			gaia_in_koi= np.in1d(a[0], koi['kepid'])
 			gaia=dict(starID= a[0][gaia_in_koi],
 					  Teff=a[2][gaia_in_koi],
+					  distance=a[4][gaia_in_koi],
 					  Rst= a[7][gaia_in_koi],
 					  giantflag= a[11][gaia_in_koi])
 			print '  {} gaia stars that are kois'.format(gaia['starID'].size)
@@ -131,7 +136,7 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 			koi['koi_steff']= gaia['Teff'][st_to_pl]
 			with np.errstate(divide='ignore', invalid='ignore'):
 				koi['koi_prad']*= gaia['Rst'][st_to_pl]/ koi['koi_srad']
-			#koi['d']=a[4][gaia_in_koi]
+			koi['distance']= gaia['distance'][st_to_pl]
 			koi['giantflag']= gaia['giantflag'][st_to_pl]
 
 			#print np.nanmedian((koi['koi_srad']*koi['koi_depth']**0.5)/ koi['koi_prad'])
@@ -200,7 +205,12 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 		if subsample=='all' and score == 0.9:
 			X,Y= np.meshgrid(eff['P'], eff['Rp'], indexing='ij')
 			#vet_2D= fbpl2d( (X,Y), 0.9, 46., -0.053, -0.37, 5.6, 0.19, -2.3)
-			vet_2D= fbpl2d( (X,Y), 0.88, 53., -0.07, -0.39, 5.7, 0.19, 0.19)
+			if Gaia:
+				vetpars= 0.84, 55., -0.07, -0.37, 8.2, 0.13, 0.13
+			else:
+				vetpars= 0.88, 53., -0.07, -0.39, 5.7, 0.19, 0.19
+				
+			vet_2D= fbpl2d( (X,Y), *vetpars)
 			survey['vet_2D']= vet_2D
 			assert vet_2D.shape == eff['fsnr'].shape
 		else:

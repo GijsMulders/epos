@@ -42,6 +42,8 @@ def planets(epos, Log=False):
 			epos.eff_yvar, epos.completeness)
 		completeness= pl_comp(epos.obs_xvar, epos.obs_yvar, grid=False)
 	focc['planet']={}
+	focc['planet']['xvar']= epos.obs_xvar
+	focc['planet']['yvar']= epos.obs_yvar	
 	focc['planet']['completeness']= completeness
 	focc['planet']['occ']= 1./completeness/epos.nstars
 	#print epos.planet_occurrence

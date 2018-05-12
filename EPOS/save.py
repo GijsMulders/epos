@@ -5,17 +5,21 @@ json/.../occurrence.??.json
 import numpy as np
 import os, json
 
-def occurrence(epos, Verbose=True):
+def occurrence(epos, Verbose=False):
 	if hasattr(epos,'occurrence'):
 		if not os.path.isdir(epos.jsondir): os.makedirs(epos.jsondir)
 		
 		focc= epos.occurrence
-		#print focc.keys()
-# 		print 'keys in epos.occurrence'
-# 		for key in focc:
-# 			print '\n{}'.format(key)
-# 			for subkey in focc[key]:
-# 				print '  {}'.format(subkey)
+		
+		if Verbose:
+			print 'keys in epos.occurrence'
+			for key in focc:
+				print '\n{}'.format(key)
+				for subkey in focc[key]:
+					print '  {}'.format(subkey)
+
+		if 'planet' in epos.occurrence:
+			save_to_json(epos, 'planet', focc, ['x','y','completeness','obs'])
 
 		if 'bin' in epos.occurrence:
 			gridkeys= ['xc', 'yc', 'dlnx', 'dlny', 'y', 'x']
@@ -40,7 +44,7 @@ def occurrence(epos, Verbose=True):
 			pass
 		
 	else:
-		print 'No bins for calculating occurrence rate, did you use epos.set_bins() ?'
+		print 'No occurrence rates found, did run use epos.occurrence.all() ?'
 	
 	
 def save_to_json(epos, fname, bigdict, keys):

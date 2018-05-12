@@ -89,7 +89,16 @@ html_theme = 'alabaster'
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+# Exoplanet Population Observation Simulator
+html_theme_options = {
+	'description':'EPOS simulates synthetic observations of exoplanet populations. '
+		'It provides an interface between planet formation simulations and '
+		'exoplanet surveys such as Kepler.',
+	'github_button': True, 'github_user': 'gijsmulders', 'github_repo': 'epos',
+	'github_banner': 'true', # this does nothing?
+	#'font_family': 'Comic Sans MS',
+    'sidebar_width': '260px'
+	}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -103,10 +112,15 @@ html_static_path = ['.static']
 # refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
 html_sidebars = {
     '**': [
+    	'about.html',
+    	'navigation.html',
         'relations.html',  # needs 'show_related': True theme option to display
         'searchbox.html',
     ]
 }
+
+# add stuff to sidebar:
+# https://stackoverflow.com/questions/33029008/how-to-edit-sidebar-under-sphinx-alabaster-theme?rq=1
 
 
 # -- Options for HTMLHelp output ------------------------------------------
