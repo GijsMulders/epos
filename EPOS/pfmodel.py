@@ -203,18 +203,18 @@ def dace_screengrab(name='CD753', dir='DACE', Verbose=False):
 	return sma, mass, radius
 
 def mordasini(name='syntheticpopmordasini1MsunJ31', dir='Mordasini', cutoff=np.inf,
-		Verbose=False):
+		Single=False, Verbose=False):
 	fname= '{}/{}.dat'.format(dir,name)
 	header= np.genfromtxt(fname, max_rows=1, dtype=str)
 	print header
-	a= np.loadtxt(fname, unpack=True, skiprows=1, usecols=(1,2,3,4,6,7))
-	include= (a[1]<cutoff) #& (a[3]>1)
-	ID= a[0][include]
-	sma= a[1][include]
-	mass= a[2][include]
-	radius= a[3][include]
-	inc=a[4][include]
-	FeH= a[5][include]
+	a= np.loadtxt(fname, unpack=True, skiprows=1, usecols=(0,1,2,3,4,6,7))
+	include= (a[2]<cutoff) #& (a[2]>0.05) #& (a[3]>1)
+	ID= a[0 if Single else 1][include]
+	sma= a[2][include]
+	mass= a[3][include]
+	radius= a[4][include]
+	inc=a[5][include]
+	FeH= a[6][include]
 
 	print '\nLoad population synthesis model {}'.format(name)
 	print '  sma:  	 {:.2e} ... {:.1f}'.format(min(sma), max(sma))
@@ -227,6 +227,8 @@ def mordasini(name='syntheticpopmordasini1MsunJ31', dir='Mordasini', cutoff=np.i
 	
 	npz={'sma':sma[order], 'mass':mass[order], 'radius':radius[order], 
 		'inc':inc[order], 'starID':ID[order], 'tag':FeH[order]}
+
+	if Single: npz['inc']=None
 		
 	return npz
 

@@ -43,7 +43,7 @@ def all(epos):
 def chain(epos):
 	nwalker, nstep, npara= epos.chain.shape
 
-	# plot multiplicity CDF
+	# axes grid
 	f, axlist = plt.subplots((npara+1)/2, 2, sharex=True)
 	f.set_size_inches(8,8)
 
@@ -51,11 +51,17 @@ def chain(epos):
 	for axl in axlist[-1]:
 		axl.set_xlabel('Step number')
 	
+	# labels
+	if hasattr(epos.fitpars,'latexkeys'):
+		labels= [epos.fitpars.latexkeys[key] if key in epos.fitpars.latexkeys else key for key in epos.fitpars.keysfit]
+	else:
+		labels=epos.fitpars.keysfit
+
 	# loop over all axes
-	for k, ax in enumerate(axlist.flatten()):
+	for k, ax in enumerate(axlist.flatten(order='F')):
 		
 		try:
-			ax.set_ylabel(epos.fitpars.keysfit[k])
+			ax.set_ylabel(labels[k])
 			#ax.set_xlim(1, 10)
 	
 			#plot each walker

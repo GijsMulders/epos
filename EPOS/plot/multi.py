@@ -387,12 +387,12 @@ def periodinner(epos, MC=False, N=False, Input=False, MCMC=False):
 					color='C0', histtype='stepfilled', label='Simulated') #epos.name)
 			
 			# Solar system analologs (from dr25_solarsystem.py)
-			Pcut=45
-			Pcut=130
-			print 'P_in > {} days:'.format(Pcut)
-			print '  obs: {}'.format((epos.obs_zoom['multi']['Pinner']>Pcut).sum())
-			print '  sim: {}'.format((ss['multi']['Pinner']>Pcut).sum())
-			print ''
+# 			Pcut=45
+# 			Pcut=130
+# 			print 'P_in > {} days:'.format(Pcut)
+# 			print '  obs: {}'.format((epos.obs_zoom['multi']['Pinner']>Pcut).sum())
+# 			print '  sim: {}'.format((ss['multi']['Pinner']>Pcut).sum())
+# 			print ''
 
 		#if False:
 		if hasattr(epos, 'ss_extra'):

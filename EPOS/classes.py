@@ -149,7 +149,7 @@ class epos:
 		Isotropic(bool): Assume isotropic mutual inclinations
 		Parametric(bool): parametric planet population?
 		Debug(bool): Verbose logging
-		seed(int): Random seed, int or None
+		seed(): Random seed, can be any of int, True, or None
     """
 	def __init__(self, name, RV=False, Debug=False, seed=True, Norm=False, MC=True):
 		"""
@@ -558,7 +558,10 @@ class epos:
 		self.modelpars= fitparameters()
 		self.fitpars= self.modelpars
 		
-		self.summarystatistic= ['N','Nk','dP'] #,'Pin']
+		if inc is None:
+			self.summarystatistic= ['N'] # xvar, yvar?
+		else:
+			self.summarystatistic= ['N','Nk','dP'] #,'Pin']
 		
 		# length checks
 		try:
@@ -635,7 +638,8 @@ class epos:
 				_, index= np.unique(starID, return_index=True)
 				pfm['system tag']= pfm['tag'][index]
 			#pfm['tag'] == pfm['system tag'][pfm['ID']]
-
+		else:
+			pfm['system tag']= pfm['tag']
 
 		pfm['M limits']=[np.min(pfm['M']),np.max(pfm['M'])]
 		pfm['P limits']=[np.min(pfm['P']),np.max(pfm['P'])]
