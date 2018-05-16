@@ -8,8 +8,8 @@ Welcome to epos' documentation!
 
 This is an autosphinx generated document
 
-
-
+.. image:: https://zenodo.org/badge/132065382.svg
+   :target: https://zenodo.org/badge/latestdoi/132065382
 
 .. toctree::
    :maxdepth: 2

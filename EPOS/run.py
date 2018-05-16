@@ -390,7 +390,7 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		f_dP= epos.fitpars.getmc('f_dP', fpara)
 					
 		# need this here?
-		if not (0<=f_iso<=1) or not (0 <= pps <= 1) or not (0 <= f_cor <= 1) \
+		if not (0<=f_iso<=1) or not (0 < pps) or not (0 <= f_cor <= 1) \
 				or not (0<=f_dP<=10) or not (0 <= f_inc < 10):
 			if Store: raise ValueError('parameters out of bounds')
 			return -np.inf
