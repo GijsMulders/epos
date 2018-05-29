@@ -12,7 +12,7 @@ This repository hosts the EPOS source code
 ### Summary of set up ###
 Download the source, preferably using git
 ```
-git clone https://github.com//GijsMulders/epos.git
+git clone https://github.com//GijsMulders/epos
 ```
 Then you can update to the latest version with
 ```
@@ -20,7 +20,14 @@ git pull
 ```
 
 ### Configuration ###
-None. Optionally add the epos/EPOS dir to your python path
+You can run EPOS from the main directory where the test and example scripts are located. 
+
+If you want to run from a different directory, you can make a soft-link to the EPOS/ and files/ folder located within the main epos dir
+```
+cd run_epos_from_here/
+ln -s path_to_epos/EPOS EPOS
+ln -s path_to_epos/files files
+```
 
 ### Dependencies ###
 * python 2.7
@@ -52,9 +59,9 @@ The example scripts describe some additional functionality:
 
 ### Where can I find documentation? ###
 
-A draft paper describing the code can be [dowloaded here](https://www.dropbox.com/s/964mwknjdcueyj9/EPOS-draft.pdf?dl=1)
+EPOS is described in [Mulders et al. 2018](https://arxiv.org/abs/1805.08211)
+The documentation will be hosted at [readthedocs](http://epos.readthedocs.io/en/latest)
 
 ### Who do I talk to? ###
 
 * Gijs Mulders: gdmulders@gmail.com
-* Slack: eposua.slack.com

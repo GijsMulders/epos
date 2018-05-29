@@ -22,7 +22,7 @@ Note:
 	- parameters a_M and b_M are not fitted
 	- dx is the range in walker initial positions for parameters that change sign (+/-)
 '''
-epos.fitpars.add('pps',		2.0, 	min=0)
+epos.fitpars.add('pps',		2.0, 	min=1e-3)
 epos.fitpars.add('P break',	1e3,	min=100,max=1e4,is2D=True)
 epos.fitpars.add('a_P',		1.0, 	min=0,			is2D=True)
 epos.fitpars.add('b_P',		-1,		dx=0.1,			is2D=True)
@@ -37,7 +37,7 @@ epos.set_ranges(xtrim=[1,1e5],ytrim=[1,1e5],xzoom=[10,1e4],yzoom=[50,1e4], Occ=T
 EPOS.run.once(epos)
 
 ''' run an MCMC chain on multiple cores or read in a previously saved run'''
-#EPOS.run.mcmc(epos, nMC=1000, nwalkers=100, nburn=200, threads=20, Saved=True)
+EPOS.run.mcmc(epos, nMC=1000, nwalkers=100, nburn=200, threads=20, Saved=True)
 
 ''' define bins where occurrence is calculated'''
 #epos.set_bins(xbins=[[2,400],[0.9*365,2.2*365]], ybins=[[1,6],[0.7,1.5]]) # eta_zoom, eta_earth
