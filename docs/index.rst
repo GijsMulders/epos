@@ -9,7 +9,7 @@ EPOS
 the Exoplanet Population Observation Simulator
 ----------------------------------------------
 
-EPOS is a tool to simulate observations of exoplanet populations. It provides an interface between planet formation simulations and exoplanet surveys such as Kepler. EPOS can also be used to estimate planet occurrence rates and the orbital architectures of planetary systems.
+EPOS is a software package to simulate observations of exoplanet populations. It provides an interface between planet formation simulations and exoplanet surveys such as Kepler. EPOS can also be used to estimate planet occurrence rates and the orbital architectures of planetary systems.
 
 EPOS is written in Python and hosted on `github  <https://github.com/GijsMulders/epos>`_. 
 Follow the instructions there to download and install EPOS.
