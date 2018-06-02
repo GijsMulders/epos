@@ -10,3 +10,4 @@ make.bat
 .static/
 .templates/
 _build/
+json/

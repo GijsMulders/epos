@@ -188,6 +188,7 @@ class epos:
 		self.Prep= False # ready to run? EPOS.run.once()
 		self.MassRadius= False
 		self.Radius= False # is this used?
+		self.PDF=False
 		
 		self.plotpars={} # dictionary to hold some customization keywords
 		
@@ -500,7 +501,8 @@ class epos:
 		focc['bin']={}
 		if Grid:
 			focc['bin']['x']= np.tile(_xbins, (len(_ybins),1))
-			focc['bin']['y in']= np.tile(_ybins, (len(_xbins),1))
+			#focc['bin']['y in']= np.tile(_ybins, (len(_xbins),1))
+			focc['bin']['y in']= np.repeat(_ybins, len(_xbins), axis=0)
 			# TODO: store 1d -> 2d mapping
 			
 		else:		
