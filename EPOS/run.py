@@ -79,15 +79,16 @@ def once(epos, fac=1.0, Extra=None, goftype='KS'):
 	fpara= epos.fitpars.getfit(Init=True)
 	
 	''' Time the first MC run'''
+	runtype= 'MC' if epos.MonteCarlo else 'noMC'
 	if Extra is None:
-		print '\nStarting the first MC run'
+		print '\nStarting the first {} run'.format(runtype)
 	else:
-		print '\nStarting extra MC run {}'.format(Extra)
+		print '\nStarting extra {} run {}'.format(runtype, Extra)
 	tstart=time.time()
 	runonce= MC if epos.MonteCarlo else noMC
 	runonce(epos, fpara, Store=True, Extra=Extra)
 	tMC= time.time()
-	print 'Finished one MC in {:.3f} sec'.format(tMC-tstart)
+	print 'Finished one {} in {:.3f} sec'.format(runtype, tMC-tstart)
 	epos.tMC= tMC-tstart
 	
 def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1, npos=30, Saved=True):
@@ -721,7 +722,9 @@ def noMC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=No
 			return -np.inf
 
 	''' Generate period-radius distribution '''
-	if epos.MassRadius:
+	if epos.RV:
+		pps, pdf, pdf_X, pdf_Y= periodradius(epos, fpara=fpara, fdet=epos.MC_eff)
+	elif epos.MassRadius:
 		raise ValueError('Generate pdf on radius grid here')
 	else:
 		pps, pdf, pdf_X, pdf_Y= periodradius(epos, fpara=fpara, fdet=epos.f_det)

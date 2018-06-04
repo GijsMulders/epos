@@ -129,7 +129,7 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False):
 		
 	return npz
 	
-def mercury(fname, istep=None, Verbose=False):
+def mercury(fname, istep=None, icut=-np.inf, Verbose=False):
 	print '\nProcessing Mercury file'
 	flist= glob.glob(fname)
 	if len(flist)==0: raise ValueError('file not found: {}'.format(fname))
@@ -152,10 +152,12 @@ def mercury(fname, istep=None, Verbose=False):
 			L_inc= a[3]
 		
 			# story copy(?) in list of planetary systems
-			sma.extend(L_sma)
-			mass.extend(L_mass)
-			inc.extend(L_inc)
-			ID.extend([i]*len(L_sma))
+			# cut out systems with low inclinatons (optional)
+			if np.median(L_inc) > icut:
+				sma.extend(L_sma)
+				mass.extend(L_mass)
+				inc.extend(L_inc)
+				ID.extend([i]*len(L_sma))
 
 		except ValueError:
 			print '\n(skipping {})\n'.format(fname)
