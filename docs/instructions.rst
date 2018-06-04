@@ -120,7 +120,7 @@ Alternatively, you can generate a 1D or 2D grid of bins, for example the SAG13 g
 
    import numpy as np
    epos.set_bins(xgrid=np.geomspace(10,640,7), 
-   	ybins=np.geomspace(0.67,17,9))
+   	ybins=np.geomspace(0.67,17,9), Grid=True)
 
 .. image:: fig_example_9_SAG13.png
 

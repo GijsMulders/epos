@@ -60,7 +60,7 @@ The example scripts describe some additional functionality:
 ### Where can I find documentation? ###
 
 EPOS is described in [Mulders et al. 2018](https://arxiv.org/abs/1805.08211)
-The documentation will be hosted at [readthedocs](http://epos.readthedocs.io/en/latest)
+The documentation is hosted at [readthedocs](http://epos.readthedocs.io/en/latest)
 
 ### Who do I talk to? ###
 

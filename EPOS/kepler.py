@@ -177,9 +177,9 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 		slice=isall
 	elif subsample in ['M','K','G','F']:
 		Teff={'M':[2400, 3865], 'K':[3865, 5310], 'G':[5310, 5980], 'F':[5980, 7320]}
-		slice= isall & (Teff['subsample'][0]<koi['koi_steff']) \
-						& (koi['koi_steff']<=Teff['subsample'][1])
-	elif subsample[0] is 'T':
+		slice= isall & (Teff[subsample][0]<koi['koi_steff']) \
+						& (koi['koi_steff']<=Teff[subsample][1])
+	elif subsample[0] == 'T':
 		Tmin=int(subsample[1:])-250
 		Tmax=int(subsample[1:])+250
 		slice= isall & (Tmin<koi['koi_steff']) & (koi['koi_steff']<=Tmax)
