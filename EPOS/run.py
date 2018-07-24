@@ -754,7 +754,7 @@ def noMC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=No
 	nobs_x=int(np.sum(pdf_x)/epos.noMC_scale_x)
 	nobs_y=int(np.sum(pdf_y)/epos.noMC_scale_y)
 	nobs= int(np.sqrt(nobs_x*nobs_y))
-	if Verbose: print 'nobs={} (x:{},y:{})'.format(nobs,nobs_x,nobs_y)
+	if Verbose: print 'nobs={} (x:{},y:{})'.format(nobs,nobs_x,nobs_y) # ??
 
 	chi2= (epos.obs_zoom['x'].size-nobs)**2. / epos.obs_zoom['x'].size
 	lnp['N']= -0.5* chi2

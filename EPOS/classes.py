@@ -233,8 +233,8 @@ class epos:
 		epos.multi['bin'], epos.multi['count']= \
 			EPOS.multi.frequency(self.obs_starID, Verbose=True)
 		epos.multi['pl cnt']= epos.multi['bin']* epos.multi['count']
-		epos.multi['Pratio'], epos.multi['Pinner']= \
-			EPOS.multi.periodratio(self.obs_starID, self.obs_xvar, Verbose=True)
+		epos.multi['Pratio'], epos.multi['Pinner'], epos.multi['Rpair']= \
+			EPOS.multi.periodratio(self.obs_starID, self.obs_xvar, R=self.obs_yvar, Verbose=True)
 		epos.multi['cdf']= EPOS.multi.cdf(self.obs_starID, Verbose=True)	
 		
 	def set_survey(self, xvar, yvar, eff_2D, Rstar=1.0, Mstar=1.0, vet_2D=None):
@@ -419,12 +419,12 @@ class epos:
 			self.yticks= Rticks[yrange]
 			self.yticklabels= Rticklabels[yrange]
 				
-# 		if self.RV:
-# 			self.xticks= [1,10,100]
-# 			self.yticks= [1,10,100,1000]
-# 		else:
-# 			self.xticks= [1,10,100,1000]
-# 			self.yticks= [0.5,1,2, 4,10]
+		# if self.RV:
+		# 	self.xticks= [1,10,100]
+		# 	self.yticks= [1,10,100,1000]
+		# else:
+		# 	self.xticks= [1,10,100,1000]
+		# 	self.yticks= [0.5,1,2, 4,10]
 			
 		self.Range=True
 		
@@ -550,7 +550,7 @@ class epos:
 		self.summarystatistic= ['N','xvar','Nk','dP','Pin']
 	
 	def set_population(self, name, sma, mass, 
-					radius=None, inc=None, starID=None, tag=None, Verbose=False):
+					radius=None, inc=None, starID=None, tag=None, sma0=None, Verbose=False):
 		# tag is fit parameter, i.e. metallicity, surface density, or model #
 
 		if hasattr(self, 'pfm'):
@@ -624,11 +624,11 @@ class epos:
 				# 2nd, 3rd, 4th??
 				pfm['dP'][km]= pfm['P'][km]/pfm['P'][np.array(km)-1]
 				pfm['kth'][km]= k+1
-# 			print pfm['ID'][1:6]
-# 			print pfm['P'][1:6]
-# 			print pfm['dP'] # not ok?
-#			for a,b in zip(pfm['ID'], pfm['kth']):
-#				print a,b
+			#print pfm['ID'][1:6]
+			#print pfm['P'][1:6]
+			#print pfm['dP'] # not ok?	
+			#for a,b in zip(pfm['ID'], pfm['kth']):
+			#	print a,b
 
 			# innermost planet in multi
 			pfm['Pin']= np.squeeze(pfm['P'][np.array(multis[1])-1])
@@ -653,8 +653,8 @@ class epos:
 		dy= (ymax/ymin)**0.05
 		self.mod_xlim=[xmin/dx, xmax*dx]
 		self.mod_ylim=[ymin/dy, ymax*dy]
-# 		self.mod_xlim=[min(xmin/dx, self.mod_xlim[0]),max(xmax*dx, self.mod_xlim[1])]
-# 		self.mod_ylim=[min(ymin/dy, self.mod_ylim[0]),max(ymax*dy, self.mod_ylim[1])]
+		self.mod_xlim=[min(xmin/dx, self.mod_xlim[0]),max(xmax*dx, self.mod_xlim[1])]
+		self.mod_ylim=[min(ymin/dy, self.mod_ylim[0]),max(ymax*dy, self.mod_ylim[1])]
 	
 	def set_massradius(self, MR, name, masslimits= [0.01,1e3]):
 		print '\nMass-Radius relation from {}'.format(name)

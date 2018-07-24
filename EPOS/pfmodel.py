@@ -8,7 +8,7 @@ import cgs
 ''' Helper functions to read in planet formation models'''
 
 #def symba(name='HMSim1', dir='hdf5/Sim1', plts_mass=0, istep=None, Verbose=False):
-def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False):
+def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False, Saved=True):
 	''' 
 	returns a list of planetary systems
 	sma in au
@@ -22,7 +22,7 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False):
 	fnpz= '{}/{}.npz'.format(dir, name)	
 	
 	''' Load hdf5 file or npz dictionary for quicker access'''
-	if os.path.isfile(fnpz):
+	if os.path.isfile(fnpz) and Saved:
 		print '\nLoading saved status from {}'.format(fnpz)
 		npz= np.load(fnpz)
 				
@@ -122,10 +122,11 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False):
 		npz={'sma':np.asarray(sma), 'mass':np.asarray(mass), 
 			'inc':np.asarray(inc), 'starID':np.asarray(ID)}
 		
-		print 'Saving status in {}'.format(fnpz)
-		#np.save(fname, epos.chain)
-		# compression slow on loading?
-		np.savez_compressed(fnpz, **npz)
+		if Saved:
+			print 'Saving status in {}'.format(fnpz)
+			#np.save(fname, epos.chain)
+			# compression slow on loading?
+			np.savez_compressed(fnpz, **npz)
 		
 	return npz
 	
@@ -204,13 +205,13 @@ def dace_screengrab(name='CD753', dir='DACE', Verbose=False):
 	
 	return sma, mass, radius
 
-def mordasini(name='syntheticpopmordasini1MsunJ31', dir='Mordasini', cutoff=np.inf,
-		Single=False, Verbose=False):
+def mordasini(name='syntheticpopmordasini1MsunJ31', dir='Mordasini', smacut=np.inf,
+		Rcut=0, Single=False, Verbose=False):
 	fname= '{}/{}.dat'.format(dir,name)
 	header= np.genfromtxt(fname, max_rows=1, dtype=str)
 	print header
 	a= np.loadtxt(fname, unpack=True, skiprows=1, usecols=(0,1,2,3,4,6,7))
-	include= (a[2]<cutoff) #& (a[2]>0.05) #& (a[3]>1)
+	include= (a[2]<Rcut) & (a[3]>Rcut)
 	ID= a[0 if Single else 1][include]
 	sma= a[2][include]
 	mass= a[3][include]
@@ -234,13 +235,13 @@ def mordasini(name='syntheticpopmordasini1MsunJ31', dir='Mordasini', cutoff=np.i
 		
 	return npz
 
-def mordasini_ext(name='syntheticpopmordasini1MsunJ31extended', dir='Mordasini', cutoff=np.inf,
-		Verbose=False):
+def mordasini_ext(name='syntheticpopmordasini1MsunJ31extended', dir='Mordasini', smacut=np.inf,
+		Rcut=0, Verbose=False):
 	fname= '{}/{}.dat'.format(dir,name)
 	header= np.genfromtxt(fname, max_rows=1, dtype=str)
 	print header
 	a= np.loadtxt(fname, unpack=True, skiprows=1, usecols=(1,2,3,4,6,7,10))
-	include= (a[1]<cutoff) #& (a[3]>1)
+	include= (a[1]<smacut) & (a[3]>Rcut)
 	ID= a[0][include]
 	sma= a[1][include]
 	mass= a[2][include]

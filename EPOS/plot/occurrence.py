@@ -16,6 +16,10 @@ def all(epos):
 		
 		if 'planet' in epos.occurrence:
 			colored(epos)
+
+		if 'model' in epos.occurrence:
+			model(epos)
+
 		
 		if 'bin' in epos.occurrence:
 			colored(epos, Bins=True)
@@ -34,7 +38,6 @@ def all(epos):
 					 parametric.oneD(epos, Occ=True, MCMC=True)
 	else:
 		print '\nNo occurrence to plot, did you run EPOS.occurrence.all()? \n'
-
 	
 def colored(epos, Bins=False):
 	
@@ -158,3 +161,39 @@ def integrated(epos, MCMC=False, Planets=False):
 	fname= 'posterior' if MCMC else 'integrated'
 	if Planets: fname+= '.planets'
 	helpers.save(plt, epos.plotdir+'occurrence/'+fname)
+
+def model(epos):
+	
+	f, ax = plt.subplots()
+	
+	name= 'Model Occurrence Rate, $\eta={:.2g}$'.format(epos.occurrence['model']['eta'])
+	ax.set_title(name)
+	
+	helpers.set_axes(ax, epos, Trim=True)
+	
+	ax.plot(epos.pfm['P'], epos.pfm['R'], ls='', marker='o', mew=0, ms=4, color='C0', zorder=0)
+	
+	''' bins'''
+	occbin= epos.occurrence['model']['bin']
+	for k, (xbin, ybin, n, inbin, occ) in enumerate(
+			zip(occbin['x'],occbin['y'],occbin['n'],occbin['i'], occbin['occ'])
+			):
+	
+		# box
+		ax.add_patch(patches.Rectangle( (xbin[0],ybin[0]), 
+			xbin[1]-xbin[0], ybin[1]-ybin[0],
+			fill=False, zorder=2, ls='-', color='k') )
+	
+		xnudge=1.01
+		ynudge=1.02
+		 
+		size=16 if not 'textsize' in epos.plotpars else epos.plotpars['textsize'] 
+			# 12 fit in box, 16 default
+		ax.text(xbin[0]*xnudge,ybin[1]/ynudge,'{:.1%}'.format(occ), va='top', 
+			size=size)
+		ax.text(xbin[0]*xnudge,ybin[1]/ynudge,'\n$\pm${:.1f}'.format(
+			occbin['err'][k]*100), va='top', size=size)
+		ax.text(xbin[1]/xnudge,ybin[0]*ynudge,'n={}'.format(n), ha='right',
+			size=size)
+
+	helpers.save(plt, epos.plotdir+'occurrence/model')

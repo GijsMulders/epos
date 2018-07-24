@@ -92,7 +92,7 @@ def cdf(ID, Verbose=False):
 	#if Verbose: print '  multi cdf planets: {}'.format(len(np.concatenate(xlist)))
 	return np.concatenate(xlist)
 
-def periodratio(ID, P, N=None, Verbose=False):
+def periodratio(ID, P, N=None, R=None, Verbose=False):
 	'''
 	returns the period ratios of adjacent planets as a list
 	'''
@@ -108,17 +108,24 @@ def periodratio(ID, P, N=None, Verbose=False):
 	Pinner= P[i1[counts>1]] # innerplanet in multi
 	
 	Pratio= []
+	Rpair= [] # size of inner planet in pair
 	for i in range(2,len(np.bincount(counts)) ):
 		#print '\nmultiplicity: {}'.format(i)
 		im= i1[counts>=i] # multis with 
 		_dP= P[im+(i-1)]/P[im+(i-2)]
+		if R is not None:
+			_R= R[im+(i-1)] # size of outer planet
 		#for k, _dP in zip(im,Pratio):
 		#	print ' ID {}, P={}, dP= {}'.format(ID[k], P[ID==ID[k]], _dP)
 		#print 'i={}: {}'.format(i,dP.size)
 		Pratio.extend(_dP)
+		if R is not None:
+			Rpair.extend(_R)
 	#print 'n dP= {}'.format(len(Pratio))
 	
-	if N is None:
+	if R is not None:
+		return np.array(Pratio), Pinner, Rpair
+	elif N is None:
 		return np.array(Pratio), Pinner
 	else:
 		''' Innermost observed planet is nth planet'''

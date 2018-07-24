@@ -128,8 +128,8 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False, T
 	if Tag:
 		for key, f in subset.iteritems():
 			toplot= f(pfm['tag'])
-#			weights= eta*epos.occurrence['model']['completeness'] \
-#					*np.where(toplot,1.,0.)/f(pfm['system tag']).sum()
+			#weights= eta*epos.occurrence['model']['completeness'] \
+			#		*np.where(toplot,1.,0.)/f(pfm['system tag']).sum()
 			weights= np.where(toplot,eta,0.)/f(pfm['system tag']).sum()
 			axP.hist(pfm['P'], bins=xbins, weights=weights, histtype='step', label=key)
 			axR.hist(pfm['R'], bins=ybins, orientation='horizontal',
@@ -302,11 +302,11 @@ def periodratio(epos, color='C1'):
 	single= pfm['dP'] == np.nan
 	inner= pfm['dP'] == 1
 	nth= pfm['dP']> 1
-
-# 	print pfm['dP'][single]
-# 	print pfm['dP'][nth]
-# 	print pfm['dP'][inner]
-# 	print pfm['dP'][nth].size, pfm['np'] # ok
+	
+	# print pfm['dP'][single]
+	# print pfm['dP'][nth]
+	# print pfm['dP'][inner]
+	# print pfm['dP'][nth].size, pfm['np'] # ok
 	
 	ax.plot(pfm['sma'][single], pfm['dP'][single], color='0.7', **fmt_symbol)
 	ax.plot(pfm['sma'][nth], pfm['dP'][nth], color=color, **fmt_symbol)
@@ -359,6 +359,101 @@ def periodratio(epos, color='C1'):
 	#helpers.set_axis_size(axR, epos, Trim=True) #, In= epos.MassRadius)
 
 	helpers.save(plt, epos.plotdir+'model/Pratio-sma')
+
+def periodratio_size(epos, color='C1'):
+	pfm=epos.pfm
+	
+	f, (ax, axR, axP)= helpers.make_panels_right(plt)
+
+	''' Inc-sma'''	
+	ax.set_title('Input Multi-planets {}'.format(epos.name))
+
+	axP.set_xlabel('Period ratio')
+	#ax.set_ylabel(r'Size [$R_\bigoplus$]')
+
+	ax.set_xlim(0.9,10)
+	#ax.set_ylim(0.3,20)
+
+	ax.set_xscale('log')
+	#ax.set_yscale('log')
+
+	helpers.set_axis_size(ax, epos, Trim=True)
+
+	''' grids '''
+	dP= np.logspace(0,1)
+	dP_bins= np.logspace(0,1,15)
+
+	# exoplanet data + hist
+	ax.plot(epos.multi['Pratio'], epos.multi['Rpair'], ls='', marker='.', ms=5.0, color='0.5')
+
+	#ax.axhline(np.median(pfm['inc']), ls='--')
+	single= pfm['dP'] == np.nan
+	inner= pfm['dP'] == 1
+	nth= pfm['dP']> 1
+	
+	# print pfm['dP'][single]
+	# print pfm['dP'][nth]
+	# print pfm['dP'][inner]
+	# print pfm['dP'][nth].size, pfm['np'] # ok
+	
+	ax.plot(pfm['dP'][single], pfm['R'][single], color='0.7', **fmt_symbol)
+	ax.plot(pfm['dP'][nth], pfm['R'][nth], color=color, **fmt_symbol)
+	ax.plot(pfm['dP'][inner], pfm['R'][inner], color='C1', **fmt_symbol)
+
+	''' Histogram Period Ratio'''
+	axP.set_xscale('log')
+	axP.set_xlim(0.9,10)
+
+	axP.hist(pfm['dP'][nth], bins=dP_bins, color=color)
+	ax.axvline(np.median(pfm['dP'][nth]), ls='--', color=color)
+	
+	''' Model best-fit '''
+	xmax= axP.get_ylim()[-1]
+	with np.errstate(divide='ignore'): 
+		Dgrid= np.log10(2.*(dP**(2./3.)-1.)/(dP**(2./3.)+1.))
+	Dgrid[0]= -2
+
+	for scale, ls in zip([-0.30,-0.37,-0.41],[':','--',':']):
+		pdf= scipy.stats.norm(scale,0.19).pdf(Dgrid)
+		pdf*= xmax/max(pdf)
+		axP.plot(dP, pdf, ls=ls, color='purple')
+		
+		pscale= np.interp(scale,Dgrid,dP)
+		ax.axvline(pscale, color='purple', ls=ls)	
+
+	''' Raw data'''
+	scale= 1.* pfm['dP'][nth].size/ epos.multi['Pratio'].size
+	weights= np.full(epos.multi['Pratio'].size, scale)
+	axP.hist(epos.multi['Pratio'], bins=dP_bins, weights=weights, histtype='step', color='0.5', zorder=1)
+
+	''' Histogram Planet Size'''
+	axR.set_yscale('log')
+	axR.set_ylim(ax.get_ylim())
+	radius= np.geomspace(*ax.get_ylim(), num=15)
+	axR.hist(pfm['R'][inner], bins=radius, orientation='horizontal', color='C1', label='Inner Planet')
+		
+	#helpers.set_axes(ax, epos, Trim=True)
+	#helpers.set_axis_distance(axP, epos, Trim=True)
+
+	''' Linear regression '''
+	try:
+		# data
+		slope, intercept, r_value, p_value, std_err= \
+			scipy.stats.linregress(np.log(epos.multi['Pratio']), np.log(epos.multi['Rpair']))
+		ax.plot(dP, np.exp(intercept+slope*np.log(dP)), label='r={:.2f}'.format(r_value), 
+				marker='', ls='-', color='0.5')
+		#print slope, intercept, r_value, p_value
+
+		slope, intercept, r_value, p_value, std_err= \
+			scipy.stats.linregress(np.log(pfm['dP'][nth]), np.log(pfm['R'][nth]))
+		ax.plot(dP, np.exp(intercept+slope*np.log(dP)), label='r={:.2f}'.format(r_value), 
+				marker='', ls='-', color=color)
+
+		ax.legend(loc='lower right')
+	except Exception as e: print(e)
+
+	helpers.save(plt, epos.plotdir+'model/Pratio-size')
+
 
 def multiplicity(epos, color='C1', Planets=False, Kepler=False):
 	# plot multiplicity

@@ -67,7 +67,7 @@ def completeness(epos, PlotBox=False, Transit=False, Vetting=True):
 	
 	if Transit:
 		toplot= epos.eff_2D
-		if Vetting: toplot*= epos.vetting
+		if Vetting and hasattr(epos, 'vetting'): toplot*= epos.vetting
 	else:
 		toplot= epos.completeness if Vetting else epos.completeness_novet
 	

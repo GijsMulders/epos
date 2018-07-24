@@ -29,7 +29,7 @@ def periodradius(epos, Nth=False, MC=True):
 		P= epos.obs_xvar
 		Y= epos.obs_yvar
 		outdir='survey'
-		title= 'Planet Candidates (score$\geq$0.9)'
+		title= r'Planet Candidates (score$\geq$0.9)'
 	
 	''' plot R(P), main panel'''
 	ax.set_title(title)
@@ -230,8 +230,7 @@ def periodratio(epos, MC=False, N=False, Input=False, MCMC=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
 	ax.set_title('Period Ratio of Adjacent Planets')
-#	ax.set_xlabel('period outer/inner')
-	ax.set_xlabel('$\mathcal{P}$ = Period Outer/Inner')
+	ax.set_xlabel(r'$\mathcal{P}$ = Period Outer/Inner')
 	ax.set_ylabel('Planet Counts')
 
 	ax.set_xlim(1, 10)

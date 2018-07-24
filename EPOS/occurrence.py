@@ -8,6 +8,11 @@ from EPOS.population import periodradius
 def all(epos):
 	if hasattr(epos,'occurrence'):
 		planets(epos)
+
+	if hasattr(epos,'pfm'):
+		models(epos)
+
+	if hasattr(epos,'occurrence'):
 		if 'bin' in epos.occurrence:
 			binned(epos)
 		if 'xzoom' in epos.occurrence and 'yzoom' in epos.occurrence:
@@ -19,7 +24,7 @@ def all(epos):
 			parametric(epos)
 	else:
 		print 'No bins for calculating occurrence rate, did you use epos.set_bins() ?'
-
+	
 def planets(epos, Log=False):
 	if not epos.Range: epos.set_ranges()
 	
@@ -50,6 +55,9 @@ def planets(epos, Log=False):
 
 def models(epos, Log=False):
 	if not epos.Range: epos.set_ranges()
+
+	if not hasattr(epos,'occurrence'):
+		epos.occurrence={}
 	
 	''' Interpolate occurrence for each planet (on log scale) '''
 	focc= epos.occurrence
@@ -87,8 +95,15 @@ def binned(epos):
 	else:
 		focc['bin']['y']= focc['bin']['y in']
 
+	print '\n  Observed Planets'
 	# calc n, i, occ, err, xc, yc, dlnx, dlny from x & y
 	_occ_per_bin(epos, focc['bin'])
+	
+	if 'model' in focc:
+		eta= epos.fitpars.getpps() if hasattr(epos, 'fitpars') else 1.
+		print '\n  Modeled planets, eta= {:.3g}'.format(eta)
+		_model_occ_per_bin(epos, focc['bin'], focc['model'], weights=eta/epos.pfm['ns'])
+		focc['model']['eta']= eta
 
 def zoomed(epos):
 	focc= epos.occurrence
@@ -129,6 +144,41 @@ def _occ_per_bin(epos, foccbin):
 	foccbin['yc']= np.array(_yc)
 	foccbin['dlnx']= np.array(_dlnx)
 	foccbin['dlny']= np.array(_dlny)
+
+def _model_occ_per_bin(epos, foccbin, foccmodel, weights=None):	
+	_occ, _n, _inbin, _xc, _yc, _dlnx, _dlny=[],[],[],[],[],[],[]
+	
+	for xbin, ybin in zip(foccbin['x'],foccbin['y']):
+		inbinx= (xbin[0]<=epos.pfm['P']) & (epos.pfm['P']<xbin[1])
+		inbiny= (ybin[0]<=epos.pfm['R']) & (epos.pfm['R']<ybin[1])
+		inbin= inbinx & inbiny
+		
+		_inbin.append(inbin)
+		_n.append(inbin.sum())
+		_occ.append(weights* inbin.sum())
+		
+		print '  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], n={}, occ={:.2g}'.format(
+			xbin[0],xbin[-1], ybin[0],ybin[-1], _n[-1], _occ[-1])
+		
+		_xc.append(np.sqrt(xbin[0])*np.sqrt(xbin[-1]) )
+		_yc.append(np.sqrt(ybin[0])*np.sqrt(ybin[-1]) )
+		_dlnx.append(np.log(xbin[-1]/xbin[0]))
+		_dlny.append(np.log(ybin[-1]/ybin[0]))
+
+	_foccbin= foccmodel['bin']= {}
+	_foccbin['n']= np.array(_n)
+	_foccbin['i']= np.array(_inbin)
+	_foccbin['occ']= np.array(_occ)
+	_foccbin['err']= _foccbin['occ']/np.where(
+							_foccbin['n']>0,np.sqrt(_foccbin['n']),1.)
+	
+	_foccbin['xc']= np.array(_xc)
+	_foccbin['yc']= np.array(_yc)
+	_foccbin['dlnx']= np.array(_dlnx)
+	_foccbin['dlny']= np.array(_dlny)
+	
+	_foccbin['x']= foccbin['x']
+	_foccbin['y']= foccbin['y']
 	
 def parametric(epos):
 	assert epos.Prep and epos.Parametric and (not epos.Multi)
@@ -145,7 +195,7 @@ def parametric(epos):
 		_gamma.append(np.average(pdf))
 		_eta.append(_gamma[-1]*_area[-1])
 
-		print '  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], area={:.2f}, eta={:.2g}'.format(
+		print '  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], area={:.2f}, eta_0={:.2g}'.format(
 			xbin[0],xbin[-1], ybin[0],ybin[-1], _area[-1], _eta[-1])
 
 		''' Posterior?'''
