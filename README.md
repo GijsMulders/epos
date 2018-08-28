@@ -10,7 +10,13 @@ This repository hosts the EPOS source code
 ## How do I get set up? ##
 
 ### Summary of set up ###
-Download the source, preferably using git
+You can install the latest version of epos with:
+```
+pip install epospy
+```
+And you should be ready to go!
+
+Alternatively, download the source, preferably using git
 ```
 git clone https://github.com//GijsMulders/epos
 ```
@@ -18,16 +24,10 @@ Then you can update to the latest version with
 ```
 git pull
 ```
+You can run EPOS from the main directory or add the EPOS/ directory to your path.
 
 ### Configuration ###
-You can run EPOS from the main directory where the test and example scripts are located. 
-
-If you want to run from a different directory, you can make a soft-link to the EPOS/ and files/ folder located within the main epos dir
-```
-cd run_epos_from_here/
-ln -s path_to_epos/EPOS EPOS
-ln -s path_to_epos/files files
-```
+As of version 1.0.2, there is no configuration if you installed via pip and dependencies should be automatically resolved.
 
 ### Dependencies ###
 * python 2.7
@@ -36,26 +36,10 @@ ln -s path_to_epos/files files
 * matplotlib 2.0+
 * [emcee](http://dan.iel.fm/emcee) for the MCMC fitting
 * [corner.py](http://corner.readthedocs.io/) for the MCMC plots
+* astropy
 
-### How to run tests ###
-The test scripts test some basic functionality
-
-```
-./test_1_survey.py
-./test_2_montecarlo.py
-./test_3_mcmc.py
-./test_4_multicore.py
-./test_5_occurrence.py
-```
-
-if you don't have ipython installed, you can also run `python test_1_survey.py`
-
-The example scripts describe some additional functionality:
-
-```
-./example_1_parametric_mode.py
-./example_2_multiplanet_mode.py
-```
+### How do I learn how to use EPOS? ###
+The best way is to run the test and example scripts as described in the [documentation](http://epos.readthedocs.io/en/latest/instructions.html#testing)
 
 ### Where can I find documentation? ###
 

@@ -12,3 +12,7 @@ make.bat
 .templates/
 _build/
 json/
+/*.egg-info
+/dist/
+temp/
+build/

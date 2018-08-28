@@ -2,45 +2,15 @@
 This module contains helper functions to load kepler survey data into EPOS
 '''
 import numpy as np
-import os.path
+import os
+import EPOS
 
 try:
 	from astropy.table import Table
 except ImportError:
 	print '\nWarning: Could not import astropy.table'
 
-'''
-NOTE: Kepler files from Q16-epos.py
-cp ~/Kepler/npz/completeness.Q16.epos.*.npz files/
-cp ~/Kepler/npz/KOI.Q16.epos.*.npz files/
-
-#cp ~/Kepler/npdict/Q16.occ.Rp-P.sptype.*.npdict files/
-'''
-
-
-def obs_Q16(subsample='all'):
-	'''
-	returns the Q16 exoplanet catalogue as numpy arrays
-	
-	Returns:
-		P(np.array):   Orbital period in days
-		Rp(np.array):  Planet radius in earth radii'
-		KID(np.array): star identifier (for multis)'
-	'''
-	KOI= np.load('files/KOI.Q16.epos.{}.npz'.format(subsample))
-	return KOI['P'], KOI['Rp'], KOI['KID']
-
-def eff_Q16(subsample='all'):
-	'''
-	returns the Q16 survey detection efficiency as a 2D matrix
-	
-	Returns:
-		P(np.array):   Orbital period in days
-		Rp(np.array):  Planet radius in earth radii'
-		eff(np.array):2D matrix of detection efficiency [0-1]
-	'''
-	eff= np.load('files/completeness.Q16.epos.{}.npz'.format(subsample))
-	return eff['x'], eff['y'], eff['fsnr']
+fpath= os.path.dirname(EPOS.__file__)
 
 def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 	'''
@@ -64,10 +34,13 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 		survey(dict):
 			the grid is in xvar,yvar, the detection efficiency in eff_2D 
 	'''
+	if not os.path.isdir('temp/'): os.makedirs('temp/')
+
 	if Gaia:
-		fkoi= 'files/q1_q17_dr25-gaia-r1_koi.npz'
+		#fkoi= 'temp/q1_q17_dr25-gaia-r1_koi.npz'
+		fkoi= 'temp/q1_q17_dr25-gaia-r2_koi.npz'
 	else:
-		fkoi= 'files/q1_q17_dr25_koi.npz'
+		fkoi= 'temp/q1_q17_dr25_koi.npz'
 		
 	if os.path.isfile(fkoi):
 		print '\nLoading planets from {}'.format(fkoi)
@@ -75,7 +48,7 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 	else:
 		print '\nReading planet candidates from IPAC file' 
 		try:
-			ipac=Table.read('files/q1_q17_dr25_koi.tbl',format='ipac')
+			ipac=Table.read(fpath+'/files/q1_q17_dr25_koi.tbl',format='ipac')
 		except NameError:
 			raise ImportError('You need to install astropy for this step')
 		#print ipac.keys()
@@ -86,16 +59,17 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 				['kepid','koi_prad','koi_period',
 				'koi_steff', 'koi_slogg', 'koi_srad', 'koi_depth',
 				'koi_pdisposition','koi_score'] }
-#		isnan= ~(koi['koi_srad']>0)
-# 		print isnan.size
-# 		print koi['kepid'][isnan]
-# 		print koi['koi_srad'][isnan]
-# 		print koi['koi_pdisposition'][isnan]
-# 		print koi['koi_prad'][isnan]
+		# isnan= ~(koi['koi_srad']>0)
+		# print isnan.size
+		# print koi['kepid'][isnan]
+		# print koi['koi_srad'][isnan]
+		# print koi['koi_pdisposition'][isnan]
+		# print koi['koi_prad'][isnan]
 
 		if Gaia:
-			# Stellar radius table from Berger+ in prep.
-			fgaia= 'files/DR2PapTable1.txt'
+			# Stellar radius table from Berger+ in prep., revision 2
+			#fgaia= 'files/DR2PapTable1_v1.txt'
+			fgaia= '{}/files/DR2PapTable1.txt'.format(fpath)
 			a=np.loadtxt(fgaia, delimiter='&', unpack=True, skiprows=1, comments='\\')
 			
 			# sort stars by ID for easy matching
@@ -146,7 +120,7 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 	''' Remove giant stars'''
 	if Gaia:
 		isdwarf= koi['giantflag'] == 0
-		suffix='gaia-r1'
+		suffix='gaia-r1' # completeness needs update to r2
 	elif Huber:
 		isdwarf= koi['koi_slogg'] > 1./4.671 * \
 					np.arctan((koi['koi_steff']-6300.)/-67.172)+ 3.876
@@ -194,7 +168,7 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 	''' Load pre-calculated detection efficiencies '''
 	# from dr25_epos.py
 	sfile= 'dwarfs' if subsample=='all' else subsample
-	eff= np.load('files/completeness.dr25.{}.{}.npz'.format(sfile, suffix))
+	eff= np.load('{}/files/completeness.dr25.{}.{}.npz'.format(fpath,sfile, suffix))
 	#eff= np.load('files/det_eff.dr25.{}.npz'.format(subsample))
 	survey= {'xvar':eff['P'], 'yvar':eff['Rp'], 'eff_2D':eff['fsnr'], 
 			'Mstar': eff['Mst'], 'Rstar':eff['Rst']}
@@ -221,3 +195,35 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 def fbpl2d((x,y), a, b, c, d, e, f, g):
 	bpl= a* (x/b)**np.where(x<b, c, d) * (y/e)**np.where(y<e, f,g)
 	return np.maximum(0.2, np.minimum(bpl, 1.))
+
+'''
+NOTE: Kepler files from Q16-epos.py
+cp ~/Kepler/npz/completeness.Q16.epos.*.npz EPOS/files/
+cp ~/Kepler/npz/KOI.Q16.epos.*.npz EPOS/files/
+
+#cp ~/Kepler/npdict/Q16.occ.Rp-P.sptype.*.npdict EPOS/files/
+'''
+
+def obs_Q16(subsample='all'):
+	'''
+	returns the Q16 exoplanet catalogue as numpy arrays
+	
+	Returns:
+		P(np.array):   Orbital period in days
+		Rp(np.array):  Planet radius in earth radii'
+		KID(np.array): star identifier (for multis)'
+	'''
+	KOI= np.load('files/KOI.Q16.epos.{}.npz'.format(subsample))
+	return KOI['P'], KOI['Rp'], KOI['KID']
+
+def eff_Q16(subsample='all'):
+	'''
+	returns the Q16 survey detection efficiency as a 2D matrix
+	
+	Returns:
+		P(np.array):   Orbital period in days
+		Rp(np.array):  Planet radius in earth radii'
+		eff(np.array):2D matrix of detection efficiency [0-1]
+	'''
+	eff= np.load('{}/files/completeness.Q16.epos.{}.npz'.format(fpath,subsample))
+	return eff['x'], eff['y'], eff['fsnr']

@@ -188,22 +188,61 @@ def pa_bert(name='1Dlin', dir='PA_Bert/', Verbose=False):
 	
 	return sma, mass, FeH
 	
-def dace_screengrab(name='CD753', dir='DACE', Verbose=False):
-	fname= '{}/{}.txt'.format(dir,name)
-	#with open(fanem,'r') as f:
-	header= np.genfromtxt(fname, max_rows=1, dtype=str)
-	print header
-	a= np.loadtxt(fname, unpack=True, skiprows=1, usecols=(2,3,4,5), delimiter='\t')
-	sma= a[1]
-	mass= a[2]
-	radius= a[3]
+def bern(name='syntheticpop_20emb_983systems.txt', dir='Bern', 
+		smacut=[0,np.inf], masscut= [0,np.inf], Rcut=[0,np.inf], 
+		Verbose=False, Single=False):
+	fname= '{}/{}'.format(dir,name)
 
-	print '\nLoad DACE model {}'.format(name)
+	''' Read the header '''
+	header= np.genfromtxt(fname, max_rows=1, dtype=str, delimiter=',')
+	if Verbose:
+		#print header
+		print '\nColumns:'
+		for k, colname in enumerate(header):
+			print '  a[{}]: {}'.format(k, colname)
+	#print k
+
+	''' Read the data '''
+	a= np.loadtxt(fname, unpack=True, skiprows=1)
+	if Verbose:
+		print '\nraw data: {} systems, {} planets'.format(np.unique(a[1]).size, a[0].size)
+
+	# cut out certain planets
+	include= (smacut[0]<=a[2]) & (a[2]<=smacut[-1])
+	include&= (masscut[0]<=a[3]) & (a[3]<=masscut[-1])
+	include&= (Rcut[0]<=a[4]) & (a[4]<=Rcut[-1])
+	#include&= (cut[0]<=a[]) & (a[]<=cut[-1])
+
+	#planet= a[0][include]
+	ID= a[1][include]
+	sma= a[2][include]
+	mass= a[3][include]
+	radius= a[4][include]
+	#ecc
+	inc=a[6][include]
+	FeH= a[7][include]
+	#Mcore
+	#Menv
+	sma0= a[10][include]
+	#fice
+
+	print '\nLoad population synthesis model {}'.format(name)
+	print '  included {} systems, {} planets'.format(np.unique(ID).size, sma.size)
 	print '  sma:  	 {:.2e} ... {:.1f}'.format(min(sma), max(sma))
+	print '  sma0: 	 {:.2e} ... {:.1f}'.format(min(sma0), max(sma0))
 	print '  mass:   {:.2e} ... {:.1f}'.format(min(mass), max(mass))
 	print '  radius: {:.2f} ... {:.1f}'.format(min(radius), max(radius))
+	print '  inc:    {:.2e} ... {:.1f}'.format(min(inc), max(inc))
+	print '  Fe/H:   {:.2f} ... {:.2f}'.format(min(FeH), max(FeH))
 	
-	return sma, mass, radius
+	order= np.lexsort((sma,ID)) 
+	
+	npz={'sma':sma[order], 'mass':mass[order], 'radius':radius[order], 
+		'inc':inc[order], 'starID':ID[order], 'tag':FeH[order], 'sma0':sma0[order]}
+	
+	if Single: npz['inc']=None
+
+	return npz
 
 def mordasini(name='syntheticpopmordasini1MsunJ31', dir='Mordasini', smacut=np.inf,
 		Rcut=0, Single=False, Verbose=False):
@@ -211,7 +250,7 @@ def mordasini(name='syntheticpopmordasini1MsunJ31', dir='Mordasini', smacut=np.i
 	header= np.genfromtxt(fname, max_rows=1, dtype=str)
 	print header
 	a= np.loadtxt(fname, unpack=True, skiprows=1, usecols=(0,1,2,3,4,6,7))
-	include= (a[2]<Rcut) & (a[3]>Rcut)
+	include= (a[2]<smacut) & (a[4]>Rcut)
 	ID= a[0 if Single else 1][include]
 	sma= a[2][include]
 	mass= a[3][include]

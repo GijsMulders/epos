@@ -25,7 +25,7 @@ def indices(ID, Verbose=False):
 	single=(counts==1)[toplanet]
 	multi= (counts>1)[toplanet]
 	ksys= range(2,len(np.bincount(counts)))
-	multis= [(counts==k)[toplanet] for k in ksys]
+	multis= [(counts==k)[toplanet] for k in ksys] # tuple for indexing
 	
 	return single, multi, ksys, multis
 
@@ -60,7 +60,7 @@ def nth_planet(ID, P):
 	for i in ksys[1:]:
 	#for i in ksys:
 		# 2nd, 3rd, ..
-		multis.append([i1[counts>=i]+(i-1)])
+		multis.append(tuple([i1[counts>=i]+(i-1)])) # tuple for indexing
 		
 	return single, multi, ksys, multis
 

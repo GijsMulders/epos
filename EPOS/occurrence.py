@@ -210,14 +210,18 @@ def parametric(epos):
 					_, pdf, _, _= periodradius(epos, fpara=sample, xbin=xbin, ybin=ybin)
 					posterior.append(np.average(pdf))
 
-			pos= np.percentile(posterior, [16, 50, 84])
-			_pos.append(pos[1])
-			_sigp.append(pos[2]-pos[1])
-			_sign.append(pos[1]-pos[0])
+			#pos= np.percentile(posterior, [16, 50, 84])
+			pos= np.percentile(posterior, [2.3, 15.9, 50., 84.1, 97.7])
+			_pos.append(pos[2])
+			_sigp.append(pos[3]-pos[2])
+			_sign.append(pos[2]-pos[1])
+			sig2p= (pos[4]-pos[2])
+			sig2n= (pos[2]-pos[0])
 		
 			print '  gamma= {:.1%} +{:.1%} -{:.1%}'.format(_pos[-1],_sigp[-1],_sign[-1])
 			print '  eta= {:.1%} +{:.1%} -{:.1%}'.format(
 				_pos[-1]*_area[-1],_sigp[-1]*_area[-1],_sign[-1]*_area[-1])
+			#print '  gamma 2sig= {:.1%} +{:.1%} -{:.1%}'.format(_pos[-1],sig2p,sig2n)
 
 	focc['bin']['area']= np.array(_area)
 	focc['bin']['gamma0']= np.array(_gamma)

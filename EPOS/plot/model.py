@@ -237,8 +237,9 @@ def inclination(epos, color='C1', imin=1e-2):
 	
 	ax = plt.subplot(gs[0, 0])	
 	axh = plt.subplot(gs[0, 1])
-	axh.tick_params(direction='in', which='both', left=False, right=True)
+	axh.tick_params(direction='in', which='both', left=False, right=True, labelleft=False)
 	axh.yaxis.set_label_position('right')
+	axh.axis('off')
 
 	''' Inc-sma'''	
 	ax.set_title('Input Inclination {}'.format(epos.name))

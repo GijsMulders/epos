@@ -1,0 +1,2 @@
+include EPOS/files/*
+include EPOS/scriptdir/*/*.py

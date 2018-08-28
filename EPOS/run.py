@@ -391,8 +391,8 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		f_dP= epos.fitpars.getmc('f_dP', fpara)
 					
 		# need this here?
-		if not (0<=f_iso<=1) or not (0 < pps) or not (0 <= f_cor <= 1) \
-				or not (0<=f_dP<=10) or not (0 <= f_inc < 10):
+		if not (0<=f_iso<=1) or not (0 < pps) or not (0 <= f_cor <= 1):
+			#\or not (0<=f_dP<=10) or not (0 <= f_inc < 10):
 			if Store: raise ValueError('parameters out of bounds')
 			return -np.inf
 		
@@ -970,7 +970,10 @@ def istransit(epos, allID, allI, allP, f_iso, f_inc, Verbose=False):
 	mutual_inc= allI * f_inc
 	#mutual_inc= 0.0 # planar distribution
 	#mutual_inc= 1.0 # fit 
-	if Verbose: print '  Average mutual inc={:.1f} degrees'.format(np.median(allI))
+	if Verbose: 
+		print '  Average mutual inc={:.1f} degrees'.format(np.median(allI))
+		if f_inc != 1.0:
+			print 'f_inc= {:.2g}, inc= {:.1f} deg'.format(f_inc, np.median(mutual_inc))
 	delta_inc= mutual_inc *np.cos(np.random.uniform(0,np.pi,allP.size)) * np.pi/180.
 	itrans= np.abs(inc_pl+delta_inc) < np.arcsin(R_a)
 

@@ -14,10 +14,22 @@ EPOS is a software package to simulate observations of exoplanet populations. It
 EPOS is written in Python and hosted on `github  <https://github.com/GijsMulders/epos>`_. 
 Follow the instructions there to download and install.
 
+**NEW** You can now install EPOS with pip:
+::
+   pip install epospy
+
+(possibly preceded by ``sudo -H``)
+
 How to use
 ----------
 
-EPOS runs from the command line. The quickest way to familiarize yourself with the code is to run the test and example scripts. Output wil appear in the terminal and plots in the ``png/`` folder.
+EPOS runs from the command line. The quickest way to familiarize yourself with the code is to copy the test and example scripts to a local directory:
+::
+	import EPOS
+	EPOS.scripts.install()
+
+These scripts demonstrate some of the basic functionality of EPOS.
+Output wil appear in the terminal and plots in the ``png/`` folder.
 
 .. toctree::
    :maxdepth: 2

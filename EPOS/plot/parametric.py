@@ -246,15 +246,15 @@ def panels(epos, PlotZoom=False, MCMC=False):
 	axP.set_yticklabels(['1%','10%','100%'])
 	axP.yaxis.tick_right()
 	axP.yaxis.set_ticks_position('both')
-	axP.tick_params(axis='y', which='minor',left='off',right='off')
+	axP.tick_params(axis='y', which='minor',left=False,right=False)
 
 	axR.set_xscale('log')
 	axR.set_xlim([2e-3,5])
 	axR.set_xticks([0.01,0.1,1])
 	axR.set_xticklabels(['1%','10%','100%'], rotation=70)
-	axR.tick_params(axis='x', which='minor',top='off',bottom='off')
-	axP.tick_params(axis='y', which='minor',left='off',right='off')
-	axP.tick_params(axis='y', which='major',left='off',right='on')
+	axR.tick_params(axis='x', which='minor',top=False,bottom=False)
+	axP.tick_params(axis='y', which='minor',left=False,right=False)
+	axP.tick_params(axis='y', which='major',left=False,right=True)
 
 	''' color scale? '''
 	cmap='jet'

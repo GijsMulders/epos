@@ -7,6 +7,7 @@ see example.py for a simple demonstration of the class
 """
 
 import numpy as np
+
 import cgs
 import EPOS.multi
 from EPOS.plot.helpers import set_pyplot_defaults
@@ -129,18 +130,18 @@ class fitparameters:
 
 class epos:
 	"""The epos class
-    
-    Description:
-    	Initialize
+	
+	Description:
+		Initialize
 
-    Args:
-    	name (str): name to use for directories
-        RV(bool): Compare to radial velocity instead of transits
-        Debug(bool): Log more output for debugging
-        seed(int): Same random number for each simulation? True, None, or int
-        Norm(bool): normalize pdf (deprecated?)
-    
-    Attributes:
+	Args:
+		name (str): name to use for directories
+		RV(bool): Compare to radial velocity instead of transits
+		Debug(bool): Log more output for debugging
+		seed(int): Same random number for each simulation? True, None, or int
+		Norm(bool): normalize pdf (deprecated?)
+	
+	Attributes:
 		name(str): name
 		plotdir(str): plot directory
 		RV(bool): Compare to Radial Velocity instead of transit data
@@ -150,23 +151,23 @@ class epos:
 		Parametric(bool): parametric planet population?
 		Debug(bool): Verbose logging
 		seed(): Random seed, can be any of int, True, or None
-    """
+	"""
 	def __init__(self, name, RV=False, Debug=False, seed=True, Norm=False, MC=True):
 		"""
 		Initialize the class
 		"""
 		self.name=name
+
+		''' Directories '''
 		self.plotdir='png/{}/'.format(name)
 		self.jsondir='json/{}/'.format(name)
-		self.RV= RV
+		#self.path= os.path.dirname(EPOS.__file__)
 
+		''' EPOS mode'''
+		self.RV= RV
 		self.Multi=False
 		self.RandomPairing= False
 		self.Isotropic= False # phase out?
-		
-		#self.populationtype=None # ['parametric','model']
-		#self.Parametric=None
-
 		self.MonteCarlo= MC
 		
 		# Seed for the random number generator
@@ -191,7 +192,7 @@ class epos:
 		self.PDF=False
 		
 		self.plotpars={} # dictionary to hold some customization keywords
-		
+
 	def set_observation(self, xvar, yvar, starID, nstars=1.6862e5, radiusError=0.1):
 		''' Observed planet population
 		
@@ -236,7 +237,7 @@ class epos:
 		epos.multi['Pratio'], epos.multi['Pinner'], epos.multi['Rpair']= \
 			EPOS.multi.periodratio(self.obs_starID, self.obs_xvar, R=self.obs_yvar, Verbose=True)
 		epos.multi['cdf']= EPOS.multi.cdf(self.obs_starID, Verbose=True)	
-		
+	
 	def set_survey(self, xvar, yvar, eff_2D, Rstar=1.0, Mstar=1.0, vet_2D=None):
 		'''Survey detection efficiency (completeness)
 		Args:
@@ -291,7 +292,7 @@ class epos:
 		self.DetectionEfficiency=True
 	
 	def set_ranges(self, xtrim=None, ytrim=None, xzoom=None, yzoom=None, 
-			LogArea=False, Occ=False):
+		LogArea=False, Occ=False):
 		
 		if self.Range: raise ValueError('Range already defined')
 		if not self.Observation: raise ValueError('No observation defined')
@@ -415,7 +416,7 @@ class epos:
 		else:			
 			Rticks= np.array([0.25,0.5,1,2, 4, 10])
 			Rticklabels= np.array(['0.25','0.5','1','2', '4','10'])
-			yrange= (self.ytrim[0]<=Rticks) & (Rticks<=self.ytrim[1])			
+			yrange= (self.ytrim[0]<=Rticks) & (Rticks<=self.ytrim[1])
 			self.yticks= Rticks[yrange]
 			self.yticklabels= Rticklabels[yrange]
 				
@@ -435,7 +436,7 @@ class epos:
 				
 			if not hasattr(self,'occurrence'):
 				self.occurrence={}
-			focc= self.occurrence			
+			focc= self.occurrence
 			
 			if self.RV:
 				xgrid= np.geomspace(self.MC_xvar[0], self.MC_xvar[-1], num=20)
@@ -453,23 +454,23 @@ class epos:
 			#xgrid= np.exp(np.arange(np.log(self.MC_xvar[0]),np.log(self.MC_xvar[-1])+0))
 			focc['yzoom']['x']= [[i,j] for i,j in zip(xgrid[:-1],xgrid[1:])]
 			focc['yzoom']['y']= [self.yzoom]* (xgrid.size-1)
-			
+	
 	def set_bins(self, xbins=[[1,10]], ybins=[[1,10]],xgrid=None, ygrid=None,Grid=False):
 		'''
 		Initialize period-radius (or mass) bins for occurrence rate calculations
 		
 		Description:
-    		Bins can be generated from a grid, f.e. xgrid=[1,10,100], 
-    		or from a list of bin edges, f.e. xbins= [[1,10],[10,100]]
-    	
-    	Args:
-    		xbins(list):	(list of) period bin edges
-    		ybins(list):	(list of) radius/mass bin edges
-    		xgrid(list):	period bin in interfaces
-    		ygrid(list):	radius/mas bin interfaces
-    		Grid(bool):
-    			If true, create a 2D grid from bins: nbins = nx ``*`` ny.
-    			If false, pair x and y bins: nbins == nx == ny
+			Bins can be generated from a grid, f.e. xgrid=[1,10,100], 
+			or from a list of bin edges, f.e. xbins= [[1,10],[10,100]]
+		
+		Args:
+			xbins(list):	(list of) period bin edges
+			ybins(list):	(list of) radius/mass bin edges
+			xgrid(list):	period bin in interfaces
+			ygrid(list):	radius/mas bin interfaces
+			Grid(bool):
+				If true, create a 2D grid from bins: nbins = nx ``*`` ny.
+				If false, pair x and y bins: nbins == nx == ny
 		'''
 		if not hasattr(self,'occurrence'):
 			self.occurrence={}
@@ -510,7 +511,7 @@ class epos:
 				raise ValueError('unequal amount of bins. Use Grid=True?')
 			focc['bin']['x']= _xbins
 			focc['bin']['y in']= _ybins
-		
+	
 	def set_parametric(self, func):
 		'''Define a parametric function to generate the planet size-period distribution
 		
@@ -537,7 +538,7 @@ class epos:
 		self.PDF=True	
 		self.fitpars=self.pdfpars
 		self.summarystatistic= ['N','xvar','yvar']
-		
+	
 	def set_multi(self, spacing=None):
 		if not self.Parametric:
 			raise ValueError('Define a parametric planet population first')
@@ -550,7 +551,7 @@ class epos:
 		self.summarystatistic= ['N','xvar','Nk','dP','Pin']
 	
 	def set_population(self, name, sma, mass, 
-					radius=None, inc=None, starID=None, tag=None, sma0=None, Verbose=False):
+		radius=None, inc=None, starID=None, tag=None, sma0=None, Verbose=False):
 		# tag is fit parameter, i.e. metallicity, surface density, or model #
 
 		if hasattr(self, 'pfm'):
@@ -672,7 +673,6 @@ class epos:
 		print 'Mass and Radius limits:'
 		print '  min M = {:.3f}-> <R> ={:.2f}'.format(masslimits[0], meanradius[0] )
 		print '  max M = {:.0f}-> <R> ={:.1f}'.format(masslimits[-1], meanradius[-1] )
-		
 
 def _trimarray(array,trim):
 	# trims array of points not needed for interpolation
