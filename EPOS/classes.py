@@ -551,7 +551,9 @@ class epos:
 		self.summarystatistic= ['N','xvar','Nk','dP','Pin']
 	
 	def set_population(self, name, sma, mass, 
-		radius=None, inc=None, starID=None, tag=None, sma0=None, Verbose=False):
+		radius=None, inc=None, starID=None, tag=None, 
+		sma0=None, mass0=None, radius0=None, inc0=None,
+		Verbose=False):
 		# tag is fit parameter, i.e. metallicity, surface density, or model #
 
 		if hasattr(self, 'pfm'):

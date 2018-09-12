@@ -12,6 +12,7 @@ setup(name='epospy',
       #packages=['epos','EPOS.plot'], # is this correct?
       packages=find_packages(),
       install_requires=[
+          'pytest >= 2.8',
           'numpy >= 1.13',
           'scipy',
           'matplotlib >= 2.0',

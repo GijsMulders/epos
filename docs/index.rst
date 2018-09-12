@@ -64,6 +64,15 @@ Pascucci et al. 2018
 Kopparapu et al. 2018 
 	`Exoplanet Classification and Yield Estimates for Direct Imaging Missions <http://adsabs.harvard.edu/abs/2018ApJ...856..122K>`_
 
+Version Notes:
+--------------
+
+:1.01: first public release |ImageLink|_
+:1.02: pip installable version
+
+
+.. |ImageLink| image:: https://zenodo.org/badge/132065382.svg
+.. _ImageLink: https://zenodo.org/badge/latestdoi/132065382
 
 Indices and tables
 ------------------

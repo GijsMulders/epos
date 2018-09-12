@@ -40,7 +40,7 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False, Save
 			if Verbose: print '  {} files'.format(len(flist))
 	
 		sma, mass, inc, ID= [], [], [], []
-		#sma0, mass0=[], []
+		sma0, mass0, inc0, ID0 =[], [], [], []
 		symbamassunit= cgs.Msun/cgs.Mearth / (2.*np.pi)**2.
 	
 		for i,fname in enumerate(flist):
@@ -62,13 +62,12 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False, Save
 					sys.stdout.flush() 
 			
 				L_sma, L_mass, L_inc= [], [], []
-				#L_sma0, L_mass0= [], []
+				L_sma0, L_mass0, L_inc0= [], [], []
 			
 				for particle in hf:
 					#if Verbose: print particle, hf.get(particle).shape[0]
 					if hf.get(particle).shape[0] == nsteps:
 						final_architecture= np.array(hf.get(particle))[-1,:]
-						#print final_architecture.shape
 
 						_mass= final_architecture[8]* symbamassunit
 						_sma= final_architecture[2]
@@ -77,6 +76,18 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False, Save
 							L_mass.append(_mass)
 							L_inc.append(final_architecture[4])
 							ID.append(i)
+
+					# initial conditions
+					if hf.get(particle).shape[0]== 1:
+						pass
+					else:
+						#print particle
+						initial_architecture= np.array(hf.get(particle))[0,:]
+						L_sma0.append(initial_architecture[2])
+						L_mass0.append(initial_architecture[8]* symbamassunit)
+						L_inc0.append(initial_architecture[4])
+						ID0.append(i)
+
 						#if not 'time' in sg: sg['time']= final_architecture[0]/1e6
 				
 					# 			# print '\nLoaded subgroup {} with {} planetary systems'.format(sg['name'], sg['n'])
@@ -115,12 +126,16 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False, Save
 				inc.extend(L_inc)
 				#ID (set in loop)
 			
-				#sma0.append(L_sma0)
-				#mass0.append(L_mass0)
+				sma0.extend(L_sma0)
+				mass0.extend(L_mass0)
+				inc0.extend(L_inc0)
+
 			if not Verbose: print '\r  [{:50s}] {:.1f}%'.format('#' * int(1 * 50), 1 * 100),
 		
 		npz={'sma':np.asarray(sma), 'mass':np.asarray(mass), 
-			'inc':np.asarray(inc), 'starID':np.asarray(ID)}
+			'inc':np.asarray(inc), 'starID':np.asarray(ID),
+			'sma0':np.asarray(sma0), 'mass0':np.asarray(mass0), 
+			'inc0':np.asarray(inc0), 'starID0':np.asarray(ID0)}
 		
 		if Saved:
 			print 'Saving status in {}'.format(fnpz)
@@ -302,4 +317,20 @@ def mordasini_ext(name='syntheticpopmordasini1MsunJ31extended', dir='Mordasini',
 	npz={'sma':sma[order], 'mass':mass[order], 'radius':radius[order], 
 		'inc':inc[order], 'starID':ID[order], 'tag':FeH[order], 'sma0':sma0[order]}
 		
+	return npz
+
+def combine(pfmlist, tags):
+	''' Combine Multiple Planet Formation Model'''
+	assert len(tags) == len(pfmlist)
+
+	''' Create list of tags '''
+	taglist= []
+	for pfm, tag in zip(pfmlist, tags):
+		taglist.append(np.full_like(pfm['sma'], tag))
+
+	''' Create merged dictionary'''
+	npz={'tag':np.concatenate(taglist)}
+	for key in pfm.keys():
+		npz[key]= np.concatenate([pfm[key] for pfm in pfmlist])
+
 	return npz
