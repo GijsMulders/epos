@@ -73,6 +73,13 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True):
 			ax.axvline(epos.fitpars.get('P break', Init=True), ls='-', color='gray')
 		ax.plot(epos.MC_xvar, pdf0_X, marker='',ls='-',color='k')
     
+	# plot posterior excluding low detection regions (arbitrary 2000 planets assumed)
+	if not (epos.RV or epos.MassRadius):
+		cens= np.where(epos.f_det<1./3000.,0,1.)
+		_, _, cens_pdf_X, _ = periodradius(epos, ybin=ybin, fdet=cens)
+		ax.plot(epos.MC_xvar, cens_pdf_X, marker='',ls='-',color='green', label='biased')
+
+
 	if epos.Zoom: 
 		for zoom in epos.xzoom: ax.axvline(zoom, ls='--', color='k')
 	
@@ -162,6 +169,13 @@ def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False):
 
 		ax.plot(yvar, pdf0_Y*yscale, marker='',ls='-',color='k')
 
+	# plot posterior excluding low detection regions (arbitrary 2000 planets assumed)
+	if not (epos.RV or epos.MassRadius):
+		cens= np.where(epos.f_det<1./3000.,0,1.)
+		_, _, _, cens_pdf_Y= periodradius(epos, xbin=xbin, fdet=cens)
+		ax.plot(yvar, cens_pdf_Y*yscale, marker='',ls='-',color='green', label='biased')
+
+
 	if epos.Zoom and not epos.MassRadius: 
 		for zoom in epos.yzoom: ax.axvline(zoom, ls='--', color='k')
 	
@@ -177,11 +191,11 @@ def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False):
 		ax.errorbar(occbin['yc'], occbin['occ']/occbin['dlny'], 
 			yerr= occbin['err']/occbin['dlny'], color='r', marker='_', ls='', capsize=3)
 			
-# 		for y, occ, err in zip(occbin['yc'], occbin['occ']/occbin['dlny'], 
-# 							occbin['err']/occbin['dlny']):
-# 			print '{:.3g} {:.3g} {:.3g}'.format(y, occ, err)
+	# 	for y, occ, err in zip(occbin['yc'], occbin['occ']/occbin['dlny'], 
+	# 						occbin['err']/occbin['dlny']):
+	# 		print '{:.3g} {:.3g} {:.3g}'.format(y, occ, err)
 
-#	if Occ or MCMC:
+	#if Occ or MCMC:
 	if MCMC:
 		ax.legend(loc='upper right')
 

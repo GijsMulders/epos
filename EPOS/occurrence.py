@@ -106,6 +106,7 @@ def binned(epos):
 		focc['model']['eta']= eta
 
 def zoomed(epos):
+	''' Occurrence (inverse detection efficiency) along x,y axis.'''
 	focc= epos.occurrence
 
 	print '\n  x zoom bins'
@@ -113,7 +114,8 @@ def zoomed(epos):
 	print '\n  y zoom bins'
 	_occ_per_bin(epos, focc['yzoom'])
 
-def _occ_per_bin(epos, foccbin):	
+def _occ_per_bin(epos, foccbin):
+	''' Planet occurrence (inverse detection efficiency) per bin '''	
 	_occ, _n, _inbin, _xc, _yc, _dlnx, _dlny=[],[],[],[],[],[],[]
 	
 	for xbin, ybin in zip(foccbin['x'],foccbin['y']):
@@ -181,22 +183,60 @@ def _model_occ_per_bin(epos, foccbin, foccmodel, weights=None):
 	_foccbin['y']= foccbin['y']
 	
 def parametric(epos):
+	''' Calculates the occurrence rate per bin from the parametric model, 
+	with uncertainties if samples from an MCMC chain are available
+	'''
 	assert epos.Prep and epos.Parametric and (not epos.Multi)
 	focc= epos.occurrence
 	
-	''' loop over all bins '''
-	_eta, _gamma, _area= [], [], []
-	_pos, _sigp, _sign=[], [], []
-	
+	''' loop over all pre-defined bins '''
 	print '\n  posterior per bin'
-	for xbin, ybin in zip(focc['bin']['x'],focc['bin']['y in']):
-		_area.append(np.log(xbin[1]/xbin[0])*np.log(ybin[1]/ybin[0]))
-		_, pdf, _, _= periodradius(epos, Init=True, xbin=xbin, ybin=ybin)
-		_gamma.append(np.average(pdf))
-		_eta.append(_gamma[-1]*_area[-1])
+	xbins= focc['bin']['x']
+	ybins= focc['bin']['y in']
+	eta, gamma, area, pos, sigp, sign= _posterior_per_bin(epos, xbins, ybins, Verbose=True)
 
-		print '  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], area={:.2f}, eta_0={:.2g}'.format(
-			xbin[0],xbin[-1], ybin[0],ybin[-1], _area[-1], _eta[-1])
+	focc['bin']['area']= np.array(area)
+	focc['bin']['gamma0']= np.array(gamma)
+	focc['bin']['eta0']= np.array(eta)	
+	
+	if hasattr(epos, 'samples'):
+		focc['bin']['gamma']= np.array(pos)
+		focc['bin']['gamma+']= np.array(sigp)
+		focc['bin']['gamma-']= np.array(sign)
+		focc['bin']['eta']= focc['bin']['gamma']*focc['bin']['area']
+		focc['bin']['eta+']= focc['bin']['gamma+']*focc['bin']['area']
+		focc['bin']['eta-']= focc['bin']['gamma-']*focc['bin']['area']
+
+	''' bin for normalization '''
+	if hasattr(epos.fitpars, 'normkeyx') and hasattr(epos.fitpars, 'normkeyy'):
+		print '\n  normalization per unit of ln area'
+		dw= 1.01
+		xnorm= epos.fitpars.get(epos.fitpars.normkeyx)
+		ynorm= epos.fitpars.get(epos.fitpars.normkeyy)
+		xbin= [xnorm/dw, xnorm*dw]
+		ybin= [ynorm/dw, ynorm*dw]
+		eta, gamma, _, gamma_fit, gamma_p, gamma_n=  _posterior_per_bin(epos, [xbin],[ybin])
+		print '  x={:.2g}, y={:.2g}, gamma= {:.2g}'.format(xnorm, ynorm, gamma[0])
+		if len(gamma_fit)>0:
+			print '  gamma= {:.2g} +{:.2g} - {:.2g}'.format(gamma_fit[0], gamma_p[0], gamma_n[0])
+
+def _posterior(epos, sample, xbin, ybin):
+	_, pdf, _, _= periodradius(epos, fpara=sample, xbin=xbin, ybin=ybin)
+	return np.average(pdf)
+
+def _posterior_per_bin(epos, xbins, ybins, Verbose=True):
+	eta, gamma, area= [], [], []
+	pos, sigp, sign=[], [], []
+	
+	for xbin, ybin in zip(xbins,ybins):
+		area.append(np.log(xbin[1]/xbin[0])*np.log(ybin[1]/ybin[0]))
+		_, pdf, _, _= periodradius(epos, Init=True, xbin=xbin, ybin=ybin)
+		gamma.append(np.average(pdf))
+		eta.append(gamma[-1]*area[-1])
+
+		if Verbose:
+			print '  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], area={:.2f}, eta_0={:.2g}'.format(
+				xbin[0],xbin[-1], ybin[0],ybin[-1], area[-1], eta[-1])
 
 		''' Posterior?'''
 		if hasattr(epos, 'samples'):
@@ -211,32 +251,18 @@ def parametric(epos):
 					posterior.append(np.average(pdf))
 
 			#pos= np.percentile(posterior, [16, 50, 84])
-			pos= np.percentile(posterior, [2.3, 15.9, 50., 84.1, 97.7])
-			_pos.append(pos[2])
-			_sigp.append(pos[3]-pos[2])
-			_sign.append(pos[2]-pos[1])
-			sig2p= (pos[4]-pos[2])
-			sig2n= (pos[2]-pos[0])
+			perc= np.percentile(posterior, [2.3, 15.9, 50., 84.1, 97.7])
+			pos.append(perc[2])
+			sigp.append(perc[3]-perc[2])
+			sign.append(perc[2]-perc[1])
+			sig2p= (perc[4]-perc[2])
+			sig2n= (perc[2]-perc[0])
 		
-			print '  gamma= {:.1%} +{:.1%} -{:.1%}'.format(_pos[-1],_sigp[-1],_sign[-1])
-			print '  eta= {:.1%} +{:.1%} -{:.1%}'.format(
-				_pos[-1]*_area[-1],_sigp[-1]*_area[-1],_sign[-1]*_area[-1])
-			#print '  gamma 2sig= {:.1%} +{:.1%} -{:.1%}'.format(_pos[-1],sig2p,sig2n)
+			if Verbose:
+				print '  gamma= {:.1%} +{:.1%} -{:.1%}'.format(pos[-1],sigp[-1],sign[-1])
+				print '  eta= {:.1%} +{:.1%} -{:.1%}'.format(
+					pos[-1]*area[-1],sigp[-1]*area[-1],sign[-1]*area[-1])
+				#print '  gamma 2sig= {:.1%} +{:.1%} -{:.1%}'.format(_pos[-1],sig2p,sig2n)
 
-	focc['bin']['area']= np.array(_area)
-	focc['bin']['gamma0']= np.array(_gamma)
-	focc['bin']['eta0']= np.array(_eta)	
-	
-	if hasattr(epos, 'samples'):
-		focc['bin']['gamma']= np.array(_pos)
-		focc['bin']['gamma+']= np.array(_sigp)
-		focc['bin']['gamma-']= np.array(_sign)
-		focc['bin']['eta']= focc['bin']['gamma']*focc['bin']['area']
-		focc['bin']['eta+']= focc['bin']['gamma+']*focc['bin']['area']
-		focc['bin']['eta-']= focc['bin']['gamma-']*focc['bin']['area']
-
-def _posterior(epos, sample, xbin, ybin):
-	_, pdf, _, _= periodradius(epos, fpara=sample, xbin=xbin, ybin=ybin)
-	return np.average(pdf)
-	
+	return eta, gamma, area, pos, sigp, sign
 	

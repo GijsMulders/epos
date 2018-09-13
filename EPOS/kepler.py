@@ -188,7 +188,7 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 			survey['vet_2D']= vet_2D
 			assert vet_2D.shape == eff['fsnr'].shape
 		else:
-			print 'no vetting completeness for {} with score={}'.format(score, subsample)
+			print 'no vetting completeness for {} with score={}'.format(subsample, score)
 	
 	return obs, survey
 	

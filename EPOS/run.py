@@ -536,8 +536,8 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 	det_Y= MC_Y[idet]
 
 	#if len(alldP)>0: 
-# 	if not epos.Parametric and 'all_Pratio' in sg: 
-# 		det_dP= MC_dP[idet]
+	# 	if not epos.Parametric and 'all_Pratio' in sg: 
+	# 		det_dP= MC_dP[idet]
 
 	if Verbose and epos.Multi: 		
 		print '  {} transiting planets, {} detectable'.format(idet.size, idet.sum())
@@ -721,13 +721,13 @@ def noMC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=No
 			logging.debug(message)
 			return -np.inf
 
-	''' Generate period-radius distribution '''
+	''' Generate observable period-radius distribution, in counts'''
 	if epos.RV:
-		pps, pdf, pdf_X, pdf_Y= periodradius(epos, fpara=fpara, fdet=epos.MC_eff)
+		pps, pdf, pdf_X, pdf_Y= periodradius(epos, fpara=fpara, fdet=epos.MC_eff*epos.nstars)
 	elif epos.MassRadius:
 		raise ValueError('Generate pdf on radius grid here')
 	else:
-		pps, pdf, pdf_X, pdf_Y= periodradius(epos, fpara=fpara, fdet=epos.f_det)
+		pps, pdf, pdf_X, pdf_Y= periodradius(epos, fpara=fpara, fdet=epos.f_det*epos.nstars)
 
 	'''
 	Probability that simulated data matches observables
@@ -817,13 +817,6 @@ def noMC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=No
 		if np.isnan(lnprob):
 			return -np.inf
 		return lnprob
-
-
-# def draw_from_function(f, grid, ndraw, *args):
-# 	cdf= np.cumsum(f(grid, *args))
-# 	return np.interp(np.random.uniform(0,cdf[-1],ndraw), cdf, grid)
-
-#def make_pdf(epos, norm=None, Init=False):
 	
 def draw_from_2D_distribution(epos, pps, fpara, npl=1):
 	
@@ -850,9 +843,9 @@ def draw_from_2D_distribution(epos, pps, fpara, npl=1):
 	elif ndraw > 1e8:
 		logging.debug('>1e8 planets ({})'.format(ndraw))
 		raise ValueError('too many planets')
-# 	elif planets_per_star > 100:
-# 		logging.debug('>100 planets per star ({})'.format(planets_per_star))
-# 		raise ValueError('too many planets per star')
+	# 	elif planets_per_star > 100:
+	# 		logging.debug('>100 planets per star ({})'.format(planets_per_star))
+	# 		raise ValueError('too many planets per star')
 	try:
 		allX= np.interp(np.random.uniform(cum_X[0],cum_X[-1],ndraw), cum_X, epos.MC_xvar)
 		allY= np.interp(np.random.uniform(cum_Y[0],cum_Y[-1],ndraw), cum_Y, epos.in_yvar)
@@ -1048,3 +1041,9 @@ def _prob_ad(a,b):
 		print prob, lnprob
 	return prob, lnprob
 
+''' Old code '''
+# def draw_from_function(f, grid, ndraw, *args):
+# 	cdf= np.cumsum(f(grid, *args))
+# 	return np.interp(np.random.uniform(0,cdf[-1],ndraw), cdf, grid)
+
+#def make_pdf(epos, norm=None, Init=False):
