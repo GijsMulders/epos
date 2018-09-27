@@ -34,8 +34,13 @@ def all(epos):
 		if 'xzoom' in epos.occurrence:
 			if epos.Parametric:
 				parametric.oneD(epos, Occ=True)
+				if not epos.MonteCarlo and epos.Msini:
+					parametric.oneD_y(epos, Occ=True, Convert=True)
+
 				if hasattr(epos, 'chain'):
 					 parametric.oneD(epos, Occ=True, MCMC=True)
+					 if epos.Msini:
+					 	parametric.oneD_y(epos, Occ=True, MCMC=True, Convert=True)
 	else:
 		print '\nNo occurrence to plot, did you run EPOS.occurrence.all()? \n'
 	

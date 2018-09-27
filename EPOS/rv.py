@@ -11,7 +11,7 @@ This module contains helper functions to load RV survey data into EPOS:'
 def Mayor2011():
 	Msini, P, Completeness = np.loadtxt(fpath+'/files/mayor_completeness.txt', 
 		usecols = (0,1,2), unpack = True)
-	P_obs, Msini_obs = np.loadtxt('files/Mayor2011.csv', usecols=(2,5), 
+	P_obs, Msini_obs = np.loadtxt(fpath+'/files/Mayor2011.csv', usecols=(2,5), 
 			unpack = True, skiprows = 1, delimiter = ',')
 	ID = np.loadtxt(fpath+'/files/Mayor2011.csv', usecols = (1,), skiprows = 1, 
 			dtype = str, delimiter = ',')

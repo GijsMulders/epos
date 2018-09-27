@@ -152,7 +152,7 @@ class epos:
 		Debug(bool): Verbose logging
 		seed(): Random seed, can be any of int, True, or None
 	"""
-	def __init__(self, name, RV=False, Debug=False, seed=True, Norm=False, MC=True):
+	def __init__(self, name, RV=False, Debug=False, seed=True, Norm=False, MC=True, Msini=False):
 		"""
 		Initialize the class
 		"""
@@ -165,6 +165,7 @@ class epos:
 
 		''' EPOS mode'''
 		self.RV= RV
+		self.Msini= Msini # do an M -> Msini conversion
 		self.Multi=False
 		self.RandomPairing= False
 		self.Isotropic= False # phase out?
@@ -204,7 +205,7 @@ class epos:
 		
 		Note:
 			Some pre-defined planet populations from Kepler can be generated from 
-			:mod:`EPOS.kepler`
+			:mod:`EPOS.kepler.dr25()`
 		'''
 		order= np.lexsort((xvar,starID)) # sort by ID, then P
 		self.obs_xvar=np.asarray(xvar)[order]
@@ -384,6 +385,15 @@ class epos:
 					self.in_yvar.size/area(self.in_yvar[-1]/self.in_yvar[0])	
 				self.scale_in= self.scale_x * self.scale_in_y
 				self.X_in,self.Y_in= np.meshgrid(self.MC_xvar,self.in_yvar,indexing='ij')
+			elif self.RV and self.Msini:
+				# extend grid to higher masses
+				nex=13
+				ext= self.MC_yvar[-nex:]*self.MC_yvar[-1]/self.MC_yvar[-(nex+1)]
+				self.in_yvar= np.concatenate([self.MC_yvar, ext]) 
+				self.in_ytrim= self.in_yvar[([0,-1])]
+				self.scale_in_y= self.scale_y 
+				self.scale_in= self.scale
+				self.X_in, self.Y_in= np.meshgrid(self.MC_xvar,self.in_yvar,indexing='ij')	
 			else:
 				self.in_ytrim= self.ytrim
 				self.in_yvar= self.MC_yvar
@@ -412,7 +422,9 @@ class epos:
 			yrange= (self.ytrim[0]<=Mticks) & (Mticks<=self.ytrim[1])
 			self.yticks= Mticks[yrange]
 			self.yticklabels= Mticklabels[yrange]
-
+			yrange= (self.in_ytrim[0]<=Mticks) & (Mticks<=self.in_ytrim[1])
+			self.y_inticks= Mticks[yrange]
+			self.y_inticklabels= Mticklabels[yrange]
 		else:			
 			Rticks= np.array([0.25,0.5,1,2, 4, 10])
 			Rticklabels= np.array(['0.25','0.5','1','2', '4','10'])

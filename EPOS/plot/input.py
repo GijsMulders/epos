@@ -17,6 +17,13 @@ def all(epos, color=None, imin=1e-2):
 		parametric.oneD(epos)
 		parametric.twoD(epos)
 		parametric.panels(epos)
+
+		# plot the input distribution converted from M->Msini or M->R
+		if not epos.MonteCarlo and epos.Msini:
+			parametric.oneD_y(epos, Convert=True) # no conversion for x (yet)
+			parametric.twoD(epos, Convert=True)
+			parametric.panels(epos, Convert=True)
+
 	else:
 		if 'R' in epos.pfm:
 			model.panels_radius(epos, color=color)		

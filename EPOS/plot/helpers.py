@@ -40,6 +40,7 @@ def set_axis_distance(ax, epos, Trim=False, Eff=False, In=False, IsX=True):
 
 def set_axis_size(ax, epos, Trim=False, Eff=False, In=False, IsY=True):
 
+	ticks=None
 	if In:
 		label= r'M [M$_\bigoplus$]'
 		if hasattr(epos,'y_inticks'):
@@ -68,6 +69,7 @@ def set_axis_size(ax, epos, Trim=False, Eff=False, In=False, IsY=True):
 		
 		ax.set_yscale('log')
 		if hasattr(epos,'yticks'):
+		#if ticks is not None:
 			ax.set_yticks(ticks)
 			ax.set_yticklabels(ticklabels)
 		
@@ -161,6 +163,7 @@ def set_pyplot_defaults():
 	rcParams.update({'ytick.major.width': 1.0})
 	rcParams.update({'ytick.minor.width': 1.0})
 	rcParams.update({'lines.markeredgewidth': 2.0})
+	rcParams.update({'axes.formatter.min_exponent': 3})
 	#rcParams.update({'hatch.linewidth':  1.0}) # error in pyplot <2.0?
 
 def default_pyplot2_colors(colors):

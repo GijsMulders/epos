@@ -723,7 +723,8 @@ def noMC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=No
 
 	''' Generate observable period-radius distribution, in counts'''
 	if epos.RV:
-		pps, pdf, pdf_X, pdf_Y= periodradius(epos, fpara=fpara, fdet=epos.MC_eff*epos.nstars)
+		pps, pdf, pdf_X, pdf_Y= periodradius(epos, fpara=fpara, fdet=epos.MC_eff*epos.nstars, 
+			Convert=epos.Msini)
 	elif epos.MassRadius:
 		raise ValueError('Generate pdf on radius grid here')
 	else:

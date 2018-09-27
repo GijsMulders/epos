@@ -12,7 +12,7 @@ def oneD(epos, PlotZoom=False, MCMC=False, Occ=False):
 	
 	oneD_x(epos, PlotZoom=PlotZoom, MCMC=MCMC, Occ=Occ)
 	oneD_y(epos, PlotZoom=PlotZoom, MCMC=MCMC, Occ=Occ)
-	if epos.RV or epos.MassRadius:
+	if epos.MassRadius:
 		# works with occ??
 		oneD_y(epos, PlotZoom=PlotZoom, MCMC=MCMC, PlotQ=True)
 
@@ -108,7 +108,7 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True):
 	helpers.save(plt, epos.plotdir+fname+'_x')
 	#print epos.plotdir+fname+'_x'
 
-def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False):
+def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False, Convert=False):
 	if Occ:
 		fname= 'occurrence/posterior' if MCMC else 'occurrence/input'
 		xbin= epos.xzoom
@@ -120,15 +120,18 @@ def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False):
 		title= 'Marginalized Distribution ({:.2g}-{:.0f} days)'.format(*epos.xtrim)
 	
 	# initial guess
-	pps, _, _, pdf0_Y= periodradius(epos, Init=True, xbin=xbin)
+	pps, _, _, pdf0_Y= periodradius(epos, Init=True, xbin=xbin, Convert=Convert)
 	if MCMC:
 		# best-fit parameters
-		pps, _, _, pdf_Y= periodradius(epos, xbin=xbin)
+		pps, _, _, pdf_Y= periodradius(epos, xbin=xbin, Convert=Convert)
+	elif Convert:
+		pps_in, _, _, pdf0_Y_in= periodradius(epos, Init=True, xbin=xbin, Convert=False)
 	
 	''' construct the posterior parameters '''
 	if MCMC: plotsample= epos.samples[np.random.randint(len(epos.samples), size=100)]
 	
 	''' Planet Radius, Mass, or q '''
+	M_to_q= 1./(epos.Mstar*cgs.Msun/cgs.Mearth)
 	# TODO: zip into previous block
 	f, ax = plt.subplots()
 	ax.set_title(title)
@@ -137,29 +140,38 @@ def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False):
 		ax.set_ylabel('Occurrence / {}q dloga'.format(epos.plotpars['area']))
 		area= 2./3.* np.log10(epos.MC_xvar[-1]/epos.MC_xvar[0])
 		yscale= 1. /area
-	elif epos.RV or epos.MassRadius:	
+		ytrim= epos.in_ytrim
+		yvar= epos.in_yvar * M_to_q
+	elif epos.MassRadius or (epos.Msini and not Convert):	
 		ax.set_xlabel(r'Planet Mass [M$_\bigoplus$]')
 		ax.set_ylabel('Occurrence / {}M'.format(epos.plotpars['area']))
 		yscale= 1.
+		ytrim= epos.in_ytrim
+		yvar= epos.in_yvar
+	elif epos.RV:
+		ax.set_xlabel(r'Planet Minimum Mass [M$_\bigoplus$]')
+		ax.set_ylabel('Occurrence / {}Msini'.format(epos.plotpars['area']))
+		yscale= 1.
+		ytrim= epos.ytrim
+		yvar= epos.MC_yvar
 	else:
 		ax.set_xlabel(r'Planet Radius [R$_\bigoplus$]')
 		ax.set_ylabel('Occurrence / {}R'.format(epos.plotpars['area']))
 		yscale= 1.
+		ytrim= epos.ytrim
+		yvar= epos.MC_yvar
 	
-	M_to_q= 1./(epos.Mstar*cgs.Msun/cgs.Mearth)
 	ax.set_xscale('log')
 	ax.set_yscale('log')
-	ax.set_xlim(np.array(epos.in_ytrim) * (M_to_q if PlotQ else 1.))
+	ax.set_xlim(np.array(ytrim) * (M_to_q if PlotQ else 1.))
 	if 'occrange' in epos.plotpars:
 		ax.set_ylim(epos.plotpars['occrange'])
 	else:	
 		ax.set_ylim([1e-3,1e1])
 	
-	yvar= epos.in_yvar * (M_to_q if PlotQ else 1.)
-	
 	if MCMC:
 		for fpara in plotsample:
-			_, _, _, ypdf= periodradius(epos, fpara=fpara, xbin=xbin)
+			_, _, _, ypdf= periodradius(epos, fpara=fpara, xbin=xbin, Convert=Convert)
 			ax.plot(yvar, ypdf*yscale, color='b', alpha=0.1)
 		ax.plot(yvar, pdf0_Y*yscale, marker='',ls=':',color='k', label='starting guess')
 		ax.plot(yvar, pdf_Y*yscale, marker='',ls='-',color='k', label='best-fit')
@@ -167,7 +179,9 @@ def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False):
 		if 'R break' in epos.fitpars.keys2d:
 			ax.axvline(epos.fitpars.get('R break', Init=True), ls='-', color='gray')
 
-		ax.plot(yvar, pdf0_Y*yscale, marker='',ls='-',color='k')
+		ax.plot(yvar, pdf0_Y*yscale, marker='',ls='-',color='k', label='M sin i' if Convert else None)
+		if Convert:
+			ax.plot(epos.in_yvar, pdf0_Y_in*yscale, marker='',ls='--',color='k', label='Intrinsic')
 
 	# plot posterior excluding low detection regions (arbitrary 2000 planets assumed)
 	if not (epos.RV or epos.MassRadius):
@@ -196,33 +210,36 @@ def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False):
 	# 		print '{:.3g} {:.3g} {:.3g}'.format(y, occ, err)
 
 	#if Occ or MCMC:
-	if MCMC:
+	if MCMC or (Occ and Convert):
 		ax.legend(loc='upper right')
 
-	helpers.save(plt, epos.plotdir+fname+('_q' if PlotQ else '_y'))
+	helpers.save(plt, epos.plotdir+fname+('_q' if PlotQ else '_y')+('_convert' if Convert else''))
 
-def twoD(epos, PlotZoom=False, MCMC=False):
+def twoD(epos, PlotZoom=False, MCMC=False, Convert=False):
 	
 	# where does this go -> run.py
 	assert epos.Parametric
 	if not epos.Range: epos.set_ranges()
 
 	# pdf
-	pps, pdf, _, _= periodradius(epos, Init= not MCMC)
+	pps, pdf, _, _= periodradius(epos, Init= not MCMC, Convert=Convert)
 	pdflog= np.log10(pdf) # in %
 		
 	f, (ax, axb) = plt.subplots(1,2, gridspec_kw = {'width_ratios':[20, 1]})
 	f.subplots_adjust(wspace=0)
 	
-	ax.set_title('Occurrence [%] / d ln p d ln '+('M' if epos.MassRadius else 'R'))
-	helpers.set_axes(ax, epos, Trim=True, In= epos.MassRadius)
+	ax.set_title('Occurrence [%] / d ln p d ln '+('M' if (epos.MassRadius or epos.RV) else 'R'))
+	helpers.set_axes(ax, epos, Trim=True, In= (epos.MassRadius or epos.RV) and not Convert)
 
 	''' color scale? '''
 	cmap='jet'
 	vmin, vmax= -5, 0
 	ticks=np.linspace(vmin, vmax, (vmax-vmin)+1)
 	levels= np.linspace(vmin, vmax)
-	ax.contourf(epos.X_in, epos.Y_in, pdflog, cmap=cmap, levels=levels)
+	if Convert:
+		ax.contourf(epos.X, epos.Y, pdflog, cmap=cmap, levels=levels)
+	else:
+		ax.contourf(epos.X_in, epos.Y_in, pdflog, cmap=cmap, levels=levels)
 	
 	# colorbar?
 	norm = Normalize(vmin=vmin, vmax=vmax)
@@ -232,22 +249,22 @@ def twoD(epos, PlotZoom=False, MCMC=False):
 	axb.tick_params(axis='y', direction='out')
 	
 	fname= 'mcmc/posterior' if MCMC else 'input/parametric_initial'
-	helpers.save(plt, epos.plotdir+fname)
+	helpers.save(plt, epos.plotdir+fname+('_convert' if Convert else''))
 
-def panels(epos, PlotZoom=False, MCMC=False):
+def panels(epos, PlotZoom=False, MCMC=False, Convert=False):
 	''' Initial distribution, panel layout'''
 	f, (ax, axb, axR, axP)= helpers.make_panels_clrbar(plt)
 
 	# pdf
-	pps, pdf, pdf_X, pdf_Y= periodradius(epos, Init= not MCMC)
+	pps, pdf, pdf_X, pdf_Y= periodradius(epos, Init= not MCMC, Convert=Convert)
 	pdflog= np.log10(pdf) # in %
 		
 	ax.set_title('Planet Occurrence / dlnP dln'+('M' if epos.MassRadius else 'R'))
-	helpers.set_axes(ax, epos, Trim=True, In= epos.MassRadius)
+	helpers.set_axes(ax, epos, Trim=True, In= (epos.MassRadius or epos.RV) and not Convert)
 
 	# Side panels
 	axP.plot(epos.MC_xvar, pdf_X, marker='',ls='-',color='k')
-	axR.plot(pdf_Y, epos.in_yvar, marker='',ls='-',color='k')
+	axR.plot(pdf_Y, epos.MC_yvar if Convert else epos.in_yvar, marker='',ls='-',color='k')
 
 	#helpers.set_axis_distance(axP, epos, Trim=True)
 	#helpers.set_axis_size(axR, epos, Trim=True, In= epos.MassRadius)
@@ -275,7 +292,10 @@ def panels(epos, PlotZoom=False, MCMC=False):
 	vmin, vmax= -5, 0
 	ticks=np.linspace(vmin, vmax, (vmax-vmin)+1)
 	levels= np.linspace(vmin, vmax)
-	ax.contourf(epos.X_in, epos.Y_in, pdflog, cmap=cmap, levels=levels)
+	if Convert:
+		ax.contourf(epos.X, epos.Y, pdflog, cmap=cmap, levels=levels)
+	else:
+		ax.contourf(epos.X_in, epos.Y_in, pdflog, cmap=cmap, levels=levels)
 	
 	# colorbar?
 	norm = Normalize(vmin=vmin, vmax=vmax)
@@ -285,4 +305,4 @@ def panels(epos, PlotZoom=False, MCMC=False):
 	axb.tick_params(axis='y', direction='out')
 	axb.set_title('%')
 	
-	helpers.save(plt, epos.plotdir+'input/panels')
+	helpers.save(plt, epos.plotdir+'input/panels'+('_convert' if Convert else''))
