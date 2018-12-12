@@ -73,7 +73,7 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True):
 			ax.axvline(epos.fitpars.get('P break', Init=True), ls='-', color='gray')
 		ax.plot(epos.MC_xvar, pdf0_X, marker='',ls='-',color='k')
     
-	# plot posterior excluding low detection regions (arbitrary 2000 planets assumed)
+	# plot posterior excluding low detection regions (arbitrary 3000 planets assumed)
 	if not (epos.RV or epos.MassRadius):
 		cens= np.where(epos.f_det<1./3000.,0,1.)
 		_, _, cens_pdf_X, _ = periodradius(epos, ybin=ybin, fdet=cens)

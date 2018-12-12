@@ -26,6 +26,9 @@ def all(epos):
 		print 'No bins for calculating occurrence rate, did you use epos.set_bins() ?'
 	
 def planets(epos, Log=False):
+	''' 
+	Calculate the intrinsic occurrence of each observed planet by interpolating the survey completeness
+	'''
 	if not epos.Range: epos.set_ranges()
 	
 	''' Interpolate occurrence for each planet (on log scale) '''
@@ -54,6 +57,9 @@ def planets(epos, Log=False):
 	#print epos.planet_occurrence
 
 def models(epos, Log=False):
+	'''
+	Interpolate the survey completeness for each modeled planet
+	'''
 	if not epos.Range: epos.set_ranges()
 
 	if not hasattr(epos,'occurrence'):
@@ -84,14 +90,20 @@ def models(epos, Log=False):
 	#focc['model']['occ']= 1./completeness/epos.nstars
 	#print epos.planet_occurrence
 
-def binned(epos):	
+def binned(epos):
+	'''
+	Calculate the planet occurrence rate per bin using inverse detection efficiency.
+	'''	
 	focc= epos.occurrence
 
 	# set y bin
 	if epos.MassRadius:
 		focc['bin']['y']= epos.MR(focc['bin']['y in'])[0]
 		for i, ybin in enumerate(focc['bin']['y']):
-			if ybin[0]>ybin[-1]: focc['bin']['y'][i]= focc['bin']['y'][i][::-1] 
+			if ybin[0]>ybin[-1]: 
+				print '\nWarning: observed bins are not increasing in size'
+				print '   {} > {}'.format(ybin[0],ybin[-1])
+				focc['bin']['y'][i]= focc['bin']['y'][i][::-1] 
 	else:
 		focc['bin']['y']= focc['bin']['y in']
 

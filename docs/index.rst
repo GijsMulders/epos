@@ -67,9 +67,9 @@ Kopparapu et al. 2018
 Version Notes:
 --------------
 
-:1.01: first public release |ImageLink|_
-:1.02: pip installable version
-
+:1.0.1: first public release |ImageLink|_
+:1.0.2: pip installable version
+:1.1.0: radial velocity without Monte Carlo
 
 .. |ImageLink| image:: https://zenodo.org/badge/132065382.svg
 .. _ImageLink: https://zenodo.org/badge/latestdoi/132065382

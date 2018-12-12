@@ -137,6 +137,8 @@ class epos:
 	Args:
 		name (str): name to use for directories
 		RV(bool): Compare to radial velocity instead of transits
+		MC(bool): Generate planet population by random draws 
+		Msini(bool): Convert the planet mass distribution into an Msini distribution
 		Debug(bool): Log more output for debugging
 		seed(int): Same random number for each simulation? True, None, or int
 		Norm(bool): normalize pdf (deprecated?)
@@ -293,7 +295,7 @@ class epos:
 		self.DetectionEfficiency=True
 	
 	def set_ranges(self, xtrim=None, ytrim=None, xzoom=None, yzoom=None, 
-		LogArea=False, Occ=False):
+		LogArea=False, Occ=False, UnitTicks=True):
 		
 		if self.Range: raise ValueError('Range already defined')
 		if not self.Observation: raise ValueError('No observation defined')
@@ -403,22 +405,34 @@ class epos:
 			
 		''' plot ticks '''
 		yr= 365.24
-		Pticks=np.array([1,10,100, yr, 10.*yr])
-		Pticklabels= np.array(['1','10','100','1yr','10yr'])
+		if UnitTicks:
+			Pticks=np.array([1,10,100, yr, 10.*yr])
+			Pticklabels= np.array(['1','10','100','1yr','10yr'])
+		else:
+			Pticks= np.logspace(-1,6,8)
+			Pticklabels= Pticks
+
 		xrange= (self.xtrim[0]<=Pticks) & (Pticks<=self.xtrim[1])
 		self.xticks= Pticks[xrange]
 		self.xticklabels= Pticklabels[xrange]
 		
-		Mjup= cgs.Mjup/cgs.Mearth
-		Mticks= np.array([0.1,1,10,100, Mjup, 10.*Mjup, 100.*Mjup])
-		Mticklabels= np.array(['0.1','1','10','100', '$M_J$', '$10 M_J$', '$100 M_J$'])
-		
+		if UnitTicks:
+			Mjup= cgs.Mjup/cgs.Mearth
+			Mticks= np.array([0.1,1,10,100, Mjup, 10.*Mjup, 100.*Mjup])
+			Mticklabels= np.array(['0.1','1','10','100', '$M_J$', '$10 M_J$', '$100 M_J$'])
+			Rticks= np.array([0.25,0.5,1,2, 4, 10])
+			Rticklabels= np.array(['0.25','0.5','1','2', '4','10'])
+		else:
+			Mticks= np.logspace(-1,6,8)
+			Mticklabels= Mticks
+			Rticks= np.logspace(-2,4,7)
+			Rticklabels= Rticks
+
 		if self.MassRadius:
 			yinrange= (self.in_ytrim[0]<=Mticks) & (Mticks<=self.in_ytrim[1])
 			self.y_inticks= Mticks[yinrange]
 			self.y_inticklabels= Mticklabels[yinrange]
-
-		if self.RV:
+		elif self.RV:
 			yrange= (self.ytrim[0]<=Mticks) & (Mticks<=self.ytrim[1])
 			self.yticks= Mticks[yrange]
 			self.yticklabels= Mticklabels[yrange]
@@ -426,18 +440,9 @@ class epos:
 			self.y_inticks= Mticks[yrange]
 			self.y_inticklabels= Mticklabels[yrange]
 		else:			
-			Rticks= np.array([0.25,0.5,1,2, 4, 10])
-			Rticklabels= np.array(['0.25','0.5','1','2', '4','10'])
 			yrange= (self.ytrim[0]<=Rticks) & (Rticks<=self.ytrim[1])
 			self.yticks= Rticks[yrange]
 			self.yticklabels= Rticklabels[yrange]
-				
-		# if self.RV:
-		# 	self.xticks= [1,10,100]
-		# 	self.yticks= [1,10,100,1000]
-		# else:
-		# 	self.xticks= [1,10,100,1000]
-		# 	self.yticks= [0.5,1,2, 4,10]
 			
 		self.Range=True
 		
