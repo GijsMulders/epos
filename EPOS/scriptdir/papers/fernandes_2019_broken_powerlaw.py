@@ -15,6 +15,9 @@ Best-fit values
   p1= 0.652 +0.197 -0.17
   m1= -0.442 +0.0526 -0.0544
 
+  posterior per bin
+  eta= 26.6% +6.1% -5.4%
+
 Asymmetric:
 ./paper_fernandes_2019_broken_powerlaw.py
 
@@ -24,6 +27,9 @@ Best-fit values
   p1= 0.641 +0.272 -0.146
   p2= -1.29 +0.96 -1.17
   m1= -0.439 +0.0538 -0.0536
+
+  posterior per bin
+  eta= 27.4% +7.0% -5.4%
 
 Plots will be generated in the png/ subfolder
 png/fernandes2019_rv/occurrence/posterior_x.png 

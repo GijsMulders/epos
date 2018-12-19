@@ -31,7 +31,8 @@ setup(name='epospy',
           'matplotlib >= 2.0',
           'astropy',
           'emcee >= 2.0',
-          'corner >= 2.0'
+          'corner >= 2.0',
+          'h5py'
       ],
       classifiers=[
         "Programming Language :: Python :: 2.7",
