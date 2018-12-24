@@ -66,7 +66,7 @@ def periodradius(epos, Init=False, fpara=None, fdet=None,
 			#pdf_X, pdf_Y= np.sum(pdf, axis=1), np.sum(pdf, axis=0)
 
 		if fdet is not None:
-			assert False, 'Where is this used?'
+			#assert False, 'Where is this used?'
 			#func_fdet= interp2d(xgrid, ygrid, fdet.T, kind='cubic')
 			func_fdet= RectBivariateSpline(epos.MC_xvar, epos.MC_yvar, fdet) # was in_yvar
 			_fdet= func_fdet(xgrid, ygrid)

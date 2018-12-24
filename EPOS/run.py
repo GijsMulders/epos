@@ -6,6 +6,7 @@ from functools import partial
 
 import cgs
 import multi
+import EPOS.analytics
 from EPOS.fitfunctions import brokenpowerlaw1D
 from EPOS.population import periodradius
 
@@ -241,7 +242,7 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1, npos=30, Save
 		print '  {}= {:.3g} +{:.3g} -{:.3g}'.format(pname,*fpar)
 
 	print '\nStarting the best-fit MC run'	
-	runonce(epos, np.array([p[0] for p in fitpars]), Store=True)
+	runonce(epos, np.array([p[0] for p in fitpars]), Store=True, BestFit=True)
 	
 def prep_obs(epos):
 	# occurrence pdf on sma from plot_input_diag?
@@ -272,7 +273,7 @@ def prep_obs(epos):
 	z['multi']['cdf']= multi.cdf(epos.obs_starID[ix&iy])
 
 def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None, 
-		Verbose=True):
+		BestFit=False, Verbose=True):
 	''' 
 	Do the Monte Carlo Simulations
 	Note:
@@ -617,12 +618,11 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 			prob['dP'], prob['Pin']= 0, 0 
 			lnp['dP'], lnp['Pin']= -np.inf, -np.inf
 
-	# combine with Fischer's rule:
+	''' combine with Fischer's rule: '''
 	lnprob= np.sum([lnp[key] for key in epos.summarystatistic])
 	#dof= len(prob_keys)
 	chi_fischer= -2. * lnprob
-	
-	
+
 	if Verbose:
 		print '\nGoodness-of-fit'
 		print '  logp= {:.1f}'.format(lnprob)
@@ -632,6 +632,19 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		if 'Nk' in prob:	print '  - p(N_k)={:.2g}'.format(prob['Nk'])
 		if 'dP' in prob:	print '  - p(P ratio)={:.2g}'.format(prob['dP'])
 		if 'Pin' in prob:	print '  - p(P inner)={:.2g}'.format(prob['Pin'])
+
+		if BestFit: 
+			''' Akaike/Bayesian information criterion'''
+			k_free= epos.fitpars.get_kfree()
+			n_data= epos.obs_zoom['x'].size
+			bic= EPOS.analytics.bic_loglike(lnprob, k_free, n_data)
+			aic= EPOS.analytics.aic_loglike(lnprob, k_free)
+			aic_c= EPOS.analytics.aic_c_loglike(lnprob, k_free, n_data)
+
+			print '\n  Akaike/Bayesian Information Criterion'
+			print '  - k={}, n={}'.format(k_free,n_data)
+			print '  - BIC= {:.1f}'.format(bic)
+			print '  - AIC= {:.1f}, AICc= {:.1f}'.format(aic,aic_c)
 		
 	tgof= time.time()
 	if Verbose: print '  observation comparison in {:.3f} sec'.format(tgof-tstart)
@@ -701,7 +714,7 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		return lnprob
 
 def noMC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None, 
-		Verbose=True):
+		BestFit=False, Verbose=True):
 	''' 
 	Do the Simulations without Monte Carlo
 	'''	
@@ -775,9 +788,22 @@ def noMC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=No
 		print '  - p(n={})={:.2g}'.format(nobs, prob['N'])
 		print '  - p(x)={:.2g}'.format(prob['xvar'])
 		print '  - p(y)={:.2g}'.format(prob['yvar'])
+
+		if BestFit:
+			''' Bayesian information criterion'''
+			k_free= epos.fitpars.get_kfree()
+			n_data= epos.obs_zoom['x'].size
+			bic= EPOS.analytics.bic_loglike(lnprob, k_free, n_data)
+			aic= EPOS.analytics.aic_loglike(lnprob, k_free)
+			aic_c= EPOS.analytics.aic_c_loglike(lnprob, k_free, n_data)
+
+			print '\n  Akaike/Bayesian Information Criterion'
+			print '  - k={}, n={}'.format(k_free,n_data)
+			print '  - BIC= {:.1f}'.format(bic)
+			print '  - AIC= {:.1f}, AICc= {:.1f}'.format(aic,aic_c)
 		
 	tgof= time.time()
-	if Verbose: print '  observation comparison in {:.3f} sec'.format(tgof-tstart)
+	if Verbose: print '\nObservation comparison in {:.3f} sec'.format(tgof-tstart)
 
 	''' Store detectable planet population '''	
 	if Store:

@@ -4,8 +4,9 @@ import multiprocessing
 from functools import partial
 
 from EPOS.population import periodradius
+import EPOS.analytics
 
-def all(epos):
+def all(epos, BinnedMetric=False):
 	if hasattr(epos,'occurrence'):
 		planets(epos)
 
@@ -22,6 +23,11 @@ def all(epos):
 		if epos.Prep and epos.Parametric and (not epos.Multi) \
 				and 'bin' in epos.occurrence:
 			parametric(epos)
+
+			''' BIC/AIC with chi^2'''
+			if BinnedMetric and 'yzoom' in epos.occurrence or 'xzoom' in epos.occurrence:
+				print '\n  Binned occurrence rate metrics'
+				binned_metric(epos)
 	else:
 		print 'No bins for calculating occurrence rate, did you use epos.set_bins() ?'
 	
@@ -34,21 +40,12 @@ def planets(epos, Log=False):
 	''' Interpolate occurrence for each planet (on log scale) '''
 	focc= epos.occurrence
 	
-	print '\nInterpolating planet occurrence per bin'
+	print '\nInterpolating planet occurrence'
 	#with np.errstate(divide='ignore'): 
 	#print '{}x{}=?={}'.format(epos.eff_xvar.shape, epos.eff_yvar.shape, epos.completeness.shape)
 	
-	if Log:
-		# does not seem to make a big difference
-		pl_comp_log= interpolate.RectBivariateSpline(np.log10(epos.eff_xvar), 
-			np.log10(epos.eff_yvar), np.log10(epos.completeness))
-		completeness= 10.**pl_comp_log(np.log10(epos.obs_xvar), np.log10(epos.obs_yvar), grid=False) 
-		#print completeness
-	else:
-		# if zeros in detection efficiency?
-		pl_comp= interpolate.RectBivariateSpline(epos.eff_xvar, 
-			epos.eff_yvar, epos.completeness)
-		completeness= pl_comp(epos.obs_xvar, epos.obs_yvar, grid=False)
+	completeness= _interpolate_occ(epos, epos.obs_xvar, epos.obs_yvar, Log=Log)
+
 	focc['planet']={}
 	focc['planet']['xvar']= epos.obs_xvar
 	focc['planet']['yvar']= epos.obs_yvar	
@@ -90,9 +87,10 @@ def models(epos, Log=False):
 	#focc['model']['occ']= 1./completeness/epos.nstars
 	#print epos.planet_occurrence
 
-def binned(epos):
+def binned(epos, Log=False):
 	'''
 	Calculate the planet occurrence rate per bin using inverse detection efficiency.
+	(these are the bins from the detection efficiency grid)
 	'''	
 	focc= epos.occurrence
 
@@ -109,7 +107,7 @@ def binned(epos):
 
 	print '\n  Observed Planets'
 	# calc n, i, occ, err, xc, yc, dlnx, dlny from x & y
-	_occ_per_bin(epos, focc['bin'])
+	_occ_per_bin(epos, focc['bin'], Log=Log)
 	
 	if 'model' in focc:
 		eta= epos.fitpars.getpps() if hasattr(epos, 'fitpars') else 1.
@@ -117,7 +115,7 @@ def binned(epos):
 		_model_occ_per_bin(epos, focc['bin'], focc['model'], weights=eta/epos.pfm['ns'])
 		focc['model']['eta']= eta
 
-def zoomed(epos):
+def zoomed(epos, TestScore= True):
 	''' Occurrence (inverse detection efficiency) along x,y axis.'''
 	focc= epos.occurrence
 
@@ -126,7 +124,7 @@ def zoomed(epos):
 	print '\n  y zoom bins'
 	_occ_per_bin(epos, focc['yzoom'])
 
-def _occ_per_bin(epos, foccbin):
+def _occ_per_bin(epos, foccbin, Log=False):
 	''' Planet occurrence (inverse detection efficiency) per bin '''	
 	_occ, _n, _inbin, _xc, _yc, _dlnx, _dlny=[],[],[],[],[],[],[]
 	
@@ -147,17 +145,20 @@ def _occ_per_bin(epos, foccbin):
 		_dlnx.append(np.log(xbin[-1]/xbin[0]))
 		_dlny.append(np.log(ybin[-1]/ybin[0]))
 
-	
+	foccbin['xc']= np.array(_xc)
+	foccbin['yc']= np.array(_yc)
+	foccbin['dlnx']= np.array(_dlnx)
+	foccbin['dlny']= np.array(_dlny)
+
 	foccbin['n']= np.array(_n)
 	foccbin['i']= np.array(_inbin)
 	foccbin['occ']= np.array(_occ)
 	foccbin['err']= foccbin['occ']/np.where(
 							foccbin['n']>0,np.sqrt(foccbin['n']),1.)
-	
-	foccbin['xc']= np.array(_xc)
-	foccbin['yc']= np.array(_yc)
-	foccbin['dlnx']= np.array(_dlnx)
-	foccbin['dlny']= np.array(_dlny)
+	isUL= foccbin['n']==0
+	if isUL.sum()>0:
+		completeness_UL= _interpolate_occ(epos, foccbin['xc'][isUL], foccbin['yc'][isUL], Log=Log)
+		foccbin['err'][isUL]= 1./completeness_UL/epos.nstars 
 
 def _model_occ_per_bin(epos, foccbin, foccmodel, weights=None):	
 	_occ, _n, _inbin, _xc, _yc, _dlnx, _dlny=[],[],[],[],[],[],[]
@@ -232,6 +233,20 @@ def parametric(epos):
 		if len(gamma_fit)>0:
 			print '  gamma= {:.2g} +{:.2g} - {:.2g}'.format(gamma_fit[0], gamma_p[0], gamma_n[0])
 
+def _interpolate_occ(epos, out_xvar, out_yvar, Log=False):
+	if Log:
+		# does not seem to make a big difference
+		pl_comp_log= interpolate.RectBivariateSpline(np.log10(epos.eff_xvar), 
+			np.log10(epos.eff_yvar), np.log10(epos.completeness))
+		out_completeness= 10.**pl_comp_log(np.log10(out_xvar), np.log10(out_yvar), grid=False) 
+		#print completeness
+	else:
+		# if zeros in detection efficiency?
+		pl_comp= interpolate.RectBivariateSpline(epos.eff_xvar, epos.eff_yvar, epos.completeness)
+		out_completeness= pl_comp(out_xvar, out_yvar, grid=False)
+
+	return out_completeness
+
 def _posterior(epos, sample, xbin, ybin):
 	_, pdf, _, _= periodradius(epos, fpara=sample, xbin=xbin, ybin=ybin)
 	return np.average(pdf)
@@ -278,3 +293,61 @@ def _posterior_per_bin(epos, xbins, ybins, Verbose=True):
 
 	return eta, gamma, area, pos, sigp, sign
 	
+
+def binned_metric(epos):
+	''' occurrence for one y bin, along x axis'''
+	if 'yzoom' in epos.occurrence:
+		xc= epos.occurrence['yzoom']['xc']
+		occ_obs= epos.occurrence['yzoom']['occ'] / epos.occurrence['yzoom']['dlnx']
+		occ_err= epos.occurrence['yzoom']['err'] / epos.occurrence['yzoom']['dlnx']
+
+		_, _, pdf_X, _= periodradius(epos, ybin=epos.yzoom, xgrid= epos.occurrence['yzoom']['xc'])
+		#for args in zip(xc, occ_obs, occ_err, pdf_X):
+			#print 'xc= {:.2g}, occ={:.2g}+-{:.2g}, model= {:.2g}'.format(*args)
+
+		squared_residuals= ((occ_obs-pdf_X)/occ_err)**2.
+
+		zoom= (epos.xzoom[0] < xc) & (xc < epos.xzoom[-1])
+
+		rss= np.sum(squared_residuals[zoom])
+		nbins= zoom.sum()
+		kfree= epos.fitpars.get_kfree()
+		dof= nbins-kfree # kfree includes normalization parameter
+		chi2= rss / dof
+
+		bic= EPOS.analytics.bic_rss(rss, kfree, nbins)
+		aic= EPOS.analytics.aic_rss(rss, kfree, nbins)
+		aic_c= EPOS.analytics.aic_c_rss(rss, kfree, nbins)
+
+		print '  x: (n={}, k={})'.format(nbins, kfree)
+		print '    chi^2= {:.1f}, reduced= {:.1f}'.format(rss, chi2)
+		print '    bic= {:.1f}'.format(bic)
+		print '    aic= {:.1f}, AICc= {:.1f}'.format(aic, aic_c)
+
+	if 'xzoom' in epos.occurrence:
+		yc= epos.occurrence['xzoom']['yc']
+		occ_obs= epos.occurrence['xzoom']['occ'] / epos.occurrence['xzoom']['dlny']
+		occ_err= epos.occurrence['xzoom']['err'] / epos.occurrence['xzoom']['dlny']
+
+		_, _, _, pdf_Y= periodradius(epos, xbin=epos.xzoom, ygrid= epos.occurrence['xzoom']['yc'])
+		#for args in zip(yc, occ_obs, occ_err, pdf_Y):
+			#print 'yc= {:.2g}, occ={:.2g}+-{:.2g}, model= {:.2g}'.format(*args)
+
+		squared_residuals= ((occ_obs-pdf_Y)/occ_err)**2.
+
+		zoom= (epos.yzoom[0] < yc) & (yc < epos.yzoom[-1])
+
+		rss= np.sum(squared_residuals[zoom])
+		nbins= zoom.sum()
+		kfree= epos.fitpars.get_kfree()
+		dof= nbins-kfree # kfree includes normalization parameter
+		chi2= rss / dof
+
+		bic= EPOS.analytics.bic_rss(rss, kfree, nbins)
+		aic= EPOS.analytics.aic_rss(rss, kfree, nbins)
+		aic_c= EPOS.analytics.aic_c_rss(rss, kfree, nbins)
+
+		print '  y: (n={}, k={})'.format(nbins, kfree)
+		print '    chi^2= {:.1f}, reduced= {:.1f}'.format(rss, chi2)
+		print '    bic= {:.1f}'.format(bic)
+		print '    aic= {:.1f}, AICc= {:.1f}'.format(aic, aic_c)

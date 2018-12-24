@@ -11,6 +11,7 @@ import numpy as np
 import cgs
 import EPOS.multi
 from EPOS.plot.helpers import set_pyplot_defaults
+from EPOS import __version__
 
 class fitparameters:
 	''' Holds the fit parameters. Usually initialized in epos.fitpars '''
@@ -128,6 +129,9 @@ class fitparameters:
 				raise ValueError('{} out of bounds, {} > {}'.format(
 					key,parlist[i],self.fitpars[key]['max']))
 
+	def get_kfree(self):
+		return len(self.keysfit)
+
 class epos:
 	"""The epos class
 	
@@ -159,6 +163,8 @@ class epos:
 		Initialize the class
 		"""
 		self.name=name
+
+		print '\n\n |~| epos {} |~|\n'.format(__version__)
 
 		''' Directories '''
 		self.plotdir='png/{}/'.format(name)
@@ -295,7 +301,7 @@ class epos:
 		self.DetectionEfficiency=True
 	
 	def set_ranges(self, xtrim=None, ytrim=None, xzoom=None, yzoom=None, 
-		LogArea=False, Occ=False, UnitTicks=True):
+		LogArea=False, Occ=False, UnitTicks=True, plotxgrid= None, plotygrid=None):
 		
 		if self.Range: raise ValueError('Range already defined')
 		if not self.Observation: raise ValueError('No observation defined')
@@ -462,12 +468,18 @@ class epos:
 				xgrid= self.MC_xvar
 				ygrid= self.MC_yvar	
 			
+			# custom grid for *plotting* occurrence rates
+			if plotxgrid is not None: xgrid= plotxgrid
+			if plotygrid is not None: ygrid= plotygrid
+
 			focc['xzoom']={}
+			#focc['xzoom']['grid']= xgrid
 			#ygrid= np.exp(np.arange(np.log(self.MC_yvar[0]),np.log(self.MC_yvar[-1])+0))
 			focc['xzoom']['x']= [self.xzoom]* (ygrid.size-1)
 			focc['xzoom']['y']= [[i,j] for i,j in zip(ygrid[:-1],ygrid[1:])]
 
 			focc['yzoom']={}
+			#focc['yzoom']['grid']= ygrid
 			#xgrid= np.exp(np.arange(np.log(self.MC_xvar[0]),np.log(self.MC_xvar[-1])+0))
 			focc['yzoom']['x']= [[i,j] for i,j in zip(xgrid[:-1],xgrid[1:])]
 			focc['yzoom']['y']= [self.yzoom]* (xgrid.size-1)
