@@ -34,6 +34,9 @@ def brokenpowerlaw2D(x, y, xp, p1, p2, yp, p3, p4):
 	'''
 	return brokenpowerlaw1D(x, xp, p1, p2) * brokenpowerlaw1D(y, yp, p3, p4)
 
+def brokenpowerlaw2D_xonly(x, y, xp, p1, p2, p3):
+	return brokenpowerlaw1D(x, xp, p1, p2) * y**p3
+
 def brokenpowerlaw2D_yonly(x, y, p1, yp, p3, p4):
 	return x**p1 * brokenpowerlaw1D(y, yp, p3, p4)
 

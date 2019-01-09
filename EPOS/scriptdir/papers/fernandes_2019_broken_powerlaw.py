@@ -50,6 +50,11 @@ import EPOS
 from EPOS import cgs
 
 Symmetric= 'sym' in sys.argv
+Single= 'single' in sys.argv
+
+if Single: suffix='_single'
+elif Symmetric: suffix='_sym'
+else: suffix=''
 
 ''' initialize the EPOS class '''
 #Msini = True converts the mass distirbution to an msini distribution
@@ -62,7 +67,9 @@ epos.set_observation(**obs)
 epos.set_survey(**survey)
 
 ''' Define a double broken power-law as a planet population '''
-if Symmetric:
+if Single:
+  epos.set_parametric(EPOS.fitfunctions.brokenpowerlaw2D_yonly)
+elif Symmetric:
 	epos.set_parametric(EPOS.fitfunctions.brokenpowerlaw2D_symmetric)
 else:
 	epos.set_parametric(EPOS.fitfunctions.brokenpowerlaw2D)
@@ -75,11 +82,13 @@ Note:
 	- dx is the range in walker initial positions for parameters that change sign (+/-)
 '''
 epos.fitpars.add('pps',		1.0, 	min=1e-3)
-
-epos.fitpars.add('P break',	1e3,	min=100,max=7e3,is2D=True)
-epos.fitpars.add('p1',		1.0, 	min=0,	max=3, 	is2D=True)
-if not Symmetric:
-	epos.fitpars.add('p2',		-0.5,	min=-3, max=0,	is2D=True)
+if Single:
+  epos.fitpars.add('p1',    1.0,  min=0,  max=3,  is2D=True)
+else:
+  epos.fitpars.add('P break', 1e3,  min=100,max=7e3,is2D=True)
+  epos.fitpars.add('p1',    1.0,  min=0,  max=3,  is2D=True)
+  if not Symmetric:
+    epos.fitpars.add('p2',		-0.5,	min=-3, max=0,	is2D=True)
 epos.fitpars.add('M break',	10.0,	fixed=True, 	is2D=True) 
 epos.fitpars.add('a_M',		0.0,	fixed=True, 	is2D=True)
 epos.fitpars.add('m1',		-0.5,	fixed=False, dx=0.1,	is2D=True)
