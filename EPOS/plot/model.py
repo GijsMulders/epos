@@ -75,13 +75,6 @@ def panels_mass(epos, Population=False, color='C1'):
 
 	axP.hist(pfm['P'], color=color, bins=xbins, weights=np.full(pfm['np'], eta/pfm['np']) )
 
-# 	try:
-# 		xbins= np.geomspace(*xlim, num=20)
-# 		ybins= np.geomspace(*ylim, num=10)
-# 	except:
-# 		xbins= np.logspace(*np.log10(xlim), num=20)
-# 		ybins= np.logspace(*np.log10(ylim), num=10)	
-
 	''' Mass side panel'''
 	#helpers.set_axis_size(axR, epos, Trim=True) #, In= epos.MassRadius)
 	axM.set_ylabel(r'Planet Mass [M$_\bigoplus$]')
@@ -192,9 +185,9 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False, T
 		ax.set_title(epos.name+': Tag')
 		
 		axP.legend(frameon=False, fontsize='small')
-# 		for k, tag in enumerate(subset):
-# 			axP.text(0.98,0.95-0.05*k,tag,ha='right',va='top',color='C1', 
-# 				transform=axP.transAxes)
+		# 		for k, tag in enumerate(subset):
+		# 			axP.text(0.98,0.95-0.05*k,tag,ha='right',va='top',color='C1', 
+		# 				transform=axP.transAxes)
 		
 	else:
 		fname=''	
@@ -274,10 +267,10 @@ def inclination(epos, color='C1', imin=1e-2):
 		
 		ax.axhline(scale, color='purple', ls=ls)	
 	
-# 		if ls=='--':
-# 			cdf= np.cumsum(pdf*inc)
-# 			h1, h2= np.interp([0.05*cdf[-1],0.95*cdf[-1]], cdf, inc)
-# 			ax.axhspan(h1,h2, facecolor='purple', alpha=0.5,lw=0.1)
+		# if ls=='--':
+		# 	cdf= np.cumsum(pdf*inc)
+		# 	h1, h2= np.interp([0.05*cdf[-1],0.95*cdf[-1]], cdf, inc)
+		# 	ax.axhspan(h1,h2, facecolor='purple', alpha=0.5,lw=0.1)
 	
 
 	helpers.save(plt, epos.plotdir+'model/inc-sma')
@@ -455,7 +448,6 @@ def periodratio_size(epos, color='C1'):
 
 	helpers.save(plt, epos.plotdir+'model/Pratio-size')
 
-
 def multiplicity(epos, color='C1', Planets=False, Kepler=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
@@ -482,11 +474,11 @@ def multiplicity(epos, color='C1', Planets=False, Kepler=False):
 	ax.bar(bins[:-1], hist, width=1, color=color)
 
 	''' Kepler '''
-# 	intrinsic= np.zeros_like(hist)
-# 	intrinsic[0]= 0.5*epos.pfm['ns']
-# 	intrinsic[-1]= 0.5*epos.pfm['ns']
-# 	#intrinsic=np.arange(len(hist))
-# 	ax.bar(bins[:-1], intrinsic, width=1, color='', ec='k')
+	# intrinsic= np.zeros_like(hist)
+	# intrinsic[0]= 0.5*epos.pfm['ns']
+	# intrinsic[-1]= 0.5*epos.pfm['ns']
+	# #intrinsic=np.arange(len(hist))
+	# ax.bar(bins[:-1], intrinsic, width=1, color='', ec='k')
 	
 	#ax.plot(, drawstyle='steps-mid', 
 	#	ls='--', marker='', color='gray', label='Kepler all')
@@ -548,3 +540,110 @@ def period(epos, Population=False, Occurrence=False, Observation=False, Tag=Fals
 
 	
 	helpers.save(plt, '{}model/input.period{}'.format(epos.plotdir, fname))
+
+
+def HansenMurray(epos, color='purple'):
+	import matplotlib.image as mpimg
+
+	pfm= epos.pfm
+	print pfm.keys()
+
+	''' Hansen & Murray 2013 Figure 1 '''
+	f, ax = plt.subplots()
+	ax.set_xlabel('$N_p$')
+	ax.set_ylabel('counts')
+	ax.set_xlim([0.5,10.5])
+	ax.set_ylim([0,35])
+	
+	fig1 = mpimg.imread('HM13figs/fig1_cut.png')
+	ax.imshow(fig1, aspect='auto', extent=[0.5,10.5,0,35])
+
+	_ , counts= np.unique(pfm['ID'],return_counts=True)
+	ax.hist(counts, bins=np.arange(0,11), align='left', 
+		color='purple', alpha=0.7, weights=np.full_like(counts, 2) )
+	
+	helpers.save(plt, '{}HM13/fig1'.format(epos.plotdir), dpi=300)
+
+	''' Hansen & Murray 2013 Figure 5 '''
+	f, ax = plt.subplots()
+	ax.set_xlabel('$P_2/P_1$')
+	ax.set_ylabel('counts')
+	ax.set_xlim([1,4])
+	ax.set_ylim([0,32])
+	#ax.set_xscale('log')
+	#ax.set_yscale('log')
+	
+	fig1 = mpimg.imread('HM13figs/fig5_cut.png')
+	ax.imshow(fig1, aspect='auto', extent=[1,4,0,32])
+
+	dP= pfm['dP'][pfm['dP']>1]
+	ax.hist(dP, bins=np.linspace(1.+(1.5/37.),4,38), align='mid', 
+		color='purple', alpha=0.7, weights=np.full_like(dP, 2))
+	
+	helpers.save(plt, '{}HM13/fig5'.format(epos.plotdir), dpi=300)
+
+
+	''' Hansen & Murray 2013 Figure 9 '''
+	f, ax = plt.subplots()
+	ax.set_xlabel('Eccentricity')
+	ax.set_ylabel('counts')
+	ax.set_xlim([0,0.24])
+	ax.set_ylim([0,35])
+	#ax.set_xscale('log')
+	#ax.set_yscale('log')
+	
+	fig1 = mpimg.imread('HM13figs/fig9_cut.png')
+	ax.imshow(fig1, aspect='auto', extent=[0,0.24,0,35])
+
+	ax.hist(pfm['ecc'], bins=np.linspace(0.01,0.25,25), align='left', 
+		color='purple', alpha=0.7, weights=np.full_like(pfm['ecc'], 2))
+	
+	helpers.save(plt, '{}HM13/fig9'.format(epos.plotdir), dpi=300)
+
+	''' Hansen & Murray 2013 Figure 10 '''
+	f, ax = plt.subplots()
+	ax.set_xlabel('sma [au]')
+	ax.set_ylabel('Inclination')
+	ax.set_xlim([0.04,1.2])
+	ax.set_ylim([0,33])
+	#ax.set_xscale('log')
+	
+	fig10 = mpimg.imread('HM13figs/fig10_cut.png')
+	ax.imshow(fig10, aspect='auto', extent=[0.04,1.2,0,33])
+	ax.get_xaxis().set_ticks([])
+
+	axlog=ax.twiny()
+	axlog.set_xlim([0.04,1.2])
+	axlog.set_xscale('log')
+	axlog.plot(pfm['sma'], pfm['inc'], color='purple', alpha=0.7, 
+		marker='o', ls='')
+	
+	helpers.save(plt, '{}HM13/fig10'.format(epos.plotdir), dpi=300)
+
+	''' Hansen & Murray 2013 Figure 11 '''
+	f, (axa, axb) = plt.subplots(2)
+	fig11a = mpimg.imread('HM13figs/fig11a_cut.png')
+	fig11b = mpimg.imread('HM13figs/fig11b_cut.png')
+
+	#ax[0].set_xlabel('Inclination')
+	axa.set_ylabel('counts')
+	axa.set_xlim([0,24.5])
+	axa.set_ylim([0,20])
+
+	axb.set_xlabel('Inclination')
+	axb.set_ylabel('counts')
+	axb.set_xlim([0,14.5])
+	axb.set_ylim([0,35])
+	
+	axa.imshow(fig11a, aspect='auto', extent=[0,24.5,0,20])
+	axb.imshow(fig11b, aspect='auto', extent=[0,14.5,0,35])
+
+	inner= pfm['inc'][pfm['sma']<0.1]
+	outer= pfm['inc'][(pfm['sma']>0.1) & (pfm['sma']<1.0)]
+
+	axa.hist(inner, bins=np.linspace(0,25,26), align='mid', 
+		color='purple', alpha=0.7, weights=np.full_like(inner, 2))
+	axb.hist(outer, bins=np.linspace(0,15,50), align='mid', 
+		color='purple', alpha=0.7, weights=np.full_like(outer, 2))
+	
+	helpers.save(plt, '{}HM13/fig11'.format(epos.plotdir), dpi=300)

@@ -86,6 +86,22 @@ def lognormal_size(x, y, xp, p1, p2, y0, dy):
 	return brokenpowerlaw1D(x, xp, p1, p2) * \
 			scipy.stats.norm.pdf(np.log10(y), loc=np.log10(y0), scale=dy)
 
+def lognormal_rise(x, y, y0, dy, yp):
+	'''
+	Lognormal distribution in planet size `y` that rises with distance `x` 
+	
+	Args:
+		x(np.array): x
+		y(np.array): y
+		y(float): mean of y
+		dy(flat): dispersion of y, in dex	
+		yp(float): break in x
+	Note:		
+		Only works with support for a non-separable function in x and y
+	'''	
+	return scipy.stats.norm.pdf(np.log10(y), loc=np.log10(y0), scale=dy) \
+		* x**yp
+
 def schechter1D(x, xp, p1):
 	''' Schechter function normalized to p break'''
 	return (x/xp)**p1 * np.exp(-x/xp)

@@ -580,8 +580,9 @@ class epos:
 		self.summarystatistic= ['N','xvar','Nk','dP','Pin']
 	
 	def set_population(self, name, sma, mass, 
-		radius=None, inc=None, starID=None, tag=None, 
-		sma0=None, mass0=None, radius0=None, inc0=None,
+		radius=None, inc=None, starID=None, ecc=None, tag=None, 
+		sma0=None, mass0=None, radius0=None, inc0=None, starID0=None, 
+		ecc0=None,
 		Verbose=False):
 		# tag is fit parameter, i.e. metallicity, surface density, or model #
 
@@ -621,7 +622,9 @@ class epos:
 			_, pfm['ID']= np.unique(starID, return_inverse=True)
 			
 		if radius is not None:
-			pfm['R']= np.asarray(radius)		
+			pfm['R']= np.asarray(radius)
+		if ecc is not None:
+			pfm['ecc']= np.asarray(ecc)			
 		if tag is not None:
 			pfm['tag']= np.asarray(tag)		
 		if inc is None:

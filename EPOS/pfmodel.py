@@ -8,7 +8,7 @@ import cgs
 ''' Helper functions to read in planet formation models'''
 
 #def symba(name='HMSim1', dir='hdf5/Sim1', plts_mass=0, istep=None, Verbose=False):
-def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False, Saved=True):
+def symba(name, fname, plts_mass=0, cut=-np.inf, smacut=np.inf, istep=None, Verbose=False, Saved=True):
 	''' 
 	returns a list of planetary systems
 	sma in au
@@ -39,8 +39,8 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False, Save
 		else:
 			if Verbose: print '  {} files'.format(len(flist))
 	
-		sma, mass, inc, ID= [], [], [], []
-		sma0, mass0, inc0, ID0 =[], [], [], []
+		sma, mass, inc, ecc, ID= [], [], [], [], []
+		sma0, mass0, inc0, ecc0, ID0 =[], [], [], [], []
 		symbamassunit= cgs.Msun/cgs.Mearth / (2.*np.pi)**2.
 	
 		for i,fname in enumerate(flist):
@@ -61,8 +61,8 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False, Save
 					print '\r  [{:50s}] {:5.1f}%'.format('#' * int(amtDone * 50), amtDone * 100),
 					sys.stdout.flush() 
 			
-				L_sma, L_mass, L_inc= [], [], []
-				L_sma0, L_mass0, L_inc0= [], [], []
+				L_sma, L_mass, L_inc, L_ecc= [], [], [], []
+				L_sma0, L_mass0, L_inc0, L_ecc0= [], [], [], []
 			
 				for particle in hf:
 					#if Verbose: print particle, hf.get(particle).shape[0]
@@ -71,10 +71,11 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False, Save
 
 						_mass= final_architecture[8]* symbamassunit
 						_sma= final_architecture[2]
-						if (_mass > plts_mass) & (_mass > cut * _sma**1.5):
+						if (_mass>plts_mass) & (_mass>cut*_sma**1.5) & (_sma<smacut):
 							L_sma.append(_sma)
 							L_mass.append(_mass)
 							L_inc.append(final_architecture[4])
+							L_ecc.append(final_architecture[3])
 							ID.append(i)
 
 					# initial conditions
@@ -86,6 +87,7 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False, Save
 						L_sma0.append(initial_architecture[2])
 						L_mass0.append(initial_architecture[8]* symbamassunit)
 						L_inc0.append(initial_architecture[4])
+						L_ecc0.append(initial_architecture[3])
 						ID0.append(i)
 
 						#if not 'time' in sg: sg['time']= final_architecture[0]/1e6
@@ -124,18 +126,22 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False, Save
 				sma.extend(L_sma)
 				mass.extend(L_mass)
 				inc.extend(L_inc)
+				ecc.extend(L_ecc)
 				#ID (set in loop)
 			
 				sma0.extend(L_sma0)
 				mass0.extend(L_mass0)
 				inc0.extend(L_inc0)
+				ecc0.extend(L_ecc0)
 
 			if not Verbose: print '\r  [{:50s}] {:.1f}%'.format('#' * int(1 * 50), 1 * 100),
 		
 		npz={'sma':np.asarray(sma), 'mass':np.asarray(mass), 
 			'inc':np.asarray(inc), 'starID':np.asarray(ID),
+			'ecc':np.asarray(ecc),
 			'sma0':np.asarray(sma0), 'mass0':np.asarray(mass0), 
-			'inc0':np.asarray(inc0), 'starID0':np.asarray(ID0)}
+			'inc0':np.asarray(inc0), 'starID0':np.asarray(ID0),
+			'ecc0':np.asarray(ecc0)}
 		
 		if Saved:
 			print 'Saving status in {}'.format(fnpz)
