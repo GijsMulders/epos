@@ -543,6 +543,7 @@ def period(epos, Population=False, Occurrence=False, Observation=False, Tag=Fals
 
 
 def HansenMurray(epos, color='purple'):
+	''' figures not included '''
 	import matplotlib.image as mpimg
 
 	pfm= epos.pfm

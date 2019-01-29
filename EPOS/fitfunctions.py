@@ -99,8 +99,7 @@ def lognormal_rise(x, y, y0, dy, yp):
 	Note:		
 		Only works with support for a non-separable function in x and y
 	'''	
-	return scipy.stats.norm.pdf(np.log10(y), loc=np.log10(y0), scale=dy) \
-		* x**yp
+	return scipy.stats.norm.pdf(np.log10(y), loc=np.log10(y0* x**yp), scale=dy)
 
 def schechter1D(x, xp, p1):
 	''' Schechter function normalized to p break'''

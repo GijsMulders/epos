@@ -661,11 +661,15 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		pop['order']= order
 		pop['P']= allP
 		pop['k']= allN
+		pop['inc']= allI
 		for key, subset in zip(['system', 'single', 'multi'],[isysdet, isingle, imulti]):
 			pop[key]={}
 			pop[key]['Y']= allY[subset] # R? M?
 			pop[key]['P']= allP[subset]
+			pop[key]['ID']= allID[subset]
+			pop[key]['inc']= allI[subset]
 			pop[key]['order']= order[subset]
+			pop[key]['detectable']= itransdet[subset]
 	
 	''' Store detectable planet population '''	
 	if Store:
