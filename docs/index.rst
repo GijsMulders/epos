@@ -33,7 +33,7 @@ Output wil appear in the terminal and plots in the ``png/`` folder.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Detailed Instructions (in progress):
+   :caption: Detailed Instructions:
 
    instructions
 

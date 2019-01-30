@@ -84,7 +84,8 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+#html_theme = 'alabaster'
+html_theme='sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -92,14 +93,18 @@ html_theme = 'alabaster'
 #
 # Exoplanet Population Observation Simulator
 html_theme_options = {
-	'description':'EPOS simulates synthetic observations of exoplanet populations. '
-		'It provides an interface between planet formation simulations and '
-		'exoplanet surveys such as Kepler.',
-	'github_button': 'true', 'github_user': 'GijsMulders', 'github_repo': 'epos',
-	'github_banner': True, # this does nothing?
-	#'font_family': 'Comic Sans MS',
-    'sidebar_width': '260px'
-	}
+#    'prev_next_buttons_location':'both'
+}
+# Alabaster:
+# html_theme_options = {
+# 	'description':'EPOS simulates synthetic observations of exoplanet populations. '
+# 		'It provides an interface between planet formation simulations and '
+# 		'exoplanet surveys such as Kepler.',
+# 	'github_button': 'true', 'github_user': 'GijsMulders', 'github_repo': 'epos',
+# 	'github_banner': True, # this does nothing?
+# 	#'font_family': 'Comic Sans MS',
+#     'sidebar_width': '260px'
+# 	}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
