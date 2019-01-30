@@ -24,9 +24,9 @@ How to use
 ----------
 
 EPOS runs from the command line. The quickest way to familiarize yourself with the code is to copy the test and example scripts to a local directory:
-::
-	import EPOS
-	EPOS.scripts.install()
+
+>>> import EPOS
+>>> EPOS.scripts.install()
 
 These scripts demonstrate some of the basic functionality of EPOS.
 Output wil appear in the terminal and plots in the ``png/`` folder.
@@ -54,7 +54,7 @@ Please cite `Mulders et al. 2018 <http://adsabs.harvard.edu/abs/2018arXiv1805082
 
 .. image:: https://zenodo.org/badge/132065382.svg
    :target: https://zenodo.org/badge/latestdoi/132065382
-
+   
 List of Publications
 --------------------
 Mulders et al. 2018 
@@ -63,13 +63,15 @@ Pascucci et al. 2018
 	`A Universal Break in the Planet-to-star Mass-ratio Function of Kepler MKG Stars <http://adsabs.harvard.edu/abs/2018ApJ...856L..28P>`_
 Kopparapu et al. 2018 
 	`Exoplanet Classification and Yield Estimates for Direct Imaging Missions <http://adsabs.harvard.edu/abs/2018ApJ...856..122K>`_
+Fernandes et al. 2019 
+	`Hints for a Turnover at the Snow Line in the Giant Planet Occurrence Rate <http://adsabs.harvard.edu/abs/2018arXiv181205569F>`_
 
 Version Notes:
 --------------
 
-:1.0.1: first public release |ImageLink|_
+:1.0.1: first public release
 :1.0.2: pip installable version
-:1.1.0: radial velocity without Monte Carlo
+:1.1.0: radial velocity without Monte Carlo |ImageLink|_
 
 .. |ImageLink| image:: https://zenodo.org/badge/132065382.svg
 .. _ImageLink: https://zenodo.org/badge/latestdoi/132065382

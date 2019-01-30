@@ -22,7 +22,7 @@ Note:
 	- parameter b_R is not fitted
 	- dx is the range in walker initial positions for parameters that change sign (+/-)
 '''
-epos.fitpars.add('pps',		2.0, 	min=0)
+epos.fitpars.add('pps',		2.0, 	min=0, 			isnorm=True)
 epos.fitpars.add('P break',	10.,	min=2,	max=50,	is2D=True)
 epos.fitpars.add('a_P',		1.5, 	min=0,			is2D=True)
 epos.fitpars.add('b_P',		0.0,	dx=0.1,			is2D=True)

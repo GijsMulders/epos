@@ -78,18 +78,124 @@ These scripts are copied to the ``epos-scripts/examples/`` directory by ``EPOS.s
 
 Parametric mode
 ---------------
-The first example shows how to fit a parametric function in planet radius and orbital period to Kepler data::
+The first example shows how to fit a parametric function in planet radius and orbital period to Kepler data. The script can be run with:
+::
 
    ./example_1_parametric_mode.py
 
+Here, is a step-by-step description of each set of commands.
+First, load EPOS and set the output directory name
 
+>>> import EPOS
+>>> epos= EPOS.epos(name='example_1')
 
+Second, load the observations (Kepler DR25 planet candidate list) and survey detection efficiency
+
+>>> obs, survey= EPOS.kepler.dr25(Huber=True, Vetting=True, score=0.9)
+>>> epos.set_observation(**obs)
+>>> epos.set_survey(**survey)
+
+Next, define the parametric distribution function that will be fitted to the data. 
+(The example is a broken power-law in both the planet size and distance dimension from fitfunctions.py, but you can define your own)
+
+>>> epos.set_parametric(EPOS.fitfunctions.brokenpowerlaw2D)
+
+Now initialize the fit parameters with their initial values and limits (min, max).
+The first parameter is the normalization, defined as the number of planets per star over the simulated radius-period range:
+
+>>> epos.fitpars.add('pps',		2.0, 	min=0)
+
+The next six parameters (one break point and two indices for each dimension) control the shape of the period-radius distribution 
+
+>>> epos.fitpars.add('P break',	10.,	min=2,	max=50,	is2D=True)
+>>> epos.fitpars.add('a_P',		1.5, 	min=0,			is2D=True)
+>>> epos.fitpars.add('b_P',		0.0,	dx=0.1,			is2D=True)
+>>> epos.fitpars.add('R break',	3.0,	min=1.0,max=5, 	is2D=True) 
+>>> epos.fitpars.add('a_R',		0.0,	dx=0.1, 		is2D=True)
+>>> epos.fitpars.add('b_R',		-4.,	fixed=True, 	is2D=True)
+
+Note that the last parameter is fixed and thus not fitted for. ``dx`` is a parameter that controls the initial distribution of walkers when the inital value is zero.
+
+Next, define the simulation range. 
+
+>>> epos.set_ranges(xtrim=[0,730],ytrim=[0.3,20.],xzoom=[2,400],yzoom=[1,6], Occ=True)
+
+For transits, ``x`` refers to orbital period and ``y`` refers to planet size. The simulated range is that supplied by the detection efficiency grid and trimmed (``trim``) to the given values. For the observational comparison we ``zoom`` in a bit further.
+
+Now we're ready to go!
+Run the code once with the initial values:
+
+>>> EPOS.run.once(epos)
+
+Then run the mcmc chain
+
+>>> EPOS.run.mcmc(epos, nMC=1000, nwalkers=100, nburn=200, threads=20, Saved=True)
+
+This runs multi-core with 20 threads. Saved indicates whether the mcmc will be skipped if a previously saved chain is present on disk. ``Saved=False`` always reruns the chain.
+
+Define a set of bins where planet occurrence rates are calculated, both from the data and from integrating the fitted planet distributions, and calculate all the rates
+
+>>> epos.set_bins(xbins=[[2,400],[0.9*365,2.2*365]], ybins=[[1,6],[0.7,1.5]]) # eta_zoom, eta_earth
+>>> EPOS.occurrence.all(epos)
+
+Last, plot everything.
+
+>>> EPOS.plot.survey.all(epos)
+>>> EPOS.plot.input.all(epos)
+>>> EPOS.plot.output.all(epos)
+>>> EPOS.plot.mcmc.all(epos)
+>>> EPOS.plot.occurrence.all(epos)
+
+Plots will appear in the ``png/example_1/`` subfolder
 
 Multi-planet Mode
 -----------------
 ::
 
    ./example_2_multiplanet_mode.py
+
+In multi-planet mode, the first planet in the system is drawn from a parametric distribution same as above. However, we adjust the initial guess for the slope after the period break
+
+>>> epos.fitpars.add('b_P',	-1,	max=1,	dx=0.1,	is2D=True)
+
+Next we tell epos to draw additional planets in the system assuming the spacing between adjacent planets is drawn from a dimensionless distribution:
+
+>>> epos.set_multi(spacing='dimensionless')
+
+We generate 10 planets per system.
+
+>>> epos.fitpars.add('npl', 10, fixed=True)
+
+The fit parameters for the dimensionless distribution are:
+
+>>> epos.fitpars.add('log D', -0.3)
+>>> epos.fitpars.add('sigma', 0.2, min=0)
+
+Other properties of the planetary systems can also be fit for (or not):
+
+>>> epos.fitpars.add('dR', 0.01, fixed=True) # Dispersion in planet radii
+>>> epos.fitpars.add('inc', 2.0) # mode of mutual inclinations
+>>> epos.fitpars.add('f_iso', 0.4) # Fraction of isotropic systems
+>>> epos.fitpars.add('f_cor', 0.5, fixed=True) # Correlated noise
+
+Then proceed as in single-planet mode.
+
+Radial Velocity Surveys
+-----------------------
+Example 5 shows how to estimate the distribution of planets from a radial velocity survey:
+::
+   ./example_5_radial_velocity.py
+
+Two commands are different from fitting a transit survey:
+First, tell epos that we are doing a radial velocity survey (RV=True), that we are not doing the Monte Carlo simulation (MC=False) and that we are fitting for the planet mass distribution (Msini=True)
+   
+>>> epos= EPOS.epos(name='example_5', RV=True, MC=False, Msini=True)
+
+Second, we define the radial velocity survey data, here from Mayor+ 2011
+
+>>> obs, survey= EPOS.rv.Mayor2011()
+>>> epos.set_observation(**obs)
+>>> epos.set_survey(**survey)
 
 Planet Ocurrence Rates
 ----------------------
