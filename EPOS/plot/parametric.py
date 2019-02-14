@@ -184,8 +184,9 @@ def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False, Convert=Fal
 		if Convert:
 			ax.plot(epos.in_yvar, pdf0_Y_in*yscale, marker='',ls='--',color='k', label='Intrinsic')
 
-	# plot posterior excluding low detection regions (arbitrary 2000 planets assumed)
-	if not (epos.RV or epos.MassRadius):
+	# plot posterior excluding low detection regions (arbitrary 3000 planets assumed)
+	#if not (epos.RV or epos.MassRadius):
+	if False:
 		cens= np.where(epos.f_det<1./3000.,0,1.)
 		_, _, _, cens_pdf_Y= periodradius(epos, xbin=xbin, fdet=cens)
 		ax.plot(yvar, cens_pdf_Y*yscale, marker='',ls='-',color='green', label='biased')

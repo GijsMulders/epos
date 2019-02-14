@@ -202,7 +202,8 @@ class epos:
 		
 		self.plotpars={} # dictionary to hold some customization keywords
 
-	def set_observation(self, xvar, yvar, starID, nstars=1.6862e5, radiusError=0.1):
+	def set_observation(self, xvar, yvar, starID, nstars=1.6862e5, 
+		radiusError=0.1, score=None):
 		''' Observed planet population
 		
 		Args:
@@ -220,6 +221,9 @@ class epos:
 		self.obs_yvar=np.asarray(yvar)[order]
 		self.obs_starID=np.asarray(starID)[order]
 		self.nstars=nstars
+
+		if score is not None:
+			self.obs_score= np.asarray(score)[order]
 		
 		assert self.obs_xvar.ndim == self.obs_yvar.ndim == self.obs_starID.ndim == 1, 'only 1D arrays'
 		assert self.obs_xvar.size == self.obs_yvar.size == self.obs_starID.size, 'arrays not same length'
@@ -438,6 +442,9 @@ class epos:
 			yinrange= (self.in_ytrim[0]<=Mticks) & (Mticks<=self.in_ytrim[1])
 			self.y_inticks= Mticks[yinrange]
 			self.y_inticklabels= Mticklabels[yinrange]
+			yrange= (self.ytrim[0]<=Rticks) & (Rticks<=self.ytrim[1])
+			self.yticks= Rticks[yrange]
+			self.yticklabels= Rticklabels[yrange]			
 		elif self.RV:
 			yrange= (self.ytrim[0]<=Mticks) & (Mticks<=self.ytrim[1])
 			self.yticks= Mticks[yrange]

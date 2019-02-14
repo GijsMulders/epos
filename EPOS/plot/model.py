@@ -85,7 +85,8 @@ def panels_mass(epos, Population=False, color='C1'):
 	
 	helpers.save(plt, '{}model/input.mass{}'.format(epos.plotdir, fname))
 	
-def panels_radius(epos, Population=False, Occurrence=False, Observation=False, Tag=False, color='C1'):
+def panels_radius(epos, Population=False, Occurrence=False, Observation=False, 
+	Tag=False, color='C1'):
 	f, (ax, axR, axP)= helpers.make_panels(plt)
 	pfm=epos.pfm
 	eta= epos.modelpars.get('eta',Init=True)
@@ -487,7 +488,8 @@ def multiplicity(epos, color='C1', Planets=False, Kepler=False):
 
 	helpers.save(plt, epos.plotdir+'model/multi')
 
-def period(epos, Population=False, Occurrence=False, Observation=False, Tag=False, color='C1'):
+def period(epos, Population=False, Occurrence=False, Observation=False, Tag=False, 
+	color='C1'):
 	''' Model occurrence as function of orbital period'''
 	f, ax = plt.subplots()
 	helpers.set_axis_distance(ax, epos, Trim=True)
@@ -540,7 +542,6 @@ def period(epos, Population=False, Occurrence=False, Observation=False, Tag=Fals
 
 	
 	helpers.save(plt, '{}model/input.period{}'.format(epos.plotdir, fname))
-
 
 def HansenMurray(epos, color='purple'):
 	''' figures not included '''

@@ -33,15 +33,40 @@ def all(epos):
 			vetting(epos, PlotBox=True)
 			completeness(epos, PlotBox=True, Vetting=False)
 
-def observed(epos, PlotBox=True):
+	if hasattr(epos,'obs_score'):
+		observed(epos, PlotBox=False, PlotScore=True)
+
+def observed(epos, PlotBox=True, PlotScore=False):
 	assert epos.Observation
-	f, ax = plt.subplots()
+
+	if PlotScore:
+		f, (ax, axb) = plt.subplots(1,2, gridspec_kw = {'width_ratios':[20, 1]})
+		f.subplots_adjust(wspace=0)
+	else:
+		f, ax = plt.subplots()
 	ax.set_title('Observed Population')
 	
 	helpers.set_axes(ax, epos, Trim=epos.Range)
 	
-	ax.plot(epos.obs_xvar, epos.obs_yvar, ls='', marker='.', mew=0, ms=5.0, color='k')
-	# add multis? 
+	if PlotScore:
+		''' color scale? '''
+		cmap='plasma' # viridis, plasma, inferno, magma, spring, cool
+		vmin, vmax= 0, 1
+		#ticks=np.linspace(vmin, vmax, (vmax-vmin)+1)
+		clrs, norm= helpers.color_array(epos.obs_score,
+			vmin=vmin,vmax=vmax, cmap=cmap)
+		ax.scatter(epos.obs_xvar, epos.obs_yvar, color=clrs, s=3)
+
+		# colorbar?
+		cb1 = clrbar.ColorbarBase(axb, cmap=cmap, norm=norm,
+	                                orientation='vertical') # horizontal
+		axb.tick_params(axis='y', direction='out')
+
+		fname='.score'
+	else:
+		ax.plot(epos.obs_xvar, epos.obs_yvar, ls='', marker='.', mew=0, ms=5.0, color='k')
+		fname=''
+		# add multis? 
 	
 	if PlotBox:
 		fname='.box'
@@ -51,7 +76,6 @@ def observed(epos, PlotBox=True):
 		if epos.Zoom:
 			ax.add_patch(patches.Rectangle( (epos.xzoom[0],epos.yzoom[0]), 
 				epos.xzoom[1]-epos.xzoom[0], epos.yzoom[1]-epos.yzoom[0],fill=False, zorder=1) )
-	else: fname=''
 
 	helpers.save(plt, epos.plotdir+'survey/planets'+fname)
 	
