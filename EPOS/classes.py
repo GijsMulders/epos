@@ -341,7 +341,7 @@ class epos:
 			self.Zoom=False
 		elif (self.xzoom==self.xtrim) and (self.yzoom==self.ytrim):
 			self.Zoom=False
-			print 'Not a zoom'
+			print 'Trim euqal to zoom'
 		else:
 			self.Zoom=True
 		
@@ -490,6 +490,8 @@ class epos:
 			#xgrid= np.exp(np.arange(np.log(self.MC_xvar[0]),np.log(self.MC_xvar[-1])+0))
 			focc['yzoom']['x']= [[i,j] for i,j in zip(xgrid[:-1],xgrid[1:])]
 			focc['yzoom']['y']= [self.yzoom]* (xgrid.size-1)
+
+		#if hasattr(self, pfm):
 	
 	def set_bins(self, xbins=[[1,10]], ybins=[[1,10]],xgrid=None, ygrid=None,Grid=False):
 		'''
@@ -547,6 +549,30 @@ class epos:
 				raise ValueError('unequal amount of bins. Use Grid=True?')
 			focc['bin']['x']= _xbins
 			focc['bin']['y in']= _ybins
+
+	def set_bins_poly(self, polys):
+		'''
+		Initialize polygonic bins for occurrence rate calculations
+		
+		Description:
+			each polygone is a Nx2 numpy array of (x,y) coordinates
+		
+		Args:
+			polys(list):	(list of) polygones
+		'''
+		if not hasattr(self,'occurrence'):
+			self.occurrence={}
+		focc= self.occurrence
+		
+		focc['poly']={}
+		focc['poly']['coords']=[]
+
+		print 'trying {} polygons'.format(len(polys))
+		for coords in polys:
+			npc= np.asarray(coords)
+			assert npc.ndim==2, 'coords needs to de 2dim list'
+			assert npc.shape[-1]==2, 'coords need to be 2xN array'
+			focc['poly']['coords'].append(npc)
 	
 	def set_parametric(self, func):
 		'''Define a parametric function to generate the planet size-period distribution
@@ -654,7 +680,7 @@ class epos:
 				if key in pfm: pfm[key]=pfm[key][order]
 			
 			EPOS.multi.indices(pfm['ID'], Verbose=True)
-			EPOS.multi.frequency(pfm['ID'], Verbose=True)
+			pfm['k'], pfm['Nk']= EPOS.multi.frequency(pfm['ID'], Verbose=True)
 			
 			# period ratio, multi-planet index
 			single, multi, ksys, multis= EPOS.multi.nth_planet(pfm['ID'],pfm['P'])

@@ -226,7 +226,8 @@ def bern(name='syntheticpop_20emb_983systems.txt', dir='Bern',
 	''' Read the data '''
 	a= np.loadtxt(fname, unpack=True, skiprows=1)
 	if Verbose:
-		print '\nraw data: {} systems, {} planets'.format(np.unique(a[1]).size, a[0].size)
+		print '\nraw data: {} systems, {} planets'.format(np.unique(
+			a[0 if Single else 1]).size, a[0].size)
 
 	# cut out certain planets
 	include= (smacut[0]<=a[2]) & (a[2]<=smacut[-1])
@@ -235,7 +236,7 @@ def bern(name='syntheticpop_20emb_983systems.txt', dir='Bern',
 	#include&= (cut[0]<=a[]) & (a[]<=cut[-1])
 
 	#planet= a[0][include]
-	ID= a[1][include]
+	ID= a[0 if Single else 1][include]
 	sma= a[2][include]
 	mass= a[3][include]
 	radius= a[4][include]
@@ -271,6 +272,10 @@ def mordasini(name='syntheticpopmordasini1MsunJ31', dir='Mordasini', smacut=np.i
 	header= np.genfromtxt(fname, max_rows=1, dtype=str)
 	print header
 	a= np.loadtxt(fname, unpack=True, skiprows=1, usecols=(0,1,2,3,4,6,7))
+
+	npl= a[2].size
+	ns= np.unique(a[0 if Single else 1]).size
+
 	include= (a[2]<smacut) & (a[4]>Rcut)
 	ID= a[0 if Single else 1][include]
 	sma= a[2][include]
@@ -280,6 +285,7 @@ def mordasini(name='syntheticpopmordasini1MsunJ31', dir='Mordasini', smacut=np.i
 	FeH= a[6][include]
 
 	print '\nLoad population synthesis model {}'.format(name)
+	print '  {} stars, {} planets'.format(ns, npl)
 	print '  sma:  	 {:.2e} ... {:.1f}'.format(min(sma), max(sma))
 	print '  mass:   {:.2e} ... {:.1f}'.format(min(mass), max(mass))
 	print '  radius: {:.2f} ... {:.1f}'.format(min(radius), max(radius))
@@ -301,6 +307,10 @@ def mordasini_ext(name='syntheticpopmordasini1MsunJ31extended', dir='Mordasini',
 	header= np.genfromtxt(fname, max_rows=1, dtype=str)
 	print header
 	a= np.loadtxt(fname, unpack=True, skiprows=1, usecols=(1,2,3,4,6,7,10))
+
+	npl= a[2].size
+	ns= np.unique(a[0 if Single else 1])
+
 	include= (a[1]<smacut) & (a[3]>Rcut)
 	ID= a[0][include]
 	sma= a[1][include]
@@ -311,6 +321,7 @@ def mordasini_ext(name='syntheticpopmordasini1MsunJ31extended', dir='Mordasini',
 	sma0= a[6][include]
 
 	print '\nLoad population synthesis model {}'.format(name)
+	print '  {} stars, {} planets'.format(ns, npl)
 	print '  sma:  	 {:.2e} ... {:.1f}'.format(min(sma), max(sma))
 	print '  sma0: 	 {:.2e} ... {:.1f}'.format(min(sma0), max(sma0))
 	print '  mass:   {:.2e} ... {:.1f}'.format(min(mass), max(mass))

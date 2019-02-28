@@ -2,6 +2,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.colorbar as clrbar
+import matplotlib.colors
 import numpy as np
 
 import helpers, parametric
@@ -10,7 +11,7 @@ from EPOS.population import periodradius
 clrs= ['r','g','b','m'] # in epos.prep
 #fmt_symbol= {'ls':'', 'marker':'o', 'mew':2, 'ms':8,'alpha':0.6}
 
-def all(epos):
+def all(epos, color=None, alpha_fac=None):
 	assert epos.Observation
 	if hasattr(epos, 'occurrence'):
 		
@@ -18,12 +19,17 @@ def all(epos):
 			colored(epos)
 
 		if 'model' in epos.occurrence:
-			model(epos)
+			model(epos, color=color, alpha_fac=alpha_fac)
 
+		if 'poly' in epos.occurrence:
+			colored(epos, Poly=True)
+			if 'model' in epos.occurrence:
+				model(epos, color=color, alpha_fac=alpha_fac, Poly=True)
 		
 		if 'bin' in epos.occurrence:
 			colored(epos, Bins=True)
-			#binned(epos)
+			if 'model' in epos.occurrence:
+				model(epos, color=color, alpha_fac=alpha_fac, Bins=True)
 	
 			if 'eta0' in epos.occurrence['bin']:
 				integrated(epos)
@@ -44,7 +50,7 @@ def all(epos):
 	else:
 		print '\nNo occurrence to plot, did you run EPOS.occurrence.all()? \n'
 	
-def colored(epos, Bins=False):
+def colored(epos, Bins=False, Poly=False):
 	
 	f, (ax, axb) = plt.subplots(1,2, gridspec_kw = {'width_ratios':[20, 1]})
 	f.subplots_adjust(wspace=0)
@@ -103,6 +109,25 @@ def colored(epos, Bins=False):
 				size=size)
 	
 		helpers.save(plt, epos.plotdir+'occurrence/bins')
+	elif Poly:
+		occpoly= epos.occurrence['poly']
+		for k, (xc, yc, coords, n, inbin, occ, err) in enumerate(
+				zip(occpoly['xc'],occpoly['yc'],occpoly['coords'],
+					occpoly['n'],occpoly['i'], occpoly['occ'], occpoly['err'])
+				):
+				
+			# box
+			ax.add_patch(matplotlib.patches.Polygon(coords,
+				fill=False, zorder=2, ls='-', color='k') )
+			 
+			size=16 if not 'textsize' in epos.plotpars else epos.plotpars['textsize'] 
+				# 12 fit in box, 16 default
+			ax.text(xc,yc,'{:.1%}\n$\pm${:.1f}'.format(occ, err), ha='center', va='center', 
+				size=size)
+			#ax.text(xbin[1]/xnudge,ybin[0]*ynudge,'n={}'.format(n), ha='right',
+			#	size=size)
+	
+		helpers.save(plt, epos.plotdir+'occurrence/poly')
 	else:
 		helpers.save(plt, epos.plotdir+'occurrence/colored')
 		
@@ -167,38 +192,80 @@ def integrated(epos, MCMC=False, Planets=False):
 	if Planets: fname+= '.planets'
 	helpers.save(plt, epos.plotdir+'occurrence/'+fname)
 
-def model(epos):
+def model(epos, color='C0', alpha_fac=None, Bins=False, Poly=False):
 	
 	f, ax = plt.subplots()
 	
-	name= 'Model Occurrence Rate, $\eta={:.2g}$'.format(epos.occurrence['model']['eta'])
+	name= '{}, $\eta={:.2g}$'.format(epos.name, epos.occurrence['model']['eta'])
 	ax.set_title(name)
 	
 	helpers.set_axes(ax, epos, Trim=True)
 	
-	ax.plot(epos.pfm['P'], epos.pfm['R'], ls='', marker='o', mew=0, ms=4, color='C0', zorder=0)
+	# set transparency
+	if alpha_fac is not None:
+
+		weigths= epos.occurrence['model']['completeness']*alpha_fac #*epos.nstars
+		alpha= np.minimum(weigths,1.)
+
+		if True:
+			# color issues with  to_rgba_array
+			clr_rgba = np.empty((len(alpha), 4), float)
+			for i, a in enumerate(alpha):
+				clr_rgba[i] = matplotlib.colors.to_rgba(color, a)
+
+		else:
+			clr= np.full_like(weigths,color,dtype=str)
+			clr_rgba= matplotlib.colors.to_rgba_array(clr) # alpha
+			#print clr_rgba[0,:]
+			clr_rgba[:,3]= alpha
+
+		ax.scatter(epos.pfm['P'], epos.pfm['R'], 
+			marker='o', s=13, lw=0, color=clr_rgba,zorder=0)
+	else:
+		clr= matplotlib.colors.to_rgba(color)
+		print clr
+		ax.plot(epos.pfm['P'], epos.pfm['R'], ls='', marker='o', mew=0, ms=4, 
+			color=clr, zorder=0)
 	
 	''' bins'''
-	occbin= epos.occurrence['model']['bin']
-	for k, (xbin, ybin, n, inbin, occ) in enumerate(
-			zip(occbin['x'],occbin['y'],occbin['n'],occbin['i'], occbin['occ'])
-			):
-	
-		# box
-		ax.add_patch(patches.Rectangle( (xbin[0],ybin[0]), 
-			xbin[1]-xbin[0], ybin[1]-ybin[0],
-			fill=False, zorder=2, ls='-', color='k') )
-	
-		xnudge=1.01
-		ynudge=1.02
-		 
-		size=16 if not 'textsize' in epos.plotpars else epos.plotpars['textsize'] 
-			# 12 fit in box, 16 default
-		ax.text(xbin[0]*xnudge,ybin[1]/ynudge,'{:.1%}'.format(occ), va='top', 
-			size=size)
-		ax.text(xbin[0]*xnudge,ybin[1]/ynudge,'\n$\pm${:.1f}'.format(
-			occbin['err'][k]*100), va='top', size=size)
-		ax.text(xbin[1]/xnudge,ybin[0]*ynudge,'n={}'.format(n), ha='right',
-			size=size)
-
-	helpers.save(plt, epos.plotdir+'occurrence/model')
+	if Bins:
+		occbin= epos.occurrence['model']['bin']
+		for k, (xbin, ybin, n, inbin, occ) in enumerate(
+				zip(occbin['x'],occbin['y'],occbin['n'],occbin['i'], occbin['occ'])
+				):
+		
+			# box
+			ax.add_patch(patches.Rectangle( (xbin[0],ybin[0]), 
+				xbin[1]-xbin[0], ybin[1]-ybin[0],
+				fill=False, zorder=2, ls='-', color='k') )
+		
+			xnudge=1.01
+			ynudge=1.02
+			 
+			size=16 if not 'textsize' in epos.plotpars else epos.plotpars['textsize'] 
+				# 12 fit in box, 16 default
+			ax.text(xbin[0]*xnudge,ybin[1]/ynudge,'{:.1%}'.format(occ), va='top', 
+				size=size)
+			ax.text(xbin[0]*xnudge,ybin[1]/ynudge,'\n$\pm${:.1f}'.format(
+				occbin['err'][k]*100), va='top', size=size)
+			ax.text(xbin[1]/xnudge,ybin[0]*ynudge,'n={}'.format(n), ha='right',
+				size=size)
+		helpers.save(plt, epos.plotdir+'occurrence/model_bins')
+	elif Poly:
+		occpoly= epos.occurrence['model']['poly']
+		for k, (xc, yc, coords, n, inbin, occ, err) in enumerate(
+				zip(occpoly['xc'],occpoly['yc'],occpoly['coords'],
+					occpoly['n'],occpoly['i'], occpoly['occ'], occpoly['err'])
+				):
+				
+			# box
+			ax.add_patch(matplotlib.patches.Polygon(coords,
+				fill=False, zorder=2, ls='-', color='k') )
+			 
+			size=16 if not 'textsize' in epos.plotpars else epos.plotpars['textsize'] 
+				# 12 fit in box, 16 default
+			ax.text(xc,yc,'{:.1%}\n$\pm${:.1%}'.format(occ, err), ha='center', va='center', 
+				size=size)
+		helpers.save(plt, epos.plotdir+'occurrence/model_poly')
+	else:
+		helpers.save(plt, epos.plotdir+'occurrence/model')

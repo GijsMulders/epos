@@ -177,17 +177,13 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
   	
 	''' Add vetting completeness '''
 	if Vetting:
+		X,Y= np.meshgrid(eff['P'], eff['Rp'], indexing='ij')
 		if subsample=='all' and score == 0.9:
-			X,Y= np.meshgrid(eff['P'], eff['Rp'], indexing='ij')
-			#vet_2D= fbpl2d( (X,Y), 0.9, 46., -0.053, -0.37, 5.6, 0.19, -2.3)
 			if Gaia:
 				vetpars= 0.84, 55., -0.07, -0.37, 8.2, 0.13, 0.13
 			else:
 				vetpars= 0.88, 53., -0.07, -0.39, 5.7, 0.19, 0.19
-				
-			vet_2D= fbpl2d( (X,Y), *vetpars)
-			survey['vet_2D']= vet_2D
-			assert vet_2D.shape == eff['fsnr'].shape
+								
 		elif subsample=='all' and score == 0.0:
 			if Gaia:
 				vetpars= 0.88, 210, -0.0035, -0.24, 6.9, -0.029, -0.029
@@ -195,7 +191,11 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 				vetpars= 0.86, 210, 0.002, -0.22, 5.5, -0.057, -0.057
 		else:
 			print 'no vetting completeness for {} with score={}'.format(subsample, score)
-	
+		
+		vet_2D= fbpl2d( (X,Y), *vetpars)
+		survey['vet_2D']= vet_2D
+		assert vet_2D.shape == eff['fsnr'].shape
+
 	return obs, survey
 	
 def fbpl2d((x,y), a, b, c, d, e, f, g):

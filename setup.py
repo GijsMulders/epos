@@ -2,9 +2,6 @@
 from setuptools import setup, find_packages
 from EPOS import __version__
 
-#exclude=['EPOS/scriptdir/examples/example_{}_*.py'.format(k) for k in [3,4,5,6,7,8]]
-#print exclude
-
 exclude= [
   'EPOS/scriptdir/examples/example_3_population_synthesis.py'
   'EPOS/scriptdir/examples/example_4_massradius.py'
@@ -14,15 +11,12 @@ exclude= [
   ] # also in MANIFEST.in
 
 setup(name='epospy',
-      #version='1.1.0.dev0',
       version=__version__,
       description='the Exoplanet Population Observation Simulator',
       url='https://github.com/GijsMulders/epos',
       author='Gijs Mulders',
       author_email='gdmulders@gmail.com',
       license='MIT',
-      #packages=['epos',find_packages()], # ??
-      #packages=['epos','EPOS.plot'], # is this correct?
       packages=find_packages(exclude=exclude),
       install_requires=[
           'pytest >= 2.8',
@@ -32,7 +26,8 @@ setup(name='epospy',
           'astropy',
           'emcee >= 2.0',
           'corner >= 2.0',
-          'h5py'
+          'h5py',
+	  'shapely'
       ],
       classifiers=[
         "Programming Language :: Python :: 2.7",

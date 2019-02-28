@@ -3,3 +3,4 @@ scipy
 matplotlib>=2.0.0
 h5py
 astropy
+shapely

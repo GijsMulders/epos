@@ -3,6 +3,8 @@ from scipy import interpolate
 import multiprocessing
 from functools import partial
 
+import shapely.geometry
+
 from EPOS.population import periodradius
 import EPOS.analytics
 
@@ -16,6 +18,8 @@ def all(epos, BinnedMetric=False):
 	if hasattr(epos,'occurrence'):
 		if 'bin' in epos.occurrence:
 			binned(epos)
+		if 'poly' in epos.occurrence:
+			poly_binned(epos)
 		if 'xzoom' in epos.occurrence and 'yzoom' in epos.occurrence:
 			zoomed(epos)
 		
@@ -115,6 +119,28 @@ def binned(epos, Log=False):
 		_model_occ_per_bin(epos, focc['bin'], focc['model'], weights=eta/epos.pfm['ns'])
 		focc['model']['eta']= eta
 
+def poly_binned(epos, Log=False):
+	'''
+	Calculate the planet occurrence rate per bin using inverse detection efficiency.
+	(these are the polygonic bins)
+	'''	
+	focc= epos.occurrence
+
+	# set y bin
+	if epos.MassRadius:
+		assert False, 'implement polygons for planet mass'
+
+	print '\n  Observed Planets'
+	# calc n, occ, err, dlnxy 
+	_occ_per_polygon(epos, focc['poly'], Log=Log)
+	
+	if 'model' in focc:
+		eta= epos.fitpars.getpps() if hasattr(epos, 'fitpars') else 1.
+		print '\n  Modeled planets, eta= {:.3g}'.format(eta)
+		_model_occ_per_polygon(epos, focc['poly'], focc['model'], 
+			weights=eta/epos.pfm['ns'])
+		#focc['model']['eta_poly']= eta
+
 def zoomed(epos, TestScore= True):
 	''' Occurrence (inverse detection efficiency) along x,y axis.'''
 	focc= epos.occurrence
@@ -160,6 +186,47 @@ def _occ_per_bin(epos, foccbin, Log=False):
 		completeness_UL= _interpolate_occ(epos, foccbin['xc'][isUL], foccbin['yc'][isUL], Log=Log)
 		foccbin['err'][isUL]= 1./completeness_UL/epos.nstars 
 
+def _occ_per_polygon(epos, foccpoly, Log=False):
+	''' Planet occurrence (inverse detection efficiency) per bin '''	
+	_occ, _n, _inbin, _xc, _yc, _dlnxy=[],[],[],[], [], []
+	
+	xyp= np.hstack([epos.obs_xvar[:,None],epos.obs_yvar[:,None]])
+
+	for xycoords in foccpoly['coords']:
+		shp=shapely.geometry.polygon.Polygon(xycoords)
+		shp_log=shapely.geometry.polygon.Polygon(np.log(xycoords))
+
+		points= map(shapely.geometry.Point, xyp)
+		inpoly= map(shp.contains, points)
+
+		logcenter= shp_log.centroid
+		
+		_inbin.append(inpoly)
+		_n.append(np.sum(inpoly))
+		_occ.append(epos.occurrence['planet']['occ'][inpoly].sum())
+		_dlnxy.append(np.log(shp_log.area))
+
+		_xc.append(np.exp(logcenter.x))
+		_yc.append(np.exp(logcenter.y))
+
+		print '  poly, n={}, occ={:.2g}, area={:.2g}'.format(_n[-1], _occ[-1], _dlnxy[-1])
+		print '    xc= {:.2g}, yc={:.2g}'.format(_xc[-1], _yc[-1])
+	
+	foccpoly['xc']= np.array(_xc)
+	foccpoly['yc']= np.array(_yc)	
+	foccpoly['dlnxy']= np.array(_dlnxy)
+
+	foccpoly['n']= np.array(_n)
+	foccpoly['i']= np.array(_inbin)
+
+	foccpoly['occ']= np.array(_occ)
+	foccpoly['err']= foccpoly['occ']/np.where(
+							foccpoly['n']>0,np.sqrt(foccpoly['n']),1.)
+	isUL= foccpoly['n']==0
+	if isUL.sum()>0:
+		completeness_UL= _interpolate_occ(epos, foccpoly['xc'][isUL], foccpoly['yc'][isUL], Log=Log)
+		foccpoly['err'][isUL]= 1./completeness_UL/epos.nstars 
+
 def _model_occ_per_bin(epos, foccbin, foccmodel, weights=None):	
 	_occ, _n, _inbin, _xc, _yc, _dlnx, _dlny=[],[],[],[],[],[],[]
 	
@@ -194,7 +261,45 @@ def _model_occ_per_bin(epos, foccbin, foccmodel, weights=None):
 	
 	_foccbin['x']= foccbin['x']
 	_foccbin['y']= foccbin['y']
+
+def _model_occ_per_polygon(epos, foccpoly, foccmodel, weights=None):	
+	_occ, _n, _inbin, _xc, _yc, _dlnxy=[],[],[],[], [], []
 	
+	xyp= np.hstack([epos.pfm['P'][:,None],epos.pfm['R'][:,None]])
+
+	for xycoords in foccpoly['coords']:
+		shp=shapely.geometry.polygon.Polygon(xycoords)
+		shp_log=shapely.geometry.polygon.Polygon(np.log(xycoords))
+
+		points= map(shapely.geometry.Point, xyp)
+		inpoly= map(shp.contains, points)
+
+		logcenter= shp_log.centroid
+		
+		_inbin.append(inpoly)
+		_n.append(np.sum(inpoly))
+		_occ.append(weights* np.sum(inpoly))
+		_dlnxy.append(np.log(shp_log.area))
+
+		_xc.append(np.exp(logcenter.x))
+		_yc.append(np.exp(logcenter.y))
+
+		print '  poly, n={}, occ={:.2g}, area={:.2g}'.format(_n[-1], _occ[-1], _dlnxy[-1])
+		print '    xc= {:.2g}, yc={:.2g}'.format(_xc[-1], _yc[-1])
+		
+	_foccpoly= foccmodel['poly']= {}
+	_foccpoly['n']= np.array(_n)
+	_foccpoly['i']= np.array(_inbin)
+	_foccpoly['occ']= np.array(_occ)
+	_foccpoly['err']= _foccpoly['occ']/np.where(
+							_foccpoly['n']>0,np.sqrt(_foccpoly['n']),1.)
+	
+	_foccpoly['xc']= np.array(_xc)
+	_foccpoly['yc']= np.array(_yc)
+	_foccpoly['dlnxy']= np.array(_dlnxy)
+	
+	_foccpoly['coords']= foccpoly['coords']
+
 def parametric(epos):
 	''' Calculates the occurrence rate per bin from the parametric model, 
 	with uncertainties if samples from an MCMC chain are available

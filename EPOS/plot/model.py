@@ -12,7 +12,7 @@ from EPOS.fitfunctions import brokenpowerlaw1D
 # kepler pdf radius
 # Kepler pdf inner (M/R ??)
 
-fmt_symbol= {'ls':'', 'marker':'o', 'mew':1, 'mec':'k', 'ms':8,'alpha':0.6}
+fmt_symbol= {'ls':'', 'marker':'o', 'mew':1, 'mec':'k', 'ms':6,'alpha':0.5}
 
 def panels_mass(epos, Population=False, color='C1'):
 	f, (ax, axM, axP)= helpers.make_panels(plt)
@@ -86,11 +86,12 @@ def panels_mass(epos, Population=False, color='C1'):
 	helpers.save(plt, '{}model/input.mass{}'.format(epos.plotdir, fname))
 	
 def panels_radius(epos, Population=False, Occurrence=False, Observation=False, 
-	Tag=False, color='C1'):
-	f, (ax, axR, axP)= helpers.make_panels(plt)
+	Tag=False, color='C1', Fancy=True):
+	f, (ax, axR, axP)= helpers.make_panels(plt, Fancy=Fancy)
 	pfm=epos.pfm
 	eta= epos.modelpars.get('eta',Init=True)
 	
+	title=''
 	if not 'R' in pfm:
 		pfm['R'], _= epos.MR(pfm['M'])
 
@@ -101,7 +102,7 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False,
 
 	''' Bins '''
 	dwR=0.2 # bin width in ln space
-	dwP=0.5
+	dwP=0.3
 	xbins= np.exp(np.arange(np.log(epos.xzoom[0]),np.log(epos.xzoom[-1])+dwP,dwP))
 	ybins= np.exp(np.arange(np.log(epos.yzoom[0]),np.log(epos.yzoom[-1])+dwR,dwR))
 
@@ -129,16 +130,17 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False,
 			axR.hist(pfm['R'], bins=ybins, orientation='horizontal',
 				weights=weights, histtype='step')
 	else:
-		axP.hist(pfm['P'], bins=xbins, weights=weights, color=color)
+		# color have to be 1-element lists ??
+		axP.hist(pfm['P'], bins=xbins, weights=weights, color=[color])
 		axR.hist(pfm['R'], bins=ybins, orientation='horizontal', weights=weights, 
-					color=color)
+					color=[color])
 				 
 	''' Overplot observations? '''
 	if Population:
 		assert hasattr(epos, 'func')
 		fname='.pop'
 		
-		ax.set_title(epos.name)
+		title= epos.name
 		
 		pps, pdf, pdf_X, pdf_Y= periodradius(epos, Init=True)
 		_, _, pdf_X, _= periodradius(epos, Init=True, ybin=ybins)
@@ -154,12 +156,11 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False,
 		
 		# Side panels
 		#print 'pps model= {}'.format(eta)
-		scale=dwR
-		axP.plot(epos.MC_xvar, pdf_X*scale, marker='',ls='-',color='purple')
-		axR.plot(pdf_Y*scale, epos.in_yvar, marker='',ls='-',color='purple')
+		axP.plot(epos.MC_xvar, pdf_X*dwP, marker='',ls='-',color='purple')
+		axR.plot(pdf_Y*dwR, epos.in_yvar, marker='',ls='-',color='purple')
 	elif Observation:
 		fname='.obs'
-		ax.set_title(epos.name+': Counts')
+		title= epos.name+': Counts'
 		
 		ax.plot(epos.obs_xvar, epos.obs_yvar, ls='', marker='.', ms=5.0, color='0.5')
 		
@@ -170,7 +171,7 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False,
 					
 	elif Occurrence:
 		fname='.occ'
-		ax.set_title(epos.name+': Occurrence')
+		title= epos.name+': Occurrence'
 
 		ax.plot(epos.obs_xvar, epos.obs_yvar, ls='', marker='.', ms=5.0, color='0.5')
 		
@@ -191,7 +192,12 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False,
 		# 				transform=axP.transAxes)
 		
 	else:
-		fname=''	
+		fname=''
+
+	if Fancy:
+		plt.suptitle(title, ha='left', x=0.05)
+	else:
+		ax.set_title(title)
 
 	''' plot main panel'''
 	#helpers.set_axes(ax, epos, Trim=True)

@@ -88,22 +88,50 @@ def set_axis_size(ax, epos, Trim=False, Eff=False, In=False, IsY=True):
 			ax.set_xticks(ticks)
 			ax.set_xticklabels(ticklabels)
 
-def make_panels(plt):
-	gs = gridspec.GridSpec(2, 2,
-                       width_ratios=[4, 20],
-                       height_ratios=[10, 3]
-                       )
-	f= plt.figure()
-	f.subplots_adjust(wspace=0, hspace=0)
-	
-	ax = plt.subplot(gs[0, 1])	
-	#axb = plt.subplot(gs[0, 2])	
+def make_panels(plt, Fancy=False):
+	if Fancy:
+		gs = gridspec.GridSpec(2, 2,
+	                       width_ratios=[20,4],
+	                       height_ratios=[3, 10]
+	                       )
+		f= plt.figure()
+		f.subplots_adjust(wspace=0, hspace=0)
 
-	axR = plt.subplot(gs[0, 0], sharey=ax)
-	axP = plt.subplot(gs[1, 1], sharex=ax)
-	
-	ax.tick_params(direction='in', which='both', top=True, right=True, 
-		bottom=False, left=False)
+		axR = plt.subplot(gs[1, 1])
+		axP = plt.subplot(gs[0, 0])
+
+		ax = plt.subplot(gs[1, 0], sharex=axP, sharey=axR)	
+		#axb = plt.subplot(gs[0, 2])	
+
+
+
+		#axh.tick_params(direction='in', which='both', left=False, right=True, labelleft=False)
+		#axh.yaxis.set_label_position('right')
+		axR.axis('off')
+		axP.axis('off')
+		
+		ax.tick_params(direction='out', which='both', top=False, right=False, 
+			bottom=True, left=True)
+		axP.tick_params(direction='out', which='both', top=False, right=False, 
+			bottom=True, left=False)
+		axR.tick_params(direction='out', which='both', top=False, right=False, 
+			bottom=False, left=True)
+	else:		
+		gs = gridspec.GridSpec(2, 2,
+	                       width_ratios=[4, 20],
+	                       height_ratios=[10, 3]
+	                       )
+		f= plt.figure()
+		f.subplots_adjust(wspace=0, hspace=0)
+		
+		ax = plt.subplot(gs[0, 1])	
+		#axb = plt.subplot(gs[0, 2])	
+
+		axR = plt.subplot(gs[0, 0], sharey=ax)
+		axP = plt.subplot(gs[1, 1], sharex=ax)
+		
+		ax.tick_params(direction='in', which='both', top=True, right=True, 
+			bottom=False, left=False)
 
 	return f, (ax, axR, axP)
 

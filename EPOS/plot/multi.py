@@ -60,10 +60,10 @@ def periodradius(epos, Nth=False, MC=True):
 	#axP.tick_params(axis='y', which='minor',left='off',right='off')
 
 	''' which multiplanets to color '''
-# 	single, multi= EPOS.multi.indices(sim['ID'])
-# 	for k, (label, subset) in enumerate(zip(['single','multi'],[single, multi])):
-# 		ax.plot(sim['P'][subset], sim['Y'][subset], ls='', marker='.', mew=0, ms=5.0, \
-# 			label=label)
+	# 	single, multi= EPOS.multi.indices(sim['ID'])
+	# 	for k, (label, subset) in enumerate(zip(['single','multi'],[single, multi])):
+	# 		ax.plot(sim['P'][subset], sim['Y'][subset], ls='', marker='.', mew=0, ms=5.0, \
+	# 			label=label)
 
 	if Nth:
 		single, multi, ksys, multis= EPOS.multi.nth_planet(ID, P)
@@ -124,14 +124,18 @@ def periodradius(epos, Nth=False, MC=True):
 
 	helpers.save(plt, '{}{}/PR.multi{}'.format(epos.plotdir, outdir, suffix))
 
-def multiplicity(epos, MC=False, Planets=False, MCMC=False):
+def multiplicity(epos, MC=False, Planets=False, MCMC=False, color='C1'):
 	# plot multiplicity
 	f, ax = plt.subplots()
 	ax.set_title('Multi-Planet Frequency')
 	ax.set_xlabel('Planets per System')
 	ax.set_ylabel('Planet Counts' if Planets else 'System Counts')
 
-	ax.set_xlim(0.5, 7.5)
+	if hasattr(epos, 'pfm'):
+		ax.set_xlim(0.5, 10.5)
+	else:
+		ax.set_xlim(0.5, 7.5)
+
 	if not Planets:
 		ax.set_ylim(0.5, 1e4) # 7.	
 		ax.set_yscale('log')
@@ -143,14 +147,19 @@ def multiplicity(epos, MC=False, Planets=False, MCMC=False):
 	if MC or MCMC:
 		ss=epos.synthetic_survey
 		if Planets:
-			ax.bar(ss['multi']['bin'], ss['multi'][key], color='C0',label='Simulated', width=1)
+			ax.bar(ss['multi']['bin'], ss['multi'][key], 
+				color=color,label='Simulated', width=1)
 
 			f_iso= epos.fitpars.get('f_iso')
 			if f_iso > 0:
 				fsingle= np.sum(ss['multi']['count'])*f_iso
 				ax.bar(1, fsingle, bottom= ss['multi'][key][0]-fsingle, 
 					color='',label='Single Planets', width=1, hatch='xx') #, ec='k')
-				#ax.plot(1, ss['multi'][key][0]-fsingle, marker='+', ms=10, ls='', color='k', label='no dichotomy')
+
+			if hasattr(epos, 'pfm'):
+				ax.plot(epos.pfm['k'], epos.pfm['Nk']*epos.pfm['k'], 
+					color='C7',label='Input', drawstyle='steps-mid', ls=':')
+
 		elif MCMC:
 			for ss in epos.ss_sample:
 				ax.hlines(ss['multi'][key], ss['multi']['bin']-0.5,ss['multi']['bin']+0.5,
@@ -159,7 +168,11 @@ def multiplicity(epos, MC=False, Planets=False, MCMC=False):
 		else:
 			#ax.step(ss['multi']['bin'], ss['multi'][key], color='C0',label=epos.name, where='mid')
 			ax.plot(ss['multi']['bin'], ss['multi'][key], 
-				ls='', marker='+', ms=10, color='C0',label=epos.name)
+				ls='', marker='+', ms=10, color=color,label=epos.name)
+
+			if hasattr(epos, 'pfm'):
+				ax.plot(epos.pfm['k'], epos.pfm['Nk'], 
+					ls=':', marker='x', ms=8, color='C7',label='Input')
 		
 		if hasattr(epos, 'ss_extra'):
 			# advance color cycle
@@ -173,13 +186,14 @@ def multiplicity(epos, MC=False, Planets=False, MCMC=False):
 					ls='', marker='+', ms=10, label=ss['name'])
 	
 		# observations in same region 
-		ax.step(epos.obs_zoom['multi']['bin'], epos.obs_zoom['multi'][key], 
-			where='mid', color='C1', label='Kepler')
+		ax.plot(epos.obs_zoom['multi']['bin'], epos.obs_zoom['multi'][key], 
+			drawstyle='steps-mid', ls='--', color='C3', label='Kepler')
 
 	else:
 		# observations
 		ax.plot(epos.multi['bin'], epos.multi[key], drawstyle='steps-mid', 
 			ls='--', marker='', color='gray', label='Kepler all')
+
 
 	ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
 	
@@ -189,7 +203,7 @@ def multiplicity(epos, MC=False, Planets=False, MCMC=False):
 	
 	helpers.save(plt, '{}{}/multiplicity{}'.format(epos.plotdir,prefix,suffix))
 
-def multiplicity_cdf(epos, MC=False):
+def multiplicity_cdf(epos, MC=False, color='C1'):
 	# plot multiplicity cdf
 	f, ax = plt.subplots()
 	ax.set_title('planet multiplicity')
@@ -226,7 +240,7 @@ def multiplicity_cdf(epos, MC=False):
 	
 	helpers.save(plt, '{}{}/cdf'.format(epos.plotdir,prefix))
 	
-def periodratio(epos, MC=False, N=False, Input=False, MCMC=False):
+def periodratio(epos, MC=False, N=False, Input=False, MCMC=False, color='C1'):
 	# plot multiplicity
 	f, ax = plt.subplots()
 	ax.set_title('Period Ratio of Adjacent Planets')
@@ -246,12 +260,20 @@ def periodratio(epos, MC=False, N=False, Input=False, MCMC=False):
 		if MCMC:
 			for ss in epos.ss_sample:
 				# bar?
-				ax.hist(ss['multi']['Pratio'], bins=bins, histtype='step', color='b', alpha=0.1)
+				dP= ss['multi']['Pratio'][ss['multi']['Pratio']>1]
+				ax.hist(dP, bins=bins, histtype='step', color='b', alpha=0.1)
 				#ax.hist(ss['multi']['Pratio'], bins=bins, color='b', alpha=1./len(epos.ss_sample))
 		else:
-			ax.hist(ss['multi']['Pratio'], bins=bins, 
-					color='C0', histtype='stepfilled', label='Simulated') #epos.name)
+			dP= ss['multi']['Pratio'][ss['multi']['Pratio']>1]
+			ax.hist(dP, bins=bins, 
+					color=color, histtype='stepfilled', label='Simulated')
 	
+			if hasattr(epos, 'pfm'):
+				dP_mod= epos.pfm['dP'][epos.pfm['dP']>1.]
+				scale= 1.*dP.size/dP_mod.size
+				ax.hist(dP_mod, bins=bins, weights=np.full_like(dP_mod, scale),
+					color='C7',label='Input/{:.2f}'.format(scale), histtype='step', ls=':')
+
 		if N:
 			# planets inbetween?
 			#ax.hist(ss['multi']['dPN'][0], \
@@ -274,7 +296,12 @@ def periodratio(epos, MC=False, N=False, Input=False, MCMC=False):
 			for ss in epos.ss_extra:
 				ax.hist(ss['multi']['Pratio'], bins=bins, 
 					histtype='step', label=ss['name'])
-		
+
+		# Observed zoom
+		dP_obs= epos.obs_zoom['multi']['Pratio'][epos.obs_zoom['multi']['Pratio']>1.]
+		ax.hist(dP_obs, bins=bins, color='C3', histtype='step', ls='--', label='Kepler')
+
+
 	else:
 		# observed all
 		ax.hist(epos.multi['Pratio'], bins=bins, color='0.7', label='Kepler all')
@@ -289,9 +316,6 @@ def periodratio(epos, MC=False, N=False, Input=False, MCMC=False):
 		ax.plot(Pgrid, pdf, marker='', ls='-', color='r',label='Intrinsic')
 
 	elif epos.Zoom:
-		# Observed zoom
-		ax.hist(epos.obs_zoom['multi']['Pratio'], \
-			bins=bins, ec='C1', histtype='step', label='Kepler')
 		if not MCMC:
 			ax.axvline(np.median(epos.obs_zoom['multi']['Pratio']), color='C1', ls='--')
 	
@@ -304,11 +328,11 @@ def periodratio(epos, MC=False, N=False, Input=False, MCMC=False):
 		
 	helpers.save(plt, '{}{}/periodratio{}'.format(epos.plotdir, prefix, suffix))	
 
-def periodratio_cdf(epos, Input=True, MC=False):
+def periodratio_cdf(epos, Input=True, MC=False, color='C1'):
 
 	# plot multiplicity CDF
 	f, ax = plt.subplots()
-	ax.set_title('period ratio adjacent planets')
+	ax.set_title('Period Ratio Adjacent Planets')
 	#ax.set_xlabel('period outer/inner')
 	ax.set_xlabel('$\mathcal{P}$ = Period Outer/Inner')
 	ax.set_ylabel('CDF')
@@ -321,32 +345,41 @@ def periodratio_cdf(epos, Input=True, MC=False):
 	# MC data
 	if MC:
 		ss=epos.synthetic_survey
-		Psort= np.sort(ss['multi']['Pratio'])
+		dP= ss['multi']['Pratio'][ss['multi']['Pratio']>1.]
+		Psort= np.sort(dP)
 		cdf= np.arange(Psort.size, dtype=float)/Psort.size
-		ax.plot(Psort, cdf, color='b', label=epos.name)
+		ax.plot(Psort, cdf, color=color, label=epos.name)
 	
 		# Observed zoom
-		Psort= np.sort(epos.obs_zoom['multi']['Pratio'])
+		dP_obs= epos.obs_zoom['multi']['Pratio'][epos.obs_zoom['multi']['Pratio']>1.]
+		Psort= np.sort(dP_obs)
 		cdf= np.arange(Psort.size, dtype=float)/Psort.size
-		ax.plot(Psort, cdf, color='k', label='Kepler')
+		ax.plot(Psort, cdf, color='C3', label='Kepler', ls='--')
+
+		if hasattr(epos, 'pfm'):
+			dP= epos.pfm['dP'][epos.pfm['dP']>1.]
+			Psort= np.sort(dP)
+			cdf= np.arange(Psort.size, dtype=float)/Psort.size
+			ax.plot(Psort, cdf, color=color, ls=':', label='Input')			
 
 	else:
 		for resonance in [2./1., 3./2.]: ax.axvline(resonance, ls=':', color='g')
 
-	# all observed
-	Psort= np.sort(epos.multi['Pratio'])
-	cdf= cdf= np.arange(Psort.size, dtype=float)/Psort.size
-	ax.plot(Psort, cdf ,color='gray' if MC else 'k', label='Kepler all')	
+		# all observed
+		dP= epos.multi['Pratio'][epos.multi['Pratio']>1]
+		Psort= np.sort(dP)
+		cdf= np.arange(Psort.size, dtype=float)/Psort.size
+		ax.plot(Psort, cdf ,color='C7', ls=':', label='Kepler all')	
 	
-# 	''' input distribution '''	
-# 	if Input and epos.Parametric:
-# 		Pgrid= np.logspace(0,1)
-# 		_, cdf= draw_dP(epos, Pgrid=Pgrid)
-# 		ax.plot(Pgrid, cdf, marker='', ls='-', color='r',label='Intrinsic')
-# 	
-# 	# HZ
-# 	ax.axvline(2.6, ls=':',label='Hab zone width')
-# 	ax.axvline(2.6**0.5, ls=':',label='Hab zone 2 planets')
+	# 	''' input distribution '''	
+	# 	if Input and epos.Parametric:
+	# 		Pgrid= np.logspace(0,1)
+	# 		_, cdf= draw_dP(epos, Pgrid=Pgrid)
+	# 		ax.plot(Pgrid, cdf, marker='', ls='-', color='r',label='Intrinsic')
+	# 	
+	# 	# HZ
+	# 	ax.axvline(2.6, ls=':',label='Hab zone width')
+	# 	ax.axvline(2.6**0.5, ls=':',label='Hab zone 2 planets')
 	
 	prefix= 'output' if MC else 'survey'
 	
@@ -356,7 +389,7 @@ def periodratio_cdf(epos, Input=True, MC=False):
 
 ''' these are practically identical to periodratio -> merge?'''
 
-def periodinner(epos, MC=False, N=False, Input=False, MCMC=False):
+def periodinner(epos, MC=False, N=False, Input=False, MCMC=False, color='C1'):
 	# plot multiplicity
 	f, ax = plt.subplots()
 	ax.set_title('Period of the Innermost Planet')
@@ -383,15 +416,18 @@ def periodinner(epos, MC=False, N=False, Input=False, MCMC=False):
 						
 		else:
 			ax.hist(ss['multi']['Pinner'], bins=bins, 
-					color='C0', histtype='stepfilled', label='Simulated') #epos.name)
-			
+					color=color, histtype='stepfilled', label='Simulated') #epos.name)
+			if hasattr(epos,'pfm'):
+				ax.hist(epos.pfm['Pin'], bins=bins, 
+					color='C7', histtype='step', label='Input', ls=':') #epos.name)
+
 			# Solar system analologs (from dr25_solarsystem.py)
-# 			Pcut=45
-# 			Pcut=130
-# 			print 'P_in > {} days:'.format(Pcut)
-# 			print '  obs: {}'.format((epos.obs_zoom['multi']['Pinner']>Pcut).sum())
-# 			print '  sim: {}'.format((ss['multi']['Pinner']>Pcut).sum())
-# 			print ''
+	# 		Pcut=45
+	# 		Pcut=130
+	# 		print 'P_in > {} days:'.format(Pcut)
+	# 		print '  obs: {}'.format((epos.obs_zoom['multi']['Pinner']>Pcut).sum())
+	# 		print '  sim: {}'.format((ss['multi']['Pinner']>Pcut).sum())
+	# 		print ''
 
 		#if False:
 		if hasattr(epos, 'ss_extra'):
@@ -412,6 +448,9 @@ def periodinner(epos, MC=False, N=False, Input=False, MCMC=False):
 			# Not actual inner planet
 			ax.hist(np.concatenate(ss['multi']['PN'][1:]), bins=bins, 
 					color='r', histtype='stepfilled', label='Not Inner Planet')
+		else:
+			ax.hist(epos.obs_zoom['multi']['Pinner'], bins=bins, 
+				ec='C3', histtype='step', label='Kepler', ls='--')
 
 	else:
 		# observed all
@@ -424,9 +463,6 @@ def periodinner(epos, MC=False, N=False, Input=False, MCMC=False):
 		norm= 0.95* ax.get_ylim()[1] / max(pdf0_X)
 		ax.plot(Pingrid, pdf0_X*norm, marker='',ls='-',color='r',label='Intrinsic')
 				
-	elif epos.Zoom and not N:
-		ax.hist(epos.obs_zoom['multi']['Pinner'], bins=bins, 
-			ec='C1', histtype='step', label='Kepler')
 	
 	prefix= 'output' if MC else 'survey'
 	suffix= '.index' if N else '' 
@@ -437,7 +473,7 @@ def periodinner(epos, MC=False, N=False, Input=False, MCMC=False):
 		
 	helpers.save(plt, '{}{}/innerperiod{}'.format(epos.plotdir, prefix,suffix))	
 
-def periodinner_cdf(epos, MC=False):
+def periodinner_cdf(epos, MC=False, color='C1'):
 	# plot multiplicity
 	f, ax = plt.subplots()
 	ax.set_title('period innermost planet')
@@ -464,7 +500,7 @@ def periodinner_cdf(epos, MC=False):
 		# Observed zoom
 		Psort= np.sort(epos.obs_zoom['multi']['Pinner'])
 		cdf= np.arange(Psort.size, dtype=float)/Psort.size
-		ax.plot(Psort, cdf, color='k', label='Kepler')
+		ax.plot(Psort, cdf, color='k', label='Kepler', ls='--')
 	else:
 		# observed all
 		Psort= np.sort(epos.multi['Pinner'])
@@ -497,9 +533,9 @@ def inner(epos):
 	ax.set_xscale('log')
 
 	x=np.geomspace(0.2,730)
-# 	ax.fill_between(x, 0.0, 0.159, color='g', alpha=0.2, lw=0)
-# 	ax.fill_between(x, 0.159, 0.841, color='c', alpha=0.2, lw=0)
-# 	ax.fill_between(x, 0.841, 1, color='g', alpha=0.2, lw=0)
+	# 	ax.fill_between(x, 0.0, 0.159, color='g', alpha=0.2, lw=0)
+	# 	ax.fill_between(x, 0.159, 0.841, color='c', alpha=0.2, lw=0)
+	# 	ax.fill_between(x, 0.841, 1, color='g', alpha=0.2, lw=0)
 	ax.fill_between(x, 0.0, 0.023, color='g', alpha=0.2, lw=0)
 	ax.fill_between(x, 0.023, 0.159, color='c', alpha=0.2, lw=0)
 	ax.fill_between(x, 0.159, 0.841, color='y', alpha=0.2, lw=0)
@@ -516,8 +552,8 @@ def inner(epos):
 	ax.text(xtext, 0.977, '$2\sigma$', va='center',size=10)
 
 	# BG all planets?
-# 	ax.plot(pop['P'], pop['order'],
-# 		ls='', marker='.', mew=0, ms=3, color='0.8')
+	# 	ax.plot(pop['P'], pop['order'],
+	# 		ls='', marker='.', mew=0, ms=3, color='0.8')
 
 	# all multis
 	key='single'
@@ -528,9 +564,9 @@ def inner(epos):
 	ax.plot(pop[key]['P'], pop[key]['order'],
 		ls='', marker='.', mew=0, ms=3, color='purple')
 	
-# 	for key in ['system','single','multi']:
-# 	ax.plot(pop['P'], pop['order'],
-# 		ls='', marker='.', mew=0, ms=3, color='gray')
+	# 	for key in ['system','single','multi']:
+	# 	ax.plot(pop['P'], pop['order'],
+	# 		ls='', marker='.', mew=0, ms=3, color='gray')
 
 	# Solar System
 	#ax.plot([0.95]*4,[])

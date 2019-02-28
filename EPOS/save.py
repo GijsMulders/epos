@@ -5,6 +5,27 @@ json/.../occurrence.??.json
 import numpy as np
 import os, json
 
+def survey(epos, Verbose=False):
+	if hasattr(epos,'obs_zoom'):
+		if not os.path.isdir(epos.jsondir): os.makedirs(epos.jsondir)
+
+		print '\nStoring Observations'
+
+		if Verbose:
+			print '  keys in epos.obs_zoom:'
+			print '  ',epos.obs_zoom.keys()
+
+		keys=epos.obs_zoom.keys()
+		save_to_json(epos,'obs_zoom',epos.obs_zoom, keys)
+
+		if 'multi' in epos.obs_zoom:
+			keys= epos.obs_zoom['multi'].keys()
+			if Verbose: print '  keys in multi:'
+			print '  ',keys
+			save_to_json(epos,'obs_zoom.multi',epos.obs_zoom['multi'], keys)
+	else:
+		print 'No survey stored, did you run epos.set_survey() and set_observation() ?'
+
 def occurrence(epos, Verbose=False):
 	if hasattr(epos,'occurrence'):
 		if not os.path.isdir(epos.jsondir): os.makedirs(epos.jsondir)
@@ -45,13 +66,38 @@ def occurrence(epos, Verbose=False):
 		
 	else:
 		print 'No occurrence rates found, did run use epos.occurrence.all() ?'
+
+def synthetic_survey(epos, Verbose=False):
+	if hasattr(epos,'synthetic_survey'):
+		if not os.path.isdir(epos.jsondir): os.makedirs(epos.jsondir)
+
+		ss= epos.synthetic_survey
+
+		print '\nStoring Synthetic Survey'
+
+		if Verbose:
+			print '  keys in epos.synthetic_survey:'
+			print '  ',ss.keys()
+
+		keys=['P', 'Y', 'M', 'R', 'P zoom', 'Y zoom']
+		save_to_json(epos,'synthetic_survey',ss, keys)
+
+		if 'multi' in ss:
+			keys= ss['multi'].keys()
+			if Verbose: print '  keys in multi:'
+			print '  ',keys
+			save_to_json(epos,'synthetic_survey.multi',ss['multi'], keys)
+	else:
+		print 'No synthetic survey stored, did you run epos.run.once() ?'
 	
 def population(epos, Verbose=False):
 	if hasattr(epos,'population'):
 		if not os.path.isdir(epos.jsondir): os.makedirs(epos.jsondir)
 		
 		pop= epos.population
-		
+
+		print '\nStoring Planet Population'
+
 		if Verbose:
 			print 'keys in epos.population'
 			for key in pop:
@@ -74,4 +120,5 @@ def save_to_json(epos, fname, bigdict, keys):
 def serialize_numpy_array(obj):
 	if isinstance(obj, np.ndarray):
 		return obj.tolist()
+	else:
 		raise TypeError('Not serializable')
