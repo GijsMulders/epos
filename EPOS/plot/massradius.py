@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import helpers
+from . import helpers
 	
 def massradius(epos, MC=False, Log=False):
 	assert epos.MassRadius

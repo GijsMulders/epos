@@ -23,7 +23,7 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False, Save
 	
 	''' Load hdf5 file or npz dictionary for quicker access'''
 	if os.path.isfile(fnpz) and Saved:
-		print '\nLoading saved status from {}'.format(fnpz)
+		print('\nLoading saved status from {}'.format(fnpz))
 		npz= np.load(fnpz)
 				
 		# check if keys present
@@ -31,13 +31,13 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False, Save
 			if not key in npz: 
 				raise ValueError('Key {} not present\n{}'.format(key,npz.keys()))
 	else:
-		print '\nProcessing Symba HDF5 file for {}'.format(name)
+		print('\nProcessing Symba HDF5 file for {}'.format(name))
 		#fname= '{}/{}_set??.h5'.format(dir,name)
 		flist= glob.glob(fname)
 		if len(flist)==0: 
 			raise ValueError('file not found: {}'.format(fname))
 		else:
-			if Verbose: print '  {} files'.format(len(flist))
+			if Verbose: print('  {} files'.format(len(flist)))
 	
 		sma, mass, inc, ID= [], [], [], []
 		sma0, mass0, inc0, ID0 =[], [], [], []
@@ -55,10 +55,10 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False, Save
 					nsteps=istep
 
 				if Verbose: 
-					print '\n{}, step {}'.format(fname, nsteps)
+					print('\n{}, step {}'.format(fname, nsteps))
 				else:
 					amtDone= float(i)/len(flist)
-					print '\r  [{:50s}] {:5.1f}%'.format('#' * int(amtDone * 50), amtDone * 100),
+					print('\r  [{:50s}] {:5.1f}%'.format('#' * int(amtDone * 50), amtDone * 100)),
 					sys.stdout.flush() 
 			
 				L_sma, L_mass, L_inc= [], [], []
@@ -116,10 +116,10 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False, Save
 			
 				# print system properties:
 				if Verbose:
-					print 'System {} has {} planets, {:.1f} Mearth:'.format(
-						i, len(L_sma),np.sum(L_mass))
+					print('System {} has {} planets, {:.1f} Mearth:'.format(
+						i, len(L_sma),np.sum(L_mass)))
 					for a,m in zip(L_sma, L_mass):
-						print '  {:.2f} au, {:.1f} Mearth'.format(a,m)
+						print('  {:.2f} au, {:.1f} Mearth'.format(a,m))
 			
 				sma.extend(L_sma)
 				mass.extend(L_mass)
@@ -130,7 +130,7 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False, Save
 				mass0.extend(L_mass0)
 				inc0.extend(L_inc0)
 
-			if not Verbose: print '\r  [{:50s}] {:.1f}%'.format('#' * int(1 * 50), 1 * 100),
+			if not Verbose: print('\r  [{:50s}] {:.1f}%'.format('#' * int(1 * 50), 1 * 100)),
 		
 		npz={'sma':np.asarray(sma), 'mass':np.asarray(mass), 
 			'inc':np.asarray(inc), 'starID':np.asarray(ID),
@@ -138,7 +138,7 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False, Save
 			'inc0':np.asarray(inc0), 'starID0':np.asarray(ID0)}
 		
 		if Saved:
-			print 'Saving status in {}'.format(fnpz)
+			print('Saving status in {}'.format(fnpz))
 			#np.save(fname, epos.chain)
 			# compression slow on loading?
 			np.savez_compressed(fnpz, **npz)
@@ -146,7 +146,7 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, istep=None, Verbose=False, Save
 	return npz
 	
 def mercury(fname, istep=None, icut=-np.inf, Verbose=False):
-	print '\nProcessing Mercury file'
+	print('\nProcessing Mercury file')
 	flist= glob.glob(fname)
 	if len(flist)==0: raise ValueError('file not found: {}'.format(fname))
 	sma, mass, inc, ID= [], [], [], []
@@ -154,10 +154,10 @@ def mercury(fname, istep=None, icut=-np.inf, Verbose=False):
 	for i,fname in enumerate(flist):
 
 		if Verbose: 
-			print '  {}: Using planetary system at final step'.format(fname)
+			print('  {}: Using planetary system at final step'.format(fname))
 		else:
 			amtDone= float(i)/len(flist)
-			print '\r  [{:50s}] {:5.1f}%'.format('#' * int(amtDone * 50), amtDone * 100),
+			print('\r  [{:50s}] {:5.1f}%'.format('#' * int(amtDone * 50), amtDone * 100)),
 			sys.stdout.flush() 
 		
 		try:
@@ -176,11 +176,11 @@ def mercury(fname, istep=None, icut=-np.inf, Verbose=False):
 				ID.extend([i]*len(L_sma))
 
 		except ValueError:
-			print '\n(skipping {})\n'.format(fname)
+			print('\n(skipping {})\n'.format(fname))
 
 		except: raise
 
-		if not Verbose: print '\r  [{:50s}] {:.1f}%'.format('#' * int(1 * 50), 1 * 100),
+		if not Verbose: print('\r  [{:50s}] {:.1f}%'.format('#' * int(1 * 50), 1 * 100)),
 		
 	npz={'sma':np.asarray(sma), 'mass':np.asarray(mass), 
 		'inc':np.asarray(inc), 'starID':np.asarray(ID)}

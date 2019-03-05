@@ -8,10 +8,10 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
 
-import parametric, multi, massradius, helpers, model
+from . import parametric, multi, massradius, helpers, model
 
 def all(epos, color=None, imin=1e-2):
-	print '\nPlotting input...'
+	print('\nPlotting input...')
 	
 	if epos.Parametric:
 		parametric.oneD(epos)

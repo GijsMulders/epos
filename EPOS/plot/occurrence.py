@@ -4,7 +4,7 @@ import matplotlib.patches as patches
 import matplotlib.colorbar as clrbar
 import numpy as np
 
-import helpers, parametric
+from . import helpers, parametric
 from EPOS.population import periodradius
 
 clrs= ['r','g','b','m'] # in epos.prep
@@ -37,7 +37,7 @@ def all(epos):
 				if hasattr(epos, 'chain'):
 					 parametric.oneD(epos, Occ=True, MCMC=True)
 	else:
-		print '\nNo occurrence to plot, did you run EPOS.occurrence.all()? \n'
+		print('\nNo occurrence to plot, did you run EPOS.occurrence.all()? \n')
 	
 def colored(epos, Bins=False):
 	

@@ -3,7 +3,7 @@ import numpy as np
 import scipy.stats
 from matplotlib import gridspec
 
-import helpers
+from . import helpers
 from EPOS.population import periodradius
 from EPOS.fitfunctions import brokenpowerlaw1D
 

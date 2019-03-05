@@ -23,7 +23,7 @@ def all(epos):
 				and 'bin' in epos.occurrence:
 			parametric(epos)
 	else:
-		print 'No bins for calculating occurrence rate, did you use epos.set_bins() ?'
+		print('No bins for calculating occurrence rate, did you use epos.set_bins() ?')
 	
 def planets(epos, Log=False):
 	if not epos.Range: epos.set_ranges()
@@ -31,7 +31,7 @@ def planets(epos, Log=False):
 	''' Interpolate occurrence for each planet (on log scale) '''
 	focc= epos.occurrence
 	
-	print '\nInterpolating planet occurrence per bin'
+	print('\nInterpolating planet occurrence per bin')
 	#with np.errstate(divide='ignore'): 
 	#print '{}x{}=?={}'.format(epos.eff_xvar.shape, epos.eff_yvar.shape, epos.completeness.shape)
 	
@@ -61,7 +61,7 @@ def models(epos, Log=False):
 	
 	''' Interpolate occurrence for each planet (on log scale) '''
 	focc= epos.occurrence
-	print '\nInterpolating model planet occurrence'
+	print('\nInterpolating model planet occurrence')
 	
 	pfm=epos.pfm
 	if not 'R' in pfm:
@@ -95,13 +95,13 @@ def binned(epos):
 	else:
 		focc['bin']['y']= focc['bin']['y in']
 
-	print '\n  Observed Planets'
+	print('\n  Observed Planets')
 	# calc n, i, occ, err, xc, yc, dlnx, dlny from x & y
 	_occ_per_bin(epos, focc['bin'])
 	
 	if 'model' in focc:
 		eta= epos.fitpars.getpps() if hasattr(epos, 'fitpars') else 1.
-		print '\n  Modeled planets, eta= {:.3g}'.format(eta)
+		print('\n  Modeled planets, eta= {:.3g}'.format(eta))
 		_model_occ_per_bin(epos, focc['bin'], focc['model'], weights=eta/epos.pfm['ns'])
 		focc['model']['eta']= eta
 
@@ -109,9 +109,9 @@ def zoomed(epos):
 	''' Occurrence (inverse detection efficiency) along x,y axis.'''
 	focc= epos.occurrence
 
-	print '\n  x zoom bins'
+	print('\n  x zoom bins')
 	_occ_per_bin(epos, focc['xzoom'])
-	print '\n  y zoom bins'
+	print('\n  y zoom bins')
 	_occ_per_bin(epos, focc['yzoom'])
 
 def _occ_per_bin(epos, foccbin):
@@ -127,8 +127,8 @@ def _occ_per_bin(epos, foccbin):
 		_n.append(inbin.sum())
 		_occ.append(epos.occurrence['planet']['occ'][inbin].sum())
 		
-		print '  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], n={}, occ={:.2g}'.format(
-			xbin[0],xbin[-1], ybin[0],ybin[-1], _n[-1], _occ[-1])
+		print('  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], n={}, occ={:.2g}'.format(
+			xbin[0],xbin[-1], ybin[0],ybin[-1], _n[-1], _occ[-1]))
 		
 		_xc.append(np.sqrt(xbin[0])*np.sqrt(xbin[-1]) )
 		_yc.append(np.sqrt(ybin[0])*np.sqrt(ybin[-1]) )
@@ -159,8 +159,8 @@ def _model_occ_per_bin(epos, foccbin, foccmodel, weights=None):
 		_n.append(inbin.sum())
 		_occ.append(weights* inbin.sum())
 		
-		print '  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], n={}, occ={:.2g}'.format(
-			xbin[0],xbin[-1], ybin[0],ybin[-1], _n[-1], _occ[-1])
+		print('  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], n={}, occ={:.2g}'.format(
+			xbin[0],xbin[-1], ybin[0],ybin[-1], _n[-1], _occ[-1]))
 		
 		_xc.append(np.sqrt(xbin[0])*np.sqrt(xbin[-1]) )
 		_yc.append(np.sqrt(ybin[0])*np.sqrt(ybin[-1]) )
@@ -190,7 +190,7 @@ def parametric(epos):
 	focc= epos.occurrence
 	
 	''' loop over all pre-defined bins '''
-	print '\n  posterior per bin'
+	print('\n  posterior per bin')
 	xbins= focc['bin']['x']
 	ybins= focc['bin']['y in']
 	eta, gamma, area, pos, sigp, sign= _posterior_per_bin(epos, xbins, ybins, Verbose=True)
@@ -209,16 +209,16 @@ def parametric(epos):
 
 	''' bin for normalization '''
 	if hasattr(epos.fitpars, 'normkeyx') and hasattr(epos.fitpars, 'normkeyy'):
-		print '\n  normalization per unit of ln area'
+		print('\n  normalization per unit of ln area')
 		dw= 1.01
 		xnorm= epos.fitpars.get(epos.fitpars.normkeyx)
 		ynorm= epos.fitpars.get(epos.fitpars.normkeyy)
 		xbin= [xnorm/dw, xnorm*dw]
 		ybin= [ynorm/dw, ynorm*dw]
 		eta, gamma, _, gamma_fit, gamma_p, gamma_n=  _posterior_per_bin(epos, [xbin],[ybin])
-		print '  x={:.2g}, y={:.2g}, gamma= {:.2g}'.format(xnorm, ynorm, gamma[0])
+		print('  x={:.2g}, y={:.2g}, gamma= {:.2g}'.format(xnorm, ynorm, gamma[0]))
 		if len(gamma_fit)>0:
-			print '  gamma= {:.2g} +{:.2g} - {:.2g}'.format(gamma_fit[0], gamma_p[0], gamma_n[0])
+			print('  gamma= {:.2g} +{:.2g} - {:.2g}'.format(gamma_fit[0], gamma_p[0], gamma_n[0]))
 
 def _posterior(epos, sample, xbin, ybin):
 	_, pdf, _, _= periodradius(epos, fpara=sample, xbin=xbin, ybin=ybin)
@@ -235,8 +235,8 @@ def _posterior_per_bin(epos, xbins, ybins, Verbose=True):
 		eta.append(gamma[-1]*area[-1])
 
 		if Verbose:
-			print '  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], area={:.2f}, eta_0={:.2g}'.format(
-				xbin[0],xbin[-1], ybin[0],ybin[-1], area[-1], eta[-1])
+			print('  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], area={:.2f}, eta_0={:.2g}'.format(
+				xbin[0],xbin[-1], ybin[0],ybin[-1], area[-1], eta[-1]))
 
 		''' Posterior?'''
 		if hasattr(epos, 'samples'):
@@ -259,9 +259,9 @@ def _posterior_per_bin(epos, xbins, ybins, Verbose=True):
 			sig2n= (perc[2]-perc[0])
 		
 			if Verbose:
-				print '  gamma= {:.1%} +{:.1%} -{:.1%}'.format(pos[-1],sigp[-1],sign[-1])
-				print '  eta= {:.1%} +{:.1%} -{:.1%}'.format(
-					pos[-1]*area[-1],sigp[-1]*area[-1],sign[-1]*area[-1])
+				print('  gamma= {:.1%} +{:.1%} -{:.1%}'.format(pos[-1],sigp[-1],sign[-1]))
+				print('  eta= {:.1%} +{:.1%} -{:.1%}'.format(
+					pos[-1]*area[-1],sigp[-1]*area[-1],sign[-1]*area[-1]))
 				#print '  gamma 2sig= {:.1%} +{:.1%} -{:.1%}'.format(_pos[-1],sig2p,sig2n)
 
 	return eta, gamma, area, pos, sigp, sign

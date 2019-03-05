@@ -20,7 +20,7 @@ def indices(ID, Verbose=False):
 	'''
 	IDsys, toplanet, counts= np.unique(ID, return_inverse=True,return_counts=True)
 	if Verbose:
-		print '\n  {} singles, {} multis'.format(np.sum(counts==1),np.sum(counts>1))
+		print('\n  {} singles, {} multis'.format(np.sum(counts==1),np.sum(counts>1)))
 	
 	single=(counts==1)[toplanet]
 	multi= (counts>1)[toplanet]
@@ -79,7 +79,7 @@ def frequency(ID, Verbose=False):
 	assert bincounts[0]==0, "unique items can't have frequency zero"
 	if Verbose:
 		for nmulti, text in zip(bincounts[1:], smulti):
-			print '  - {}: {}'.format(text, nmulti)
+			print('  - {}: {}'.format(text, nmulti))
 	
 	return np.arange(1,bincounts.size), bincounts[1:]
 
