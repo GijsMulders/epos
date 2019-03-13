@@ -111,6 +111,22 @@ def population(epos, Verbose=False):
 		
 	else:
 		print 'No population stored, did you run epos.run.once() ?'
+
+def model(epos, Verbose=False):
+	if hasattr(epos,'pfm'):
+		if not os.path.isdir(epos.jsondir): os.makedirs(epos.jsondir)
+
+		print '\nStoring Models'
+
+		if Verbose:
+			print '  keys in epos.pfm:'
+			print '  ',epos.pfm.keys()
+
+		keys=epos.pfm.keys()
+		save_to_json(epos,'pfm',epos.pfm, keys)
+
+	else:
+		print 'No model stored, did you run epos.set_population() ?'
 	
 def save_to_json(epos, fname, bigdict, keys):
 	tosave= {x: bigdict[x] for x in keys if x in bigdict}

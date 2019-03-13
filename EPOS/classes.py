@@ -341,7 +341,7 @@ class epos:
 			self.Zoom=False
 		elif (self.xzoom==self.xtrim) and (self.yzoom==self.ytrim):
 			self.Zoom=False
-			print 'Trim euqal to zoom'
+			print 'Trim equal to zoom' # so??
 		else:
 			self.Zoom=True
 		
@@ -567,7 +567,7 @@ class epos:
 		focc['poly']={}
 		focc['poly']['coords']=[]
 
-		print 'trying {} polygons'.format(len(polys))
+		print '\nTrying {} polygons'.format(len(polys))
 		for coords in polys:
 			npc= np.asarray(coords)
 			assert npc.ndim==2, 'coords needs to de 2dim list'
@@ -614,10 +614,12 @@ class epos:
 	
 	def set_population(self, name, sma, mass, 
 		radius=None, inc=None, starID=None, ecc=None, tag=None, 
-		sma0=None, mass0=None, radius0=None, inc0=None, starID0=None, 
-		ecc0=None,
-		Verbose=False):
+		Verbose=False, **kwargs):
 		# tag is fit parameter, i.e. metallicity, surface density, or model #
+
+		if Verbose:
+			print '\nArguments not used by set_population:'
+			print '  ',kwargs.keys()
 
 		if hasattr(self, 'pfm'):
 			raise ValueError('expand: adding multiple populations?')
@@ -667,7 +669,6 @@ class epos:
 			pfm['inc']= np.asarray(inc)
 				
 		pfm['P']= pfm['sma']**1.5 * 365.25 # update
-		#pfm['dP']= ??
 		
 		pfm['np']= pfm['ID'].size
 		pfm['ns']= np.unique(pfm['ID']).size

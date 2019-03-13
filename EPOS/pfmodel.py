@@ -240,13 +240,13 @@ def bern(name='syntheticpop_20emb_983systems.txt', dir='Bern',
 	sma= a[2][include]
 	mass= a[3][include]
 	radius= a[4][include]
-	#ecc
+	ecc= a[5][include]
 	inc=a[6][include]
 	FeH= a[7][include]
-	#Mcore
-	#Menv
+	Mcore= a[8][include]
+	Menv= a[9][include]
 	sma0= a[10][include]
-	#fice
+	fice= a[11][include]
 
 	print '\nLoad population synthesis model {}'.format(name)
 	print '  included {} systems, {} planets'.format(np.unique(ID).size, sma.size)
@@ -260,7 +260,9 @@ def bern(name='syntheticpop_20emb_983systems.txt', dir='Bern',
 	order= np.lexsort((sma,ID)) 
 	
 	npz={'sma':sma[order], 'mass':mass[order], 'radius':radius[order], 
-		'inc':inc[order], 'starID':ID[order], 'tag':FeH[order], 'sma0':sma0[order]}
+		'inc':inc[order], 'ecc':ecc[order], 'starID':ID[order], 
+		'Mcore':Mcore[order], 'Menv':Menv[order], 'fice':fice[order],
+		'tag':FeH[order], 'sma0':sma0[order]}
 	
 	if Single: npz['inc']=None
 

@@ -55,6 +55,8 @@ def all(epos, color=None, imin=1e-2):
 			model.periodratio(epos, color=color)
 			if 'R' in epos.pfm:
 				model.periodratio_size(epos, color=color)
+			if 'inc' in epos.pfm:
+				model.periodratio_inc(epos, color=color, imin=imin)
 			
 # 		input(epos, PlotBox=False)
 # 		input_diag(epos, PlotBox=False)

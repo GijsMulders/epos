@@ -455,6 +455,63 @@ def periodratio_size(epos, color='C1'):
 
 	helpers.save(plt, epos.plotdir+'model/Pratio-size')
 
+def periodratio_inc(epos, color='C1', imin=1e-2):
+	pfm=epos.pfm
+	
+	f, (ax, axy, axx)= helpers.make_panels(plt, Fancy=True)
+
+	''' Inc-sma'''	
+	ax.set_title('Input Multi-planets {}'.format(epos.name))
+
+	ax.set_xlabel('Period ratio')
+	ax.set_ylabel('Inclination [degree]')
+
+	ax.set_xlim(0.9,10)
+	ax.set_ylim(imin,90)
+
+	ax.set_xscale('log')
+	ax.set_yscale('log')
+
+	''' grids '''
+	dP= np.logspace(0,1)
+	dP_bins= np.logspace(0,1,15)
+
+	#ax.axhline(np.median(pfm['inc']), ls='--')
+	single= pfm['dP'] == np.nan
+	inner= pfm['dP'] == 1
+	nth= pfm['dP']> 1
+
+	# exoplanet data + hist
+	ax.plot(pfm['dP'][nth], epos.pfm['inc'][nth], color=color, **fmt_symbol)
+	
+	# print pfm['dP'][single]
+	# print pfm['dP'][nth]
+	# print pfm['dP'][inner]
+	# print pfm['dP'][nth].size, pfm['np'] # ok
+	
+	#ax.plot(pfm['dP'][single], pfm['R'][single], color='0.7', **fmt_symbol)
+	#ax.plot(pfm['dP'][nth], pfm['R'][nth], color=color, **fmt_symbol)
+	#ax.plot(pfm['dP'][inner], pfm['R'][inner], color='C1', **fmt_symbol)
+
+	''' Histogram Period Ratio'''
+	axx.hist(pfm['dP'][nth], bins=dP_bins, color=color)
+	ax.axvline(np.median(pfm['dP'][nth]), ls='--', color=color)
+
+	ax.axvline(2, ls='--', color='b', zorder=0)
+	ax.axvline(1.5, ls='--', color='b', zorder=0)
+
+	''' Histogram Inclination'''
+	#axy.set_yscale('log')
+	#axy.set_ylim(ax.get_ylim())
+	inc= np.logspace(np.log10(imin),2)
+	axy.hist(pfm['inc'], bins=inc, orientation='horizontal', color=color) 
+		
+	#helpers.set_axes(ax, epos, Trim=True)
+	#helpers.set_axis_distance(axP, epos, Trim=True)
+
+	helpers.save(plt, epos.plotdir+'model/Pratio-inc')
+
+
 def multiplicity(epos, color='C1', Planets=False, Kepler=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
