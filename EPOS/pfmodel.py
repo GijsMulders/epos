@@ -268,6 +268,85 @@ def bern(name='syntheticpop_20emb_983systems.txt', dir='Bern',
 
 	return npz
 
+def morby(name, fname, Verbose=False, Saved=True):
+	''' 
+	returns a list of planetary systems
+	sma in au
+	mass in earth masses
+	'''
+	
+	dir= 'npz/{}'.format(name)
+	if not os.path.exists(dir): os.makedirs(dir)
+	fnpz= '{}/{}.npz'.format(dir, name)	
+	
+	''' Load hdf5 file or npz dictionary for quicker access'''
+	if os.path.isfile(fnpz) and Saved:
+		print '\nLoading saved status from {}'.format(fnpz)
+		npz= np.load(fnpz)
+				
+		# check if keys present
+		for key in ['sma','mass','inc','starID']:
+			if not key in npz: 
+				raise ValueError('Key {} not present\n{}'.format(key,npz.keys()))
+	else:
+		print '\nProcessing Symba HDF5 file for {}'.format(name)
+		#fname= '{}/{}_set??.h5'.format(dir,name)
+		flist= glob.glob(fname)
+		if len(flist)==0: 
+			raise ValueError('file not found: {}'.format(fname))
+		else:
+			if Verbose: print '  {} files'.format(len(flist))
+	
+		sma, mass, inc, ecc, ID= [], [], [], [], []
+	
+		for i,fname in enumerate(flist):
+			a= np.loadtxt(fname,skiprows=1, usecols=(1,2,3,7), unpack=True)
+			#if a.ndim==1: a=[a]
+			try:
+				if a.ndim==1:
+					sma.append([a[0]])
+					ecc.append([a[1]])
+					inc.append([a[2]])
+					mass.append([a[3]])
+
+					ID.append([i])
+				elif a.ndim==2:
+
+					sma.append(a[0])
+					ecc.append(a[1])
+					inc.append(a[2])
+					mass.append(a[3])
+
+					ID.append([i]*len(a[0]))
+				else:
+					print a.shape
+					print a
+					raise ValueError('Error reading in') 
+			except (IndexError, TypeError):
+				print a.shape
+				print a
+				raise
+
+			# print system properties:
+			if Verbose:
+				print 'System {} has {} planets, {:.1f} Mearth:'.format(
+					i, len(sma[-1]),np.sum(mass[-1]))
+				for items in zip(sma[-1], mass[-1], inc[-1]):
+					print '  {:.2f} au, {:.1f} Mearth, {:.3g} deg'.format(*items)
+		
+		npz={'sma':np.concatenate(sma), 'mass':np.concatenate(mass), 
+			'inc':np.concatenate(inc), 'starID':np.concatenate(ID),
+			'ecc':np.concatenate(ecc)}
+		
+		if Saved:
+			print 'Saving status in {}'.format(fnpz)
+			#np.save(fname, epos.chain)
+			# compression slow on loading?
+			np.savez_compressed(fnpz, **npz)
+		
+	return npz
+
+
 def mordasini(name='syntheticpopmordasini1MsunJ31', dir='Mordasini', smacut=np.inf,
 		Rcut=0, Single=False, Verbose=False):
 	fname= '{}/{}.dat'.format(dir,name)

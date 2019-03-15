@@ -153,8 +153,9 @@ def multiplicity(epos, MC=False, Planets=False, MCMC=False, color='C1'):
 			f_iso= epos.fitpars.get('f_iso')
 			if f_iso > 0:
 				fsingle= np.sum(ss['multi']['count'])*f_iso
+				label= 'Singles ({:2.0%})'.format(f_iso)
 				ax.bar(1, fsingle, bottom= ss['multi'][key][0]-fsingle, 
-					color='',label='Single Planets', width=1, hatch='xx') #, ec='k')
+					color='',label=label, width=1, hatch='xx') #, ec='k')
 
 			if hasattr(epos, 'pfm'):
 				ax.plot(epos.pfm['k'], epos.pfm['Nk']*epos.pfm['k'], 
@@ -221,14 +222,14 @@ def multiplicity_cdf(epos, MC=False, color='C1'):
 		cdf= np.arange(bincounts.size, dtype=float)/bincounts.size
 		ax.plot(bincounts, cdf, 
 			drawstyle='steps-mid', 
-			ls='-', marker='', mew=2, ms=10, color='b',label=epos.name)
+			ls='-', marker='', mew=2, ms=10, color=color,label=epos.name)
 	
 		# observations in same region 
 		bincounts= np.sort(epos.obs_zoom['multi']['cdf'])
 		cdf= np.arange(bincounts.size, dtype=float)/bincounts.size
 		ax.plot(bincounts, cdf,  
 			drawstyle='steps-mid', 
-			ls='-', marker='', color='k', label='Kepler')
+			ls='--', marker='', color='C3', label='Kepler')
 
 	# observations
 	#ax.plot(epos.multi['bin'], epos.multi['count'], drawstyle='steps-mid', 
@@ -495,12 +496,12 @@ def periodinner_cdf(epos, MC=False, color='C1'):
 		ss=epos.synthetic_survey
 		Psort= np.sort(ss['multi']['Pinner'])
 		cdf= np.arange(Psort.size, dtype=float)/Psort.size
-		ax.plot(Psort, cdf, color='b', label=epos.name)
+		ax.plot(Psort, cdf, color=color, label=epos.name)
 	
 		# Observed zoom
 		Psort= np.sort(epos.obs_zoom['multi']['Pinner'])
 		cdf= np.arange(Psort.size, dtype=float)/Psort.size
-		ax.plot(Psort, cdf, color='k', label='Kepler', ls='--')
+		ax.plot(Psort, cdf, color='C3', label='Kepler', ls='--')
 	else:
 		# observed all
 		Psort= np.sort(epos.multi['Pinner'])

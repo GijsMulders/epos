@@ -69,7 +69,7 @@ def models(epos, Log=False):
 	''' Interpolate occurrence for each planet (on log scale) '''
 	focc= epos.occurrence
 	print '\nInterpolating model planet occurrence'
-	
+
 	pfm=epos.pfm
 	if not 'R' in pfm:
 		pfm['R'], _= epos.MR(pfm['M'])
@@ -88,6 +88,8 @@ def models(epos, Log=False):
 		
 	focc['model']={}
 	focc['model']['completeness']= completeness
+	focc['model']['eta']= epos.fitpars.getpps() if hasattr(epos, 'fitpars') else 1.
+
 	#focc['model']['occ']= 1./completeness/epos.nstars
 	#print epos.planet_occurrence
 
@@ -114,10 +116,9 @@ def binned(epos, Log=False):
 	_occ_per_bin(epos, focc['bin'], Log=Log)
 	
 	if 'model' in focc:
-		eta= epos.fitpars.getpps() if hasattr(epos, 'fitpars') else 1.
+		eta= focc['model']['eta']
 		print '\n  Modeled planets, eta= {:.3g}'.format(eta)
 		_model_occ_per_bin(epos, focc['bin'], focc['model'], weights=eta/epos.pfm['ns'])
-		focc['model']['eta']= eta
 
 def poly_binned(epos, Log=False):
 	'''
@@ -135,11 +136,10 @@ def poly_binned(epos, Log=False):
 	_occ_per_polygon(epos, focc['poly'], Log=Log)
 	
 	if 'model' in focc:
-		eta= epos.fitpars.getpps() if hasattr(epos, 'fitpars') else 1.
+		eta= focc['model']['eta']
 		print '\n  Modeled planets, eta= {:.3g}'.format(eta)
 		_model_occ_per_polygon(epos, focc['poly'], focc['model'], 
 			weights=eta/epos.pfm['ns'])
-		#focc['model']['eta_poly']= eta
 
 def zoomed(epos, TestScore= True):
 	''' Occurrence (inverse detection efficiency) along x,y axis.'''

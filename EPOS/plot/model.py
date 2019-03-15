@@ -86,7 +86,7 @@ def panels_mass(epos, Population=False, color='C1'):
 	helpers.save(plt, '{}model/input.mass{}'.format(epos.plotdir, fname))
 	
 def panels_radius(epos, Population=False, Occurrence=False, Observation=False, 
-	Tag=False, color='C1', Fancy=True):
+	Tag=False, color='C1', Fancy=True, Zoom=False):
 	f, (ax, axR, axP)= helpers.make_panels(plt, Fancy=Fancy)
 	pfm=epos.pfm
 	eta= epos.modelpars.get('eta',Init=True)
@@ -103,8 +103,12 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False,
 	''' Bins '''
 	dwR=0.2 # bin width in ln space
 	dwP=0.3
-	xbins= np.exp(np.arange(np.log(epos.xzoom[0]),np.log(epos.xzoom[-1])+dwP,dwP))
-	ybins= np.exp(np.arange(np.log(epos.yzoom[0]),np.log(epos.yzoom[-1])+dwR,dwR))
+	if Zoom:
+		xbins= np.exp(np.arange(np.log(epos.xzoom[0]),np.log(epos.xzoom[-1])+dwP,dwP))
+		ybins= np.exp(np.arange(np.log(epos.yzoom[0]),np.log(epos.yzoom[-1])+dwR,dwR))	
+	else:
+		xbins= np.exp(np.arange(np.log(epos.xtrim[0]),np.log(epos.xtrim[-1])+dwP,dwP))
+		ybins= np.exp(np.arange(np.log(epos.ytrim[0]),np.log(epos.ytrim[-1])+dwR,dwR))
 
 	''' Plot model occurrence or observed counts'''
 	if Observation:
@@ -138,7 +142,7 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False,
 	''' Overplot observations? '''
 	if Population:
 		assert hasattr(epos, 'func')
-		fname='.pop'
+		fname='.pop' +('.zoom' if Zoom else '')
 		
 		title= epos.name
 		
@@ -159,7 +163,8 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False,
 		axP.plot(epos.MC_xvar, pdf_X*dwP, marker='',ls='-',color='purple')
 		axR.plot(pdf_Y*dwR, epos.in_yvar, marker='',ls='-',color='purple')
 	elif Observation:
-		fname='.obs'
+		fname='.obs'+('.zoom' if Zoom else '')
+
 		title= epos.name+': Counts'
 		
 		ax.plot(epos.obs_xvar, epos.obs_yvar, ls='', marker='.', ms=5.0, color='0.5')
@@ -170,8 +175,8 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False,
 			orientation='horizontal', histtype='step', color='0.5')
 					
 	elif Occurrence:
-		fname='.occ'
-		title= epos.name+': Occurrence'
+		fname='.occ'+('.zoom' if Zoom else '')
+		title= epos.name+r': Occurrence, $\eta={:.2g}$'.format(eta)
 
 		ax.plot(epos.obs_xvar, epos.obs_yvar, ls='', marker='.', ms=5.0, color='0.5')
 		

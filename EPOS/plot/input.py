@@ -37,16 +37,20 @@ def all(epos, color=None, imin=1e-2):
 			if epos.MassRadius:
 				model.panels_mass(epos, Population=True, color=color)
 			else:
-				model.panels_radius(epos, Population=True, color=color)
+				model.panels_radius(epos, Population=True, color=color) #Zoom?
 
 		if hasattr(epos, 'occurrence'):
-			if 'planet' in epos.occurrence:	
+			if 'planet' in epos.occurrence:
 				model.panels_radius(epos, Occurrence=True, color=color)
+				if epos.Zoom:
+					model.panels_radius(epos, Occurrence=True, color=color, Zoom=True)
 			if 'model' in epos.occurrence:
 				model.panels_radius(epos, Observation=True, color=color)
+				if epos.Zoom:
+					model.panels_radius(epos, Observation=True, color=color, Zoom=True)
 
 		if 'tag' in epos.pfm:
-			model.panels_radius(epos, Tag=True)
+			model.panels_radius(epos, Tag=True) # Zoom?
 			model.period(epos, Tag=True)
 			
 		if 'inc' in epos.pfm:

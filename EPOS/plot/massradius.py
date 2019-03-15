@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import helpers
 	
-def massradius(epos, MC=False, Log=False):
+def massradius(epos, MC=False, Log=False, color='C1'):
 	assert epos.MassRadius
 	# plot R(M)
 	f, ax = plt.subplots()
@@ -22,7 +22,7 @@ def massradius(epos, MC=False, Log=False):
 	# MC data
 	if MC:
 		ss=epos.synthetic_survey
-		ax.plot(ss['M'], ss['R'], ls='', marker='.', mew=0, ms=5.0, color='k', zorder=1)
+		ax.plot(ss['M'], ss['R'], ls='', marker='.', mew=0, ms=5.0, color=color, zorder=1)
 		
 	xM= np.logspace(*np.log10(ax.get_xlim())) if Log else np.linspace(*ax.get_xlim()) #np.max(tr['M']))
 	xR, dispersion= epos.MR(xM)

@@ -13,7 +13,7 @@ import matplotlib
 if matplotlib.__version__[0] != 2: 
 	helpers.default_pyplot2_colors(matplotlib.colors)
 
-def periodradius(epos, SNR=True, Parametric=False):
+def periodradius(epos, SNR=True, Parametric=False, color='C1'):
 
 	f, (ax, axR, axP)= helpers.make_panels(plt)
 	
@@ -72,7 +72,7 @@ def periodradius(epos, SNR=True, Parametric=False):
 	#ax.legend(loc='lower left', shadow=False, prop={'size':14}, numpoints=1)
 	helpers.save(plt, '{}output/periodradius.{}'.format(epos.plotdir,fsuffix))
 
-def panels(epos, MCMC=False):
+def panels(epos, MCMC=False, color='C1'):
 
 	f, (ax, axR, axP)= helpers.make_panels(plt)
 	
@@ -329,7 +329,7 @@ def pdf(epos):
 	
 	helpers.save(plt, epos.plotdir+'output/pdf.diag')
 
-def cdf(epos):
+def cdf(epos, color='C1'):
 	
 	f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 	f.set_size_inches(9, 7) # default 7, 5
@@ -341,7 +341,7 @@ def cdf(epos):
 	helpers.set_axes(ax1, epos, Trim=True)
 	ax1.set_title('Synthetic ({})'.format(sim['nobs']))
 	if epos.MonteCarlo:
-		ax1.plot(sim['P'], sim['Y'], ls='', marker='.', mew=0, ms=5.0, color='r', alpha=0.5)
+		ax1.plot(sim['P'], sim['Y'], ls='', marker='.', mew=0, ms=5.0, color='C3', alpha=0.5)
 	else:
 		levels= np.linspace(0,np.max(sim['pdf']))		
 		ax1.contourf(epos.MC_xvar, epos.MC_yvar, sim['pdf'].T, cmap='Reds', levels=levels)
@@ -356,7 +356,7 @@ def cdf(epos):
 	ax2.set_title('Observed ({})'.format(epos.obs_zoom['x'].size))
 	helpers.set_axes(ax2, epos, Trim=True)
 
-	ax2.plot(epos.obs_xvar, epos.obs_yvar, ls='', marker='.', mew=0, ms=5.0, color='b')		
+	ax2.plot(epos.obs_xvar, epos.obs_yvar, ls='', marker='.', mew=0, ms=5.0, color=color)		
 	if epos.Zoom:
 		ax2.add_patch(patches.Rectangle( (epos.xzoom[0],epos.yzoom[0]), 
 			epos.xzoom[1]-epos.xzoom[0], epos.yzoom[1]-epos.yzoom[0],fill=False, zorder=1) )
@@ -378,13 +378,13 @@ def cdf(epos):
 	if epos.MonteCarlo:
 		#model histogram x
 		P= sim['P zoom']
-		ax3.plot(np.sort(P), np.arange(P.size, dtype=float)/P.size, ls='-', marker='', color='r')
+		ax3.plot(np.sort(P), np.arange(P.size, dtype=float)/P.size, ls='-', marker='', color='C3')
 	else:
 		ax3.plot(sim['P zoom'], sim['P zoom cdf'], ls='-', marker='', color='r')
 	
 	#obs histogram x
 	P= epos.obs_zoom['x']
-	ax3.plot(np.sort(P), np.arange(P.size, dtype=float)/P.size, ls='-', marker='', color='b')		
+	ax3.plot(np.sort(P), np.arange(P.size, dtype=float)/P.size, ls='-', marker='', color=color)		
 
 	''' 
 	CDF planet radius
@@ -406,13 +406,13 @@ def cdf(epos):
 	if epos.MonteCarlo:
 		#model histogram x
 		R= sim['Y zoom']
-		ax4.plot(np.sort(R), np.arange(R.size, dtype=float)/R.size, ls='-', marker='', color='r')
+		ax4.plot(np.sort(R), np.arange(R.size, dtype=float)/R.size, ls='-', marker='', color='C3')
 	else:
-		ax4.plot(sim['Y zoom'], sim['Y zoom cdf'], ls='-', marker='', color='r')
+		ax4.plot(sim['Y zoom'], sim['Y zoom cdf'], ls='-', marker='', color='C3')
 
 	#obs histogram x
 	R= epos.obs_zoom['y']
-	ax4.plot(np.sort(R), np.arange(R.size, dtype=float)/R.size, ls='-', marker='', color='b')		
+	ax4.plot(np.sort(R), np.arange(R.size, dtype=float)/R.size, ls='-', marker='', color=color)		
 		
 	f.tight_layout()
 	helpers.save(plt, epos.plotdir+'output/cdf.diag')

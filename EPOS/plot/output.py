@@ -18,8 +18,8 @@ def all(epos, color='C1'):
 			# plot period-radius for non-MC
 			pass
 		
-		periodradius.cdf(epos)
-		periodradius.panels(epos)
+		periodradius.cdf(epos, color=color)
+		periodradius.panels(epos, color=color)
 	
 		if epos.Multi:
 			multi.periodradius(epos)
@@ -41,8 +41,8 @@ def all(epos, color='C1'):
 			#periodradius.pdf_3d(epos)
 
 		if epos.MassRadius:
-			massradius.massradius(epos, MC=True)
-			massradius.massradius(epos, MC=True, Log=True)
+			massradius.massradius(epos, MC=True, color=color)
+			massradius.massradius(epos, MC=True, Log=True, color=color)
 
 		else:
 			if epos.Parametric and epos.Multi and not epos.RV:
