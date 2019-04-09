@@ -39,8 +39,11 @@ def occurrence(epos, Verbose=False):
 				for subkey in focc[key]:
 					print '  {}'.format(subkey)
 
+		if 'model' in epos.occurrence:
+			save_to_json(epos,'occurrence.model',focc['model'], ['eta', 'completeness'])
+
 		if 'planet' in epos.occurrence:
-			save_to_json(epos,'occurrence.planet',focc,['x','y','completeness','obs'])
+			save_to_json(epos,'occurrence.planet',focc['planet'],['xvar','yvar','completeness','occ'])
 
 		if 'bin' in epos.occurrence:
 			gridkeys= ['xc', 'yc', 'dlnx', 'dlny', 'y', 'x']

@@ -13,6 +13,9 @@ import parametric, multi, massradius, helpers, model
 def all(epos, color=None, imin=1e-2):
 	print '\nPlotting input...'
 	
+	#add decorators for zoom T/F?
+	# color into epos?
+
 	if epos.Parametric:
 		parametric.oneD(epos)
 		parametric.twoD(epos)
@@ -30,7 +33,7 @@ def all(epos, color=None, imin=1e-2):
 		if 'M' in epos.pfm:
 			model.panels_mass(epos, color=color)
 		
-		model.period(epos)
+		model.period(epos, color=color)
 			
 		model.multiplicity(epos, color=color)
 		if hasattr(epos, 'func'):
@@ -40,10 +43,15 @@ def all(epos, color=None, imin=1e-2):
 				model.panels_radius(epos, Population=True, color=color) #Zoom?
 
 		if hasattr(epos, 'occurrence'):
+			# model counts (debiases data)
 			if 'planet' in epos.occurrence:
 				model.panels_radius(epos, Occurrence=True, color=color)
+				if 'R' in epos.pfm or epos.MassRadius:
+					model.period(epos, Occurrence=True, color=color)
 				if epos.Zoom:
 					model.panels_radius(epos, Occurrence=True, color=color, Zoom=True)
+
+			# planet counts (biases model)
 			if 'model' in epos.occurrence:
 				model.panels_radius(epos, Observation=True, color=color)
 				if epos.Zoom:

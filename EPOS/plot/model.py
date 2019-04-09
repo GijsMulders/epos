@@ -557,13 +557,13 @@ def multiplicity(epos, color='C1', Planets=False, Kepler=False):
 	helpers.save(plt, epos.plotdir+'model/multi')
 
 def period(epos, Population=False, Occurrence=False, Observation=False, Tag=False, 
-	color='C1'):
+	color='C1', Zoom=False, Rbin=[1.,4.]):
 	''' Model occurrence as function of orbital period'''
 	f, ax = plt.subplots()
 	helpers.set_axis_distance(ax, epos, Trim=True)
 	ax.set_xlim(0.5,200)
 	
-	ax.set_ylabel(r'Planet Occurrence 1-4 $R_\bigoplus$')
+	ax.set_ylabel(r'Planet Occurrence {:.2g}-{:.2g} $R_\bigoplus$'.format(*Rbin))
 	ax.set_yscale('log')
 	
 	pfm=epos.pfm
@@ -579,8 +579,14 @@ def period(epos, Population=False, Occurrence=False, Observation=False, Tag=Fals
 
 	''' Bins '''
 	#xbins= np.geomspace(1,1000,10)/(10.**(1./3.))
-	xbins= np.geomspace(0.5,200,15)
+	#xbins= np.geomspace(0.5,200,15)
 
+	dwP=0.3 # bin width in ln space
+	
+	if Zoom:
+		xbins= np.exp(np.arange(np.log(epos.xzoom[0]),np.log(epos.xzoom[-1])+dwP,dwP))
+	else:
+		xbins= np.exp(np.arange(np.log(epos.xtrim[0]),np.log(epos.xtrim[-1])+dwP,dwP))
 
 	''' Plot model occurrence or observed counts'''
 	weights=np.full(pfm['np'], eta/pfm['ns'])
@@ -598,7 +604,7 @@ def period(epos, Population=False, Occurrence=False, Observation=False, Tag=Fals
 			ax.hist(pfm['P'], bins=xbins, weights=weights, histtype='step', label=key,
 				color='#88CCEE' if key=='Fe/H<=0' else '#332288')
 	else:
-		ax.hist(pfm['P'], bins=xbins, weights=weights, color=color)
+		ax.hist(pfm['P'], bins=xbins, weights=weights, color=color, histtype='step')
 				 
 			
 	if Tag:
@@ -608,8 +614,17 @@ def period(epos, Population=False, Occurrence=False, Observation=False, Tag=Fals
 	else:
 		fname=''	
 
-	
-	helpers.save(plt, '{}model/input.period{}'.format(epos.plotdir, fname))
+	if Occurrence:
+		cut= (Rbin[0]<epos.obs_yvar) & (epos.obs_yvar<Rbin[-1])
+		
+		weights= epos.occurrence['planet']['occ'][cut]
+		ax.hist(epos.obs_xvar[cut],bins=xbins,weights=weights,histtype='step',color='k')
+		
+		helpers.save(plt, '{}occurrence/model.period{}'.format(epos.plotdir, fname))
+
+	# elif Observation: # counts
+	else:
+		helpers.save(plt, '{}model/input.period{}'.format(epos.plotdir, fname))
 
 def HansenMurray(epos, color='purple'):
 	''' figures not included '''

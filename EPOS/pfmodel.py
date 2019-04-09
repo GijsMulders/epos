@@ -151,7 +151,8 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, smacut=np.inf, istep=None, Verb
 		
 	return npz
 	
-def mercury(fname, istep=None, icut=-np.inf, Verbose=False):
+def mercury(fname, istep=None, icut=-np.inf, smacut=[0,np.inf], masscut= [0,np.inf],
+	Verbose=False):
 	print '\nProcessing Mercury file'
 	flist= glob.glob(fname)
 	if len(flist)==0: raise ValueError('file not found: {}'.format(fname))
@@ -187,9 +188,18 @@ def mercury(fname, istep=None, icut=-np.inf, Verbose=False):
 		except: raise
 
 		if not Verbose: print '\r  [{:50s}] {:.1f}%'.format('#' * int(1 * 50), 1 * 100),
-		
-	npz={'sma':np.asarray(sma), 'mass':np.asarray(mass), 
-		'inc':np.asarray(inc), 'starID':np.asarray(ID)}
+
+	sma= np.array(sma)
+	mass=np.array(mass)
+	inc=np.array(inc)
+	starID=np.array(ID)
+
+	# cut out certain planets
+	include= (smacut[0]<=sma) & (sma<=smacut[-1])
+	include&= (masscut[0]<=mass) & (mass<=masscut[-1])
+
+	npz={'sma':sma[include], 'mass':mass[include], 
+		'inc':inc[include], 'starID':starID[include]}
 		
 	return npz
 

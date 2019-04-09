@@ -202,6 +202,51 @@ def fbpl2d((x,y), a, b, c, d, e, f, g):
 	bpl= a* (x/b)**np.where(x<b, c, d) * (y/e)**np.where(y<e, f,g)
 	return np.maximum(0.2, np.minimum(bpl, 1.))
 
+def single():
+	'''
+	Generates Kepler single transit planet population and detection efficiency
+	
+	Args:
+		
+	Returns:
+		tuple: two dictionaries
+		
+		obs(dict):
+			xvar(np.array of float): orbital period
+			yvar(np.array of float): planet radius
+			starID(np.array): stellar ID
+			nstars(int): number of stars surveyed
+		survey(dict):
+			the grid is in xvar,yvar, the detection efficiency in eff_2D 
+	'''
+	P_days= np.array([1246.35,1071.23,1772.14,1018.14,1047.83,2608.45,704.20,
+		730.83,1006.63,769.19,8375.64,1183.93,936.06,732.02,737.11,741.58, 
+		1245.41,854.09,1632.13])
+	R_Jup= np.array([0.783,0.904,0.662,0.374,0.727,0.310,0.411,3.296,0.577,2.368,
+		0.580, 0.926, 0.733,2.298,0.955,2.713,0.464,0.541,0.889])
+	starID=np.array(['3218908','3239945','4754460','6551440','8410697','8505215',
+		'8800954','9306307','10187159','10602068','10842718','11709124',
+		'6186417','6234593','7906827','7947784','9704149','10525077','11342550'])
+
+	obs= {'xvar':P_days,'yvar':R_Jup, 'starID':starID,'nstars':61418}
+	
+	''' Load pre-calculated detection efficiencies '''
+	xvar= np.geomspace(2,25,5) # 4 bins :@@
+	yvar= np.logspace(0.02,0.3,8) # 7 bins
+
+	eff_2d= np.array(
+		[[0.542,0.485,0.461,0.374],[0.638,0.569,0.537,0.472],
+		[0.704,0.601,0.607,0.532],[0.645,0.578,0.543,0.535],
+		[0.497,0.436,0.433,0.384],[0.198,0.142,0.152,0.139],
+		[0.049,0.037,0.027,0.016]]
+		)
+
+	survey= {'xvar':xvar, 'yvar':yvar, 'eff_2D':eff_2d, 
+			'Mstar': 1.0, 'Rstar':1.0}
+
+	return obs, survey
+
+
 '''
 NOTE: Kepler files from Q16-epos.py
 cp ~/Kepler/npz/completeness.Q16.epos.*.npz EPOS/files/

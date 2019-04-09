@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import helpers
+import cgs
 	
-def massradius(epos, MC=False, Log=False, color='C1'):
+def massradius(epos, MC=False, Log=False, color='C1', Mlim=[0,20], Rlim=[0,7], rho=None):
 	assert epos.MassRadius
 	# plot R(M)
 	f, ax = plt.subplots()
@@ -16,8 +17,8 @@ def massradius(epos, MC=False, Log=False, color='C1'):
 		ax.set_xscale('log')
 		ax.set_yscale('log')
 	else:
-		ax.set_xlim(0, 20.) # 20.
-		ax.set_ylim(0, 7.) # 7.
+		ax.set_xlim(*Mlim) # 20.
+		ax.set_ylim(*Rlim) # 7.
 	
 	# MC data
 	if MC:
@@ -32,6 +33,12 @@ def massradius(epos, MC=False, Log=False, color='C1'):
 	ax.plot(xM, xR, ls='-', marker='', color='b', label=epos.MR_label)
 	ax.plot(xM, xR-dispersion, ls='--', marker='', color='b')
 	ax.plot(xM, xR+dispersion, ls='--', marker='', color='b')
+
+	# constant density used in N-body
+	if rho is not None:
+		rhoR= (xM*cgs.Mearth / (4./3.*np.pi*rho))**(1./3.) / cgs.Rearth
+		ax.plot(xM, rhoR, ls='-', color='0.5', marker='', 
+			label=r'$\rho={:.1f}\,g\,cm^{{-3}}$'.format(rho), zorder=-1)
 
 	ax.legend(loc='lower right', shadow=False, prop={'size':14}, numpoints=1)
 	

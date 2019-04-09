@@ -461,7 +461,7 @@ class epos:
 		
 		if Occ:
 			if self.MassRadius:
-				raise ValuError('Plotting occurrence with mass-radius not yet supported')
+				raise ValueError('Plotting occurrence with mass-radius not yet supported')
 				#pass
 				
 			if not hasattr(self,'occurrence'):
@@ -550,7 +550,7 @@ class epos:
 			focc['bin']['x']= _xbins
 			focc['bin']['y in']= _ybins
 
-	def set_bins_poly(self, polys):
+	def set_bins_poly(self, polys, labels=None):
 		'''
 		Initialize polygonic bins for occurrence rate calculations
 		
@@ -574,6 +574,10 @@ class epos:
 			assert npc.shape[-1]==2, 'coords need to be 2xN array'
 			focc['poly']['coords'].append(npc)
 	
+		if labels is not None:
+			assert len(labels) == len(focc['poly']['coords']), 'Names don\'t match up'
+			focc['poly']['labels']= np.asarray(labels)
+
 	def set_parametric(self, func):
 		'''Define a parametric function to generate the planet size-period distribution
 		

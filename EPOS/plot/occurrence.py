@@ -25,6 +25,10 @@ def all(epos, color=None, alpha_fac=None):
 			colored(epos, Poly=True)
 			if 'model' in epos.occurrence:
 				model(epos, color=color, alpha_fac=alpha_fac, Poly=True)
+				if 'labels' in epos.occurrence['poly']:
+					# only callable with models right now
+					poly_only(epos)
+
 		
 		if 'bin' in epos.occurrence:
 			colored(epos, Bins=True)
@@ -269,3 +273,31 @@ def model(epos, color='C0', alpha_fac=None, Bins=False, Poly=False):
 		helpers.save(plt, epos.plotdir+'occurrence/model_poly')
 	else:
 		helpers.save(plt, epos.plotdir+'occurrence/model')
+
+def poly_only(epos):
+	
+	f, ax = plt.subplots()
+	
+	ax.set_title('Planet Classes')
+	
+	helpers.set_axes(ax, epos, Trim=True)
+	
+	# coordinates are from model routine
+	occpoly= epos.occurrence['model']['poly']
+
+	for k, (xc, yc, coords, label) in enumerate(
+			zip(occpoly['xc'],occpoly['yc'],occpoly['coords'],
+				epos.occurrence['poly']['labels'])
+			):
+			
+		# box
+		ax.add_patch(matplotlib.patches.Polygon(coords,
+			fill=False, zorder=2, ls='-', color='k') )
+		 
+		size=16 if not 'textsize' in epos.plotpars else epos.plotpars['textsize'] 
+			# 12 fit in box, 16 default
+		ax.text(xc,yc,label, ha='center', va='center', 
+			size=size)
+
+	helpers.save(plt, epos.plotdir+'occurrence/poly_only')
+

@@ -89,8 +89,7 @@ def models(epos, Log=False):
 	focc['model']={}
 	focc['model']['completeness']= completeness
 	focc['model']['eta']= epos.fitpars.getpps() if hasattr(epos, 'fitpars') else 1.
-
-	#focc['model']['occ']= 1./completeness/epos.nstars
+	#focc['model']['occ']= focc['model']['eta']/completeness/epos.nstars
 	#print epos.planet_occurrence
 
 def binned(epos, Log=False):
