@@ -12,7 +12,7 @@ from EPOS.fitfunctions import brokenpowerlaw1D
 # kepler pdf radius
 # Kepler pdf inner (M/R ??)
 
-fmt_symbol= {'ls':'', 'marker':'o', 'mew':1, 'mec':'k', 'ms':6,'alpha':0.5}
+fmt_symbol= {'ls':'', 'marker':'o', 'mew':1, 'mec':'k', 'ms':4,'alpha':0.3}
 
 def panels_mass(epos, Population=False, color='C1'):
 	f, (ax, axM, axP)= helpers.make_panels(plt)
@@ -86,7 +86,7 @@ def panels_mass(epos, Population=False, color='C1'):
 	helpers.save(plt, '{}model/input.mass{}'.format(epos.plotdir, fname))
 	
 def panels_radius(epos, Population=False, Occurrence=False, Observation=False, 
-	Tag=False, color='C1', Fancy=True, Zoom=False):
+	Tag=False, color='C0', clr_obs='C3', Shade=True, Fancy=True, Zoom=False):
 	f, (ax, axR, axP)= helpers.make_panels(plt, Fancy=Fancy)
 	pfm=epos.pfm
 	eta= epos.modelpars.get('eta',Init=True)
@@ -144,7 +144,7 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False,
 		assert hasattr(epos, 'func')
 		fname='.pop' +('.zoom' if Zoom else '')
 		
-		title= epos.name
+		title= epos.title
 		
 		pps, pdf, pdf_X, pdf_Y= periodradius(epos, Init=True)
 		_, _, pdf_X, _= periodradius(epos, Init=True, ybin=ybins)
@@ -155,17 +155,26 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False,
 		levels= np.linspace(0,np.max(pdf))
 		lines= np.array([0.1, 0.5]) * np.max(pdf)
 		
-		ax.contourf(epos.X_in, epos.Y_in, pdf, cmap='Purples', levels=levels)
-		#ax.contour(epos.X_in, epos.Y_in, pdf, levels=lines)
+		if Shade:
+			ax.contourf(epos.X_in, epos.Y_in, pdf, cmap='Purples', levels=levels)
+			#ax.contour(epos.X_in, epos.Y_in, pdf, levels=lines)
 		
-		# Side panels
-		#print 'pps model= {}'.format(eta)
-		axP.plot(epos.MC_xvar, pdf_X*dwP, marker='',ls='-',color='purple')
-		axR.plot(pdf_Y*dwR, epos.in_yvar, marker='',ls='-',color='purple')
+			# Side panels
+			#print 'pps model= {}'.format(eta)
+			axP.plot(epos.MC_xvar, pdf_X*dwP, marker='',ls='-',color='purple')
+			axR.plot(pdf_Y*dwR, epos.in_yvar, marker='',ls='-',color='purple')
+		else:
+			# renormalize
+			xnorm= axP.get_ylim()[1]/max(pdf_X)
+			ynorm= axR.get_xlim()[1]/max(pdf_Y)
+
+			axP.plot(epos.MC_xvar, pdf_X*xnorm, marker='',ls='-',color=clr_obs)
+			axR.plot(pdf_Y*ynorm, epos.in_yvar, marker='',ls='-',color=clr_obs)
+
 	elif Observation:
 		fname='.obs'+('.zoom' if Zoom else '')
 
-		title= epos.name+': Counts'
+		title= epos.title+': Counts'
 		
 		ax.plot(epos.obs_xvar, epos.obs_yvar, ls='', marker='.', ms=5.0, color='0.5')
 		
@@ -176,7 +185,7 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False,
 					
 	elif Occurrence:
 		fname='.occ'+('.zoom' if Zoom else '')
-		title= epos.name+r': Occurrence, $\eta={:.2g}$'.format(eta)
+		title= epos.title+r': Occurrence, $\eta={:.2g}$'.format(eta)
 
 		ax.plot(epos.obs_xvar, epos.obs_yvar, ls='', marker='.', ms=5.0, color='0.5')
 		
@@ -189,7 +198,7 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False,
 			
 	elif Tag:
 		fname='.tag'
-		ax.set_title(epos.name+': Tag')
+		ax.set_title(epos.title+': Tag')
 		
 		axP.legend(frameon=False, fontsize='small')
 		# 		for k, tag in enumerate(subset):
@@ -200,7 +209,7 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False,
 		fname=''
 
 	if Fancy:
-		plt.suptitle(title, ha='left', x=0.05)
+		plt.suptitle(title, ha='center')#, x=0.05)
 	else:
 		ax.set_title(title)
 
@@ -231,7 +240,7 @@ def panels_radius(epos, Population=False, Occurrence=False, Observation=False,
 	
 	helpers.save(plt, '{}model/input.radius{}'.format(epos.plotdir, fname))
 
-def inclination(epos, color='C1', imin=1e-2):
+def inclination(epos, color='C0', clr_obs='C3', imin=1e-2, Simple=False):
 	pfm=epos.pfm
 	
 	gs = gridspec.GridSpec(1, 2,
@@ -247,7 +256,7 @@ def inclination(epos, color='C1', imin=1e-2):
 	axh.axis('off')
 
 	''' Inc-sma'''	
-	ax.set_title('Input Inclination {}'.format(epos.name))
+	ax.set_title('Inclination {}'.format(epos.title))
 
 	ax.set_xlabel('Semi-Major Axis [au]')
 	#ax.set_ylabel(r'Planet Mass [M$_\bigoplus$]')
@@ -271,31 +280,36 @@ def inclination(epos, color='C1', imin=1e-2):
 	
 	#Model best-fit
 	xmax= axh.get_xlim()[-1]
-	for scale, ls in zip([1,2,2.7],[':','--',':']):
+	if Simple:
+		scale=2.
 		pdf= scipy.stats.rayleigh(scale=scale).pdf(inc)
-		#pdf/= np.log(inc) #log scale?
 		pdf*= xmax/max(pdf)
-		axh.plot(pdf, inc, ls=ls, color='purple')
-		
-		ax.axhline(scale, color='purple', ls=ls)	
-	
-		# if ls=='--':
-		# 	cdf= np.cumsum(pdf*inc)
-		# 	h1, h2= np.interp([0.05*cdf[-1],0.95*cdf[-1]], cdf, inc)
-		# 	ax.axhspan(h1,h2, facecolor='purple', alpha=0.5,lw=0.1)
-	
+		axh.plot(pdf, inc, ls='-', color=clr_obs)
+		ax.axhline(scale, color=clr_obs, ls='--')	
+	else:
+		for scale, ls in zip([1,2,2.7],[':','--',':']):
+			pdf= scipy.stats.rayleigh(scale=scale).pdf(inc)
+			#pdf/= np.log(inc) #log scale?
+			pdf*= xmax/max(pdf)
+			axh.plot(pdf, inc, ls=ls, color=clr_obs)
+			
+			ax.axhline(scale, color=clr_obs, ls=ls)		
 
 	helpers.save(plt, epos.plotdir+'model/inc-sma')
 	
-def periodratio(epos, color='C1'):
+def periodratio(epos, color='C0', clr_obs='C3', Simple=False, Fancy=True):
 	pfm=epos.pfm
 	
-	f, (ax, axR, axP)= helpers.make_panels_right(plt)
+	if Fancy:
+		f, (ax, axR, axP)= helpers.make_panels(plt, Fancy=True)
+		f.suptitle('Multi-planets {}'.format(epos.title))
+	else:
+		f, (ax, axR, axP)= helpers.make_panels_right(plt)
+		ax.set_title('Input Multi-planets {}'.format(epos.title))
+
 
 	''' Inc-sma'''	
-	ax.set_title('Input Multi-planets {}'.format(epos.name))
-
-	axP.set_xlabel('Semi-Major Axis [au]')
+	ax.set_xlabel('Semi-Major Axis [au]')
 	ax.set_ylabel('Period ratio')
 
 	#ax.set_xlim(epos.mod_xlim)
@@ -322,9 +336,11 @@ def periodratio(epos, color='C1'):
 	axR.set_yscale('log')
 	axR.set_ylim(0.9,10)
 
-	dP= np.logspace(0,1,15)
+	#dP= np.logspace(0,1,15)
+	dP= np.logspace(0,1, 25)
 	axR.hist(pfm['dP'][nth], bins=dP, orientation='horizontal', color=color)
-	ax.axhline(np.median(pfm['dP'][nth]), ls='--', color=color)
+	if not Simple:
+		ax.axhline(np.median(pfm['dP'][nth]), ls='--', color=color, zorder=-1)
 	
 	#Model best-fit
 	dP= np.logspace(0,1)
@@ -333,18 +349,27 @@ def periodratio(epos, color='C1'):
 		Dgrid= np.log10(2.*(dP**(2./3.)-1.)/(dP**(2./3.)+1.))
 	Dgrid[0]= -2
 
-	for scale, ls in zip([-0.30,-0.37,-0.41],[':','--',':']):
+	if Simple:
+		scale= -0.37
 		pdf= scipy.stats.norm(scale,0.19).pdf(Dgrid)
 		pdf*= xmax/max(pdf)
-		axR.plot(pdf, dP, ls=ls, color='purple')
-		
+		axR.plot(pdf, dP, ls='-', color=clr_obs)
+
 		pscale= np.interp(scale,Dgrid,dP)
-		ax.axhline(pscale, color='purple', ls=ls)	
+		#ax.axhline(pscale, color=clr_obs, ls='--')	
+	else:
+		for scale, ls in zip([-0.30,-0.37,-0.41],[':','--',':']):
+			pdf= scipy.stats.norm(scale,0.19).pdf(Dgrid)
+			pdf*= xmax/max(pdf)
+			axR.plot(pdf, dP, ls=ls, color='purple')
+			
+			pscale= np.interp(scale,Dgrid,dP)
+			ax.axhline(pscale, color='purple', ls=ls, zorder=-1)	
 
 	''' Histogram Inner Planet'''
 	axP.set_xscale('log')
 	axP.set_xlim(ax.get_xlim())
-	sma= np.geomspace(*ax.get_xlim(), num=15)
+	sma= np.geomspace(*ax.get_xlim(), num=25)
 	axP.hist(pfm['sma'][inner], bins=sma, color='C1', label='Inner Planet')
 	
 	ymax= axP.get_ylim()[-1]
@@ -354,10 +379,16 @@ def periodratio(epos, color='C1'):
 	pdf*= ymax/max(pdf)
 	
 	#axP.legend(frameon=False)
-	axP.text(0.98,0.95,'Inner Planet',ha='right',va='top',color='C1', 
-		transform=axP.transAxes)
+	if Fancy:
+		ax.text(0.02,0.98,'Inner Planet',ha='left',va='top',color='C1', 
+			transform=ax.transAxes)
+		ax.text(0.02,0.98,'\nOuter Planet(s)',ha='left',va='top',color=color, 
+			transform=ax.transAxes)
+	else:
+		axP.text(0.98,0.95,'Inner Planet',ha='right',va='top',color='C1', 
+			transform=axP.transAxes)
 	
-	axP.plot(smaP, pdf, ls='-', color='purple')
+	axP.plot(smaP, pdf, ls='-', color=clr_obs)
 
 	
 	#helpers.set_axes(ax, epos, Trim=True)
@@ -515,7 +546,6 @@ def periodratio_inc(epos, color='C1', imin=1e-2):
 	#helpers.set_axis_distance(axP, epos, Trim=True)
 
 	helpers.save(plt, epos.plotdir+'model/Pratio-inc')
-
 
 def multiplicity(epos, color='C1', Planets=False, Kepler=False):
 	# plot multiplicity

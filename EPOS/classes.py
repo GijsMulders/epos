@@ -158,11 +158,13 @@ class epos:
 		Debug(bool): Verbose logging
 		seed(): Random seed, can be any of int, True, or None
 	"""
-	def __init__(self, name, RV=False, Debug=False, seed=True, Norm=False, MC=True, Msini=False):
+	def __init__(self, name, Debug=False, seed=True, title=None, 
+		RV=False, Norm=False, MC=True, Msini=False):
 		"""
 		Initialize the class
 		"""
 		self.name=name
+		self.title=name if title is None else title
 
 		print '\n\n |~| epos {} |~|\n'.format(__version__)
 
@@ -726,6 +728,7 @@ class epos:
 		dy= (ymax/ymin)**0.05
 		self.mod_xlim=[xmin/dx, xmax*dx]
 		self.mod_ylim=[ymin/dy, ymax*dy]
+		# ??
 		self.mod_xlim=[min(xmin/dx, self.mod_xlim[0]),max(xmax*dx, self.mod_xlim[1])]
 		self.mod_ylim=[min(ymin/dy, self.mod_ylim[0]),max(ymax*dy, self.mod_ylim[1])]
 	

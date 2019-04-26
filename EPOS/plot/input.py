@@ -40,7 +40,7 @@ def all(epos, color=None, imin=1e-2):
 			if epos.MassRadius:
 				model.panels_mass(epos, Population=True, color=color)
 			else:
-				model.panels_radius(epos, Population=True, color=color) #Zoom?
+				model.panels_radius(epos, Population=True, Shade=False, color=color) #Zoom?
 
 		if hasattr(epos, 'occurrence'):
 			# model counts (debiases data)
@@ -62,20 +62,13 @@ def all(epos, color=None, imin=1e-2):
 			model.period(epos, Tag=True)
 			
 		if 'inc' in epos.pfm:
-			model.inclination(epos, color=color, imin=imin)
+			model.inclination(epos, Simple=True, color=color, imin=imin)
 		if 'dP' in epos.pfm:
-			model.periodratio(epos, color=color)
+			model.periodratio(epos, color=color, Simple=True)
 			if 'R' in epos.pfm:
 				model.periodratio_size(epos, color=color)
 			if 'inc' in epos.pfm:
 				model.periodratio_inc(epos, color=color, imin=imin)
-			
-# 		input(epos, PlotBox=False)
-# 		input_diag(epos, PlotBox=False)
-# 		if 'all_Pratio' in epos.groups[0]:
-# 			Pratio(epos)
-# 		if 'all_inc' in epos.groups[0]:
-# 			inclination(epos)
 
 	if epos.Multi:
 		if epos.Parametric:

@@ -12,8 +12,10 @@ def all(epos, color='C1'):
 		print '\nPlotting output...'
 	
 		if epos.MonteCarlo:
-			periodradius.periodradius(epos, Parametric=epos.Parametric, SNR=False)
-			periodradius.periodradius(epos, Parametric=epos.Parametric, SNR=True)
+			periodradius.periodradius(epos, SNR=False)
+			periodradius.periodradius(epos, SNR=True)
+			if not epos.Parametric:
+				periodradius.periodradius(epos, Model=True, SNR=False, color=color)
 		else:
 			# plot period-radius for non-MC
 			pass

@@ -19,7 +19,11 @@ def all(epos, color=None, alpha_fac=None):
 			colored(epos)
 
 		if 'model' in epos.occurrence:
-			model(epos, color=color, alpha_fac=alpha_fac)
+			model(epos, color=color)
+			if alpha_fac is not None:
+				model(epos, color=color, alpha_fac=alpha_fac)
+			#if Fade:
+			model(epos, color=color, Gradient=True)
 
 		if 'poly' in epos.occurrence:
 			colored(epos, Poly=True)
@@ -196,7 +200,7 @@ def integrated(epos, MCMC=False, Planets=False):
 	if Planets: fname+= '.planets'
 	helpers.save(plt, epos.plotdir+'occurrence/'+fname)
 
-def model(epos, color='C0', alpha_fac=None, Bins=False, Poly=False):
+def model(epos, color='C0', alpha_fac=None, Bins=False, Poly=False, Gradient=False):
 	
 	f, ax = plt.subplots()
 	
@@ -205,11 +209,35 @@ def model(epos, color='C0', alpha_fac=None, Bins=False, Poly=False):
 	
 	helpers.set_axes(ax, epos, Trim=True)
 	
-	# set transparency
-	if alpha_fac is not None:
+	# set transparency / color gradient
+	if Gradient:
+		suffix= '.gradient'
+
+		weigths= epos.occurrence['model']['completeness']
+		cmin, cmax= 0.001, 0.1
+
+		weigths= np.maximum(np.minimum(weigths,cmax), cmin)
+
+		cmap='copper_r'
+		#ticks=np.linspace(vmin, vmax, (vmax-vmin)+1)
+		clrs, norm= helpers.color_array(np.log10(weigths),
+			vmin=np.log10(cmin),vmax=np.log10(cmax), cmap=cmap)
+		
+		ax.scatter(epos.pfm['P'], epos.pfm['R'], 
+			marker='o', s=13, lw=0, color=clrs,zorder=0)
+
+		# colorbar?
+		# cb1 = clrbar.ColorbarBase(axb, cmap=cmap, norm=norm, ticks=ticks,
+		#                             orientation='vertical') # horizontal
+		# axb.set_yticklabels(100*10.**ticks)
+		# axb.tick_params(axis='y', direction='out')
+
+
+	elif alpha_fac is not None:
+		suffix= '.alpha'
 
 		weigths= epos.occurrence['model']['completeness']*alpha_fac #*epos.nstars
-		alpha= np.minimum(weigths,1.)
+		alpha= np.maximum(np.minimum(weigths,1.), 0.0) # 0.2?
 
 		if True:
 			# color issues with  to_rgba_array
@@ -226,8 +254,8 @@ def model(epos, color='C0', alpha_fac=None, Bins=False, Poly=False):
 		ax.scatter(epos.pfm['P'], epos.pfm['R'], 
 			marker='o', s=13, lw=0, color=clr_rgba,zorder=0)
 	else:
+		suffix=''
 		clr= matplotlib.colors.to_rgba(color)
-		print clr
 		ax.plot(epos.pfm['P'], epos.pfm['R'], ls='', marker='o', mew=0, ms=4, 
 			color=clr, zorder=0)
 	
@@ -254,7 +282,7 @@ def model(epos, color='C0', alpha_fac=None, Bins=False, Poly=False):
 				occbin['err'][k]*100), va='top', size=size)
 			ax.text(xbin[1]/xnudge,ybin[0]*ynudge,'n={}'.format(n), ha='right',
 				size=size)
-		helpers.save(plt, epos.plotdir+'occurrence/model_bins')
+		helpers.save(plt, epos.plotdir+'occurrence/model_bins'+suffix)
 	elif Poly:
 		occpoly= epos.occurrence['model']['poly']
 		for k, (xc, yc, coords, n, inbin, occ, err) in enumerate(
@@ -270,9 +298,9 @@ def model(epos, color='C0', alpha_fac=None, Bins=False, Poly=False):
 				# 12 fit in box, 16 default
 			ax.text(xc,yc,'{:.1%}\n$\pm${:.1%}'.format(occ, err), ha='center', va='center', 
 				size=size)
-		helpers.save(plt, epos.plotdir+'occurrence/model_poly')
+		helpers.save(plt, epos.plotdir+'occurrence/model_poly'+suffix)
 	else:
-		helpers.save(plt, epos.plotdir+'occurrence/model')
+		helpers.save(plt, epos.plotdir+'occurrence/model'+suffix)
 
 def poly_only(epos):
 	

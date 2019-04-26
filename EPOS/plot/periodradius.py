@@ -13,24 +13,44 @@ import matplotlib
 if matplotlib.__version__[0] != 2: 
 	helpers.default_pyplot2_colors(matplotlib.colors)
 
-def periodradius(epos, SNR=True, Parametric=False, color='C1'):
+def periodradius(epos, SNR=True, Model=False, color='C1'):
 
-	f, (ax, axR, axP)= helpers.make_panels(plt)
+	f, (ax, axR, axP)= helpers.make_panels(plt, Fancy=True)
 	
 	sim=epos.synthetic_survey
-	title='Simulated Detections'
+	title='Simulated Detections: {}'.format(epos.name)
 	fsuffix='detect'
+	xbins= epos.MC_xvar
+	ybins= epos.MC_yvar
 
 	if SNR:
 		transit=epos.transit
 		title= 'Simulated Transiting Planets'
 		fsuffix='transit'
+	elif Model:
+		pfm= epos.pfm
+		fsuffix='population'
+
+		dwR=0.2 # bin width in ln space
+		dwP=0.3
+		
+		xbins= np.exp(np.arange(np.log(epos.mod_xlim[0]),np.log(epos.mod_xlim[-1])+dwP,dwP))
+		ybins= np.exp(np.arange(np.log(epos.ytrim[0]),np.log(epos.ytrim[-1])+dwR,dwR))	
+
 	
 	''' plot R(P), main panel'''
-	ax.set_title(title)
+	f.suptitle(title)
 	helpers.set_axes(ax, epos, Trim=True)
-	if SNR: ax.plot(transit['P'], transit['Y'], ls='', marker='.', color='C6')
-	ax.plot(sim['P'], sim['Y'], ls='', marker='.', color='C0')
+	if SNR: 
+		ax.plot(transit['P'], transit['Y'], ls='', marker='.', color='C6')
+	elif Model:
+		ax.plot(pfm['P'],pfm['R'], ls='', marker='.', ms=5.0, color='0.5')
+	ax.plot(sim['P'], sim['Y'], ls='', marker='.', color=color)
+
+	if Model:
+		xlim= ax.get_xlim()
+		ax.set_xlim(xlim[0], epos.mod_xlim[-1])
+		#ax.set_ylim(epos.mod_ylim)
 
 	''' Period side panel '''
 	#helpers.set_axis_distance(axP, epos, Trim=True)
@@ -43,8 +63,14 @@ def periodradius(epos, SNR=True, Parametric=False, color='C1'):
 	axP.yaxis.set_ticks_position('both')
 	#axP.tick_params(axis='y', which='minor',left='off',right='off')
 	
-	if SNR: axP.hist(transit['P'], bins=epos.MC_xvar, color='C6')
-	axP.hist(sim['P'], bins=epos.MC_xvar)
+	if SNR: 
+		axP.hist(transit['P'], bins=xbins, color='C6', density=True)
+	elif Model:
+		axP.hist(pfm['P'], bins=xbins, color='0.5', density=True, log=True)
+		axP.hist(pfm['P'], bins=xbins, color='k', density=True, log=True, 
+			histtype='step', zorder=10, ls='-')
+	axP.hist(sim['P'], bins=xbins, density=Model, log=Model, color=color)
+
 
 	''' Radius side panel'''
 	#helpers.set_axis_size(axR, epos, Trim=True, In= epos.MassRadius)
@@ -59,15 +85,29 @@ def periodradius(epos, SNR=True, Parametric=False, color='C1'):
 	#axR.tick_params(axis='x', which='minor',top='off',bottom='off')
 	#axP.tick_params(axis='y', which='minor',left='off',right='off')
 
-	if SNR: axR.hist(transit['Y'],orientation='horizontal', bins=epos.MC_yvar, color='C6')
-	axR.hist(sim['Y'],orientation='horizontal', bins=epos.MC_yvar)
+	if SNR: 
+		axR.hist(transit['Y'],orientation='horizontal', bins=ybins, color='C6', 
+			density=True)
+	elif Model:
+		axR.hist(pfm['R'],orientation='horizontal', bins=ybins, color='0.5', 
+			density=True, log=True)
+		axR.hist(pfm['R'],orientation='horizontal', bins=ybins, color='k', 
+			density=True, log=True, histtype='step', zorder=10, ls='-')
+	axR.hist(sim['Y'],orientation='horizontal', bins=ybins, 
+		density=Model, log=Model, color=color)
 	
 	# labels
 	if SNR:
 		xpos= epos.MC_xvar[-1]
 		ypos= axP.get_ylim()[-1]/1.05
-		axP.text(xpos, ypos, 'Detected ', color='C0', ha='right', va='top')
+		axP.text(xpos, ypos, 'Detected ', color=color, ha='right', va='top')
 		axP.text(xpos, ypos/1.3, 'Undetected ', color='C6', ha='right', va='top')
+	elif Model:
+		xpos= ax.get_xlim()[-1]
+		ypos= ax.get_ylim()[-1]/1.05
+		ax.text(xpos, ypos, 'Detected ', color=color, ha='right', va='top')
+		ax.text(xpos, ypos/1.3, 'Undetected ', color='0.5', ha='right', va='top')
+
 	
 	#ax.legend(loc='lower left', shadow=False, prop={'size':14}, numpoints=1)
 	helpers.save(plt, '{}output/periodradius.{}'.format(epos.plotdir,fsuffix))
@@ -185,25 +225,25 @@ def pdf_3d(epos):
 	sim=epos.synthetic_survey
 	
 	# PDF, individual contributions
-# 	if epos.populationtype is 'model':
-# 		for k, sg in enumerate(epos.groups):
-# 			subset= sim['i sg']==k
-# 			P= sim['P'][subset]
-# 			R= sim['Y'][subset]
-# 			ax.plot(np.log10(P),np.log10(R), zs=0,zdir='z',
-# 				ls='',marker='.',mew=0,ms=5.0,color=clrs[k % 4])
-# 				
-# 			xgrid= np.logspace(*np.log10(epos.xtrim))
-# 			pdf= regression.sliding_window_log(P, None, xgrid) #, width=2. )
-# 			ax.plot(np.log10(xgrid), pdf, zs=yplane,zdir='y', 
-# 				ls='-', marker='', color=clrs[k % 4],
-# 				label='{} x{:.3f}'.format(sg['name'], sg['weight']))
-# 
-# 			ygrid= np.logspace(*np.log10(epos.ytrim))
-# 			pdf= regression.sliding_window_log(R, None, ygrid) #, width=2. )
-# 			ax.plot(np.log10(ygrid), pdf, zs=xplane, zdir='x', 
-# 				ls='-', marker='', color=clrs[k % 4])
-# 	else:
+	# 	if epos.populationtype is 'model':
+	# 		for k, sg in enumerate(epos.groups):
+	# 			subset= sim['i sg']==k
+	# 			P= sim['P'][subset]
+	# 			R= sim['Y'][subset]
+	# 			ax.plot(np.log10(P),np.log10(R), zs=0,zdir='z',
+	# 				ls='',marker='.',mew=0,ms=5.0,color=clrs[k % 4])
+	# 				
+	# 			xgrid= np.logspace(*np.log10(epos.xtrim))
+	# 			pdf= regression.sliding_window_log(P, None, xgrid) #, width=2. )
+	# 			ax.plot(np.log10(xgrid), pdf, zs=yplane,zdir='y', 
+	# 				ls='-', marker='', color=clrs[k % 4],
+	# 				label='{} x{:.3f}'.format(sg['name'], sg['weight']))
+	# 
+	# 			ygrid= np.logspace(*np.log10(epos.ytrim))
+	# 			pdf= regression.sliding_window_log(R, None, ygrid) #, width=2. )
+	# 			ax.plot(np.log10(ygrid), pdf, zs=xplane, zdir='x', 
+	# 				ls='-', marker='', color=clrs[k % 4])
+	# 	else:
 
 	# top left panel (P,R)
 	ax.plot(np.log10(sim['P']), np.log10(sim['Y']),zs=0,zdir='z', 
@@ -230,17 +270,17 @@ def pdf_3d(epos):
 
 		pdf= regression.sliding_window_log(epos.obs_yvar, None, ygrid) 
 		ax.plot(np.log10(ygrid), pdf, zs=xplane,zdir='x', ls=':', marker='', color='k')
-	
-# 	xmax= ax.get_ylim()[-1]
-# 	ymax= ax.get_zlim()[-1]
-# 	ax.errorbar(xmax/1.5, ymax*0.9, yerr=(xmax/1.5*(1.-np.sqrt(1./2.)) ), 
-# 				zs=0,zdir='y', color='k')
-# 	
-# 	xmax= ax.get_xlim()[-1]
-# 	ymax= ax.get_zlim()[-1]
-# 	ax.errorbar(xmax/1.5, ymax*0.9, xerr=(xmax/1.5*(1.-np.sqrt(1./2.)) ), 
-# 				zs=0,zdir='x', color='k')
-	
+		
+	# 	xmax= ax.get_ylim()[-1]
+	# 	ymax= ax.get_zlim()[-1]
+	# 	ax.errorbar(xmax/1.5, ymax*0.9, yerr=(xmax/1.5*(1.-np.sqrt(1./2.)) ), 
+	# 				zs=0,zdir='y', color='k')
+	# 	
+	# 	xmax= ax.get_xlim()[-1]
+	# 	ymax= ax.get_zlim()[-1]
+	# 	ax.errorbar(xmax/1.5, ymax*0.9, xerr=(xmax/1.5*(1.-np.sqrt(1./2.)) ), 
+	# 				zs=0,zdir='x', color='k')
+		
 	#ax2.tick_params(labelbottom='on') # does not re-enable axis
 	
 	''' Legend instead of 4th plot'''

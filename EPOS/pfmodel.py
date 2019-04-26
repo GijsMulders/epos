@@ -8,7 +8,8 @@ import cgs
 ''' Helper functions to read in planet formation models'''
 
 #def symba(name='HMSim1', dir='hdf5/Sim1', plts_mass=0, istep=None, Verbose=False):
-def symba(name, fname, plts_mass=0, cut=-np.inf, smacut=np.inf, istep=None, Verbose=False, Saved=True):
+def symba(name, fname, plts_mass=0, cut=-np.inf, smacut=np.inf, istep=None, 
+	Verbose=False, Saved=True):
 	''' 
 	returns a list of planetary systems
 	sma in au
@@ -143,11 +144,11 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, smacut=np.inf, istep=None, Verb
 			'inc0':np.asarray(inc0), 'starID0':np.asarray(ID0),
 			'ecc0':np.asarray(ecc0)}
 		
-		if Saved:
-			print 'Saving status in {}'.format(fnpz)
-			#np.save(fname, epos.chain)
-			# compression slow on loading?
-			np.savez_compressed(fnpz, **npz)
+		#if Saved:
+		print '\nSaving status in {}'.format(fnpz)
+		#np.save(fname, epos.chain)
+		# compression slow on loading?
+		np.savez_compressed(fnpz, **npz)
 		
 	return npz
 	
