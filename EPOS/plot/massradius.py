@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import helpers
-import cgs
+from EPOS import cgs
 	
 def massradius(epos, MC=False, Log=False, color='C1', Mlim=[0,20], Rlim=[0,7], rho=None):
 	assert epos.MassRadius
