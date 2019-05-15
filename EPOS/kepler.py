@@ -190,7 +190,7 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 			else:
 				vetpars= 0.86, 210, 0.002, -0.22, 5.5, -0.057, -0.057
 		else:
-			print 'no vetting completeness for {} with score={}'.format(subsample, score)
+			raise ValueError('no vetting completeness for {} with score={}'.format(subsample, score))
 		
 		vet_2D= fbpl2d( (X,Y), *vetpars)
 		survey['vet_2D']= vet_2D

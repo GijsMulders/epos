@@ -505,7 +505,7 @@ def periodinner_cdf(epos, MC=False, color='C1'):
 	else:
 		# observed all
 		Psort= np.sort(epos.multi['Pinner'])
-		cdf= cdf= np.arange(Psort.size, dtype=float)/Psort.size
+		cdf= np.arange(Psort.size, dtype=float)/Psort.size
 		ax.plot(Psort, cdf ,color='gray' if MC else 'k', label='Kepler all')	
 	
 	prefix= 'output' if MC else 'survey'
