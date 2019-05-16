@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import periodradius, massradius, multi, helpers
+from . import periodradius, massradius, multi, helpers
 
 clrs= ['r','g','b','m'] # in epos.prep
 fmt_symbol= {'ls':'', 'marker':'o', 'mew':2, 'ms':8,'alpha':0.6}
@@ -9,7 +9,7 @@ fmt_symbol= {'ls':'', 'marker':'o', 'mew':2, 'ms':8,'alpha':0.6}
 def all(epos, color='C1'):
 
 	if hasattr(epos, 'synthetic_survey'):
-		print '\nPlotting output...'
+		print ('\nPlotting output...')
 	
 		if epos.MonteCarlo:
 			periodradius.periodradius(epos, SNR=False)
@@ -54,4 +54,4 @@ def all(epos, color='C1'):
 				multi.periodinner(epos, MC=True, N=True)
 
 	else:
-		print '\nNo output to plot, did you run EPOS.run.once()? \n'
+		print ('\nNo output to plot, did you run EPOS.run.once()? \n')

@@ -3,7 +3,7 @@ import numpy as np
 import scipy.stats
 from matplotlib import gridspec
 
-import helpers
+from . import helpers
 from EPOS.population import periodradius
 from EPOS.fitfunctions import brokenpowerlaw1D
 
@@ -661,7 +661,7 @@ def HansenMurray(epos, color='purple'):
 	import matplotlib.image as mpimg
 
 	pfm= epos.pfm
-	print pfm.keys()
+	print (pfm.keys())
 
 	''' Hansen & Murray 2013 Figure 1 '''
 	f, ax = plt.subplots()

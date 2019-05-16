@@ -20,7 +20,7 @@ def indices(ID, Verbose=False):
 	'''
 	IDsys, toplanet, counts= np.unique(ID, return_inverse=True,return_counts=True)
 	if Verbose:
-		print '\n  {} singles, {} multis'.format(np.sum(counts==1),np.sum(counts>1))
+		print ('\n  {} singles, {} multis'.format(np.sum(counts==1),np.sum(counts>1)))
 	
 	single=(counts==1)[toplanet]
 	multi= (counts>1)[toplanet]
@@ -79,7 +79,7 @@ def frequency(ID, Verbose=False):
 	assert bincounts[0]==0, "unique items can't have frequency zero"
 	if Verbose:
 		for nmulti, text in zip(bincounts[1:], smulti):
-			print '  - {}: {}'.format(text, nmulti)
+			print ('  - {}: {}'.format(text, nmulti))
 	
 	return np.arange(1,bincounts.size), bincounts[1:]
 
@@ -89,7 +89,7 @@ def cdf(ID, Verbose=False):
 	'''
 	bin, count= frequency(ID)
 	xlist=[[bin[k]]*count[k]*bin[k] for k in range(len(bin))]
-	#if Verbose: print '  multi cdf planets: {}'.format(len(np.concatenate(xlist)))
+	#if Verbose: print ('  multi cdf planets: {}'.format(len(np.concatenate(xlist)))
 	return np.concatenate(xlist)
 
 def periodratio(ID, P, N=None, R=None, Verbose=False):
@@ -110,18 +110,18 @@ def periodratio(ID, P, N=None, R=None, Verbose=False):
 	Pratio= []
 	Rpair= [] # size of inner planet in pair
 	for i in range(2,len(np.bincount(counts)) ):
-		#print '\nmultiplicity: {}'.format(i)
+		#print ('\nmultiplicity: {}'.format(i)
 		im= i1[counts>=i] # multis with 
 		_dP= P[im+(i-1)]/P[im+(i-2)]
 		if R is not None:
 			_R= R[im+(i-1)] # size of outer planet
 		#for k, _dP in zip(im,Pratio):
-		#	print ' ID {}, P={}, dP= {}'.format(ID[k], P[ID==ID[k]], _dP)
-		#print 'i={}: {}'.format(i,dP.size)
+		#	print (' ID {}, P={}, dP= {}'.format(ID[k], P[ID==ID[k]], _dP)
+		#print ('i={}: {}'.format(i,dP.size)
 		Pratio.extend(_dP)
 		if R is not None:
 			Rpair.extend(_R)
-	#print 'n dP= {}'.format(len(Pratio))
+	#print ('n dP= {}'.format(len(Pratio))
 	
 	if R is not None:
 		return np.array(Pratio), Pinner, Rpair
@@ -132,21 +132,21 @@ def periodratio(ID, P, N=None, R=None, Verbose=False):
 		PN, dPN= [], []
 		for m in range(1,10):
 			PN.append(Pinner[N[i1[counts>1]]==m])
-			#print m, np.sum(N[i1[counts>1]]==m) # mostly 1 or 2, never 3+
-			#print N[i1[counts>1]]
+			#print (m, np.sum(N[i1[counts>1]]==m) # mostly 1 or 2, never 3+
+			#print (N[i1[counts>1]]
 			
 			# Period ratio of adjacent planets?
-			#print 'm={}'.format(m)
+			#print ('m={}'.format(m)
 			PratioN= []
 			for i in range(2,len(np.bincount(counts)) ):
 				im= i1[counts>=i] # multis with 
 				idx= N[im+(i-1)]-N[im+(i-2)] == m # adjacent, 1,2,3... inbetween
-				#print N[im+(i-1)]- N[im+(i-2)]
-				#print i, im.size, 
-				#print m, idx.sum()
+				#print (N[im+(i-1)]- N[im+(i-2)]
+				#print (i, im.size, 
+				#print (m, idx.sum()
 				dP= P[im[idx]+(i-1)]/P[im[idx]+(i-2)]
 				PratioN.extend(dP)
-			#print 'm={}, n dPN={}'.format(m, len(PratioN))
+			#print ('m={}, n dPN={}'.format(m, len(PratioN))
 			dPN.append(PratioN)
 
 		#return np.array(Pratio), Pinner, PN, dPN

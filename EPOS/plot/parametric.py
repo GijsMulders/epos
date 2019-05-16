@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colorbar as clrbar
 from matplotlib.colors import Normalize
 
-import helpers
+from . import helpers
 from EPOS import cgs
 from EPOS.population import periodradius
 

@@ -5,7 +5,7 @@ import matplotlib.colorbar as clrbar
 import matplotlib.colors
 import numpy as np
 
-import helpers, parametric
+from . import helpers, parametric
 from EPOS.population import periodradius
 
 clrs= ['r','g','b','m'] # in epos.prep
@@ -56,7 +56,7 @@ def all(epos, color=None, alpha_fac=None):
 					 if epos.Msini:
 					 	parametric.oneD_y(epos, Occ=True, MCMC=True, Convert=True)
 	else:
-		print '\nNo occurrence to plot, did you run EPOS.occurrence.all()? \n'
+		print ('\nNo occurrence to plot, did you run EPOS.occurrence.all()? \n')
 	
 def colored(epos, Bins=False, Poly=False):
 	

@@ -9,22 +9,22 @@ def survey(epos, Verbose=False):
 	if hasattr(epos,'obs_zoom'):
 		if not os.path.isdir(epos.jsondir): os.makedirs(epos.jsondir)
 
-		print '\nStoring Observations'
+		print ('\nStoring Observations')
 
 		if Verbose:
-			print '  keys in epos.obs_zoom:'
-			print '  ',epos.obs_zoom.keys()
+			print ('  keys in epos.obs_zoom:')
+			print ('  {}'.fotmat(epos.obs_zoom.keys()))
 
 		keys=epos.obs_zoom.keys()
 		save_to_json(epos,'obs_zoom',epos.obs_zoom, keys)
 
 		if 'multi' in epos.obs_zoom:
 			keys= epos.obs_zoom['multi'].keys()
-			if Verbose: print '  keys in multi:'
-			print '  ',keys
+			if Verbose: print ('  keys in multi:')
+			print ('  {}'.format(keys))
 			save_to_json(epos,'obs_zoom.multi',epos.obs_zoom['multi'], keys)
 	else:
-		print 'No survey stored, did you run epos.set_survey() and set_observation() ?'
+		print ('No survey stored, did you run epos.set_survey() and set_observation() ?')
 
 def occurrence(epos, Verbose=False):
 	if hasattr(epos,'occurrence'):
@@ -33,17 +33,19 @@ def occurrence(epos, Verbose=False):
 		focc= epos.occurrence
 		
 		if Verbose:
-			print 'keys in epos.occurrence'
+			print ('keys in epos.occurrence')
 			for key in focc:
-				print '\n{}'.format(key)
+				print ('\n{}'.format(key))
 				for subkey in focc[key]:
-					print '  {}'.format(subkey)
+					print ('  {}'.format(subkey))
 
 		if 'model' in epos.occurrence:
-			save_to_json(epos,'occurrence.model',focc['model'], ['eta', 'completeness'])
+			save_to_json(epos,'occurrence.model',focc['model'], 
+				['eta', 'completeness'])
 
 		if 'planet' in epos.occurrence:
-			save_to_json(epos,'occurrence.planet',focc['planet'],['xvar','yvar','completeness','occ'])
+			save_to_json(epos,'occurrence.planet',focc['planet'],
+				['xvar','yvar','completeness','occ'])
 
 		if 'bin' in epos.occurrence:
 			gridkeys= ['xc', 'yc', 'dlnx', 'dlny', 'y', 'x']
@@ -63,12 +65,19 @@ def occurrence(epos, Verbose=False):
 				keys=['eta','eta+','eta-','gamma','gamma+','gamma-','area']+gridkeys
 				save_to_json(epos, 'occurrence.posterior', focc['bin'], keys)
 
+		if 'poly' in epos.occurrence:
+			gridkeys= ['xc', 'yc', 'dlnxy', 'y', 'x']
+			
+			# inverse detection efficiency
+			if 'occ' in focc['poly']:
+				keys=['occ', 'err', 'n']+gridkeys
+				save_to_json(epos, 'occurrence.poly.inverse', focc['poly'], keys)
 		# occurrence along x and y axes
 		if 'xzoom' in epos.occurrence and 'yzoom' in epos.occurrence:
 			pass
 		
 	else:
-		print 'No occurrence rates found, did run use epos.occurrence.all() ?'
+		print ('No occurrence rates found, did run use epos.occurrence.all() ?')
 
 def synthetic_survey(epos, Verbose=False):
 	if hasattr(epos,'synthetic_survey'):
@@ -76,22 +85,22 @@ def synthetic_survey(epos, Verbose=False):
 
 		ss= epos.synthetic_survey
 
-		print '\nStoring Synthetic Survey'
+		print ('\nStoring Synthetic Survey')
 
 		if Verbose:
-			print '  keys in epos.synthetic_survey:'
-			print '  ',ss.keys()
+			print ('  keys in epos.synthetic_survey:')
+			print ('  {}'.format(ss.keys()))
 
 		keys=['P', 'Y', 'M', 'R', 'P zoom', 'Y zoom']
 		save_to_json(epos,'synthetic_survey',ss, keys)
 
 		if 'multi' in ss:
 			keys= ss['multi'].keys()
-			if Verbose: print '  keys in multi:'
-			print '  ',keys
+			if Verbose: print ('  keys in multi:')
+			print ('  {}'.format(keys))
 			save_to_json(epos,'synthetic_survey.multi',ss['multi'], keys)
 	else:
-		print 'No synthetic survey stored, did you run epos.run.once() ?'
+		print ('No synthetic survey stored, did you run epos.run.once() ?')
 	
 def population(epos, Verbose=False):
 	if hasattr(epos,'population'):
@@ -99,37 +108,37 @@ def population(epos, Verbose=False):
 		
 		pop= epos.population
 
-		print '\nStoring Planet Population'
+		print ('\nStoring Planet Population')
 
 		if Verbose:
-			print 'keys in epos.population'
+			print ('keys in epos.population')
 			for key in pop:
-				print '\n{}'.format(key)
+				print ('\n{}'.format(key))
 				for subkey in pop[key]:
-					print '  {}'.format(subkey)
+					print ('  {}'.format(subkey))
 
 		if 'system' in epos.population:
 			keys=['P', 'Y', 'ID', 'inc', 'detectable']
 			save_to_json(epos,'population.systems',pop['system'], keys)
 		
 	else:
-		print 'No population stored, did you run epos.run.once() ?'
+		print ('No population stored, did you run epos.run.once() ?')
 
 def model(epos, Verbose=False):
 	if hasattr(epos,'pfm'):
 		if not os.path.isdir(epos.jsondir): os.makedirs(epos.jsondir)
 
-		print '\nStoring Models'
+		print ('\nStoring Models')
 
 		if Verbose:
-			print '  keys in epos.pfm:'
-			print '  ',epos.pfm.keys()
+			print ('  keys in epos.pfm:')
+			print ('  {}'.format(epos.pfm.keys()))
 
 		keys=epos.pfm.keys()
 		save_to_json(epos,'pfm',epos.pfm, keys)
 
 	else:
-		print 'No model stored, did you run epos.set_population() ?'
+		print ('No model stored, did you run epos.set_population() ?')
 	
 def save_to_json(epos, fname, bigdict, keys):
 	tosave= {x: bigdict[x] for x in keys if x in bigdict}

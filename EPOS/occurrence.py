@@ -3,7 +3,10 @@ from scipy import interpolate
 import multiprocessing
 from functools import partial
 
-import shapely.geometry
+try:
+	import shapely.geometry
+except:
+	print('No shapely')
 
 from EPOS.population import periodradius
 import EPOS.analytics
@@ -30,10 +33,10 @@ def all(epos, BinnedMetric=False):
 
 			''' BIC/AIC with chi^2'''
 			if BinnedMetric and 'yzoom' in epos.occurrence or 'xzoom' in epos.occurrence:
-				print '\n  Binned occurrence rate metrics'
+				print ('\n  Binned occurrence rate metrics')
 				binned_metric(epos)
 	else:
-		print 'No bins for calculating occurrence rate, did you use epos.set_bins() ?'
+		print ('No bins for calculating occurrence rate, did you use epos.set_bins() ?')
 	
 def planets(epos, Log=False):
 	''' 
@@ -44,7 +47,7 @@ def planets(epos, Log=False):
 	''' Interpolate occurrence for each planet (on log scale) '''
 	focc= epos.occurrence
 	
-	print '\nInterpolating planet occurrence'
+	print ('\nInterpolating planet occurrence')
 	#with np.errstate(divide='ignore'): 
 	#print '{}x{}=?={}'.format(epos.eff_xvar.shape, epos.eff_yvar.shape, epos.completeness.shape)
 	
@@ -68,7 +71,7 @@ def models(epos, Log=False):
 	
 	''' Interpolate occurrence for each planet (on log scale) '''
 	focc= epos.occurrence
-	print '\nInterpolating model planet occurrence'
+	print ('\nInterpolating model planet occurrence')
 
 	pfm=epos.pfm
 	if not 'R' in pfm:
@@ -104,19 +107,19 @@ def binned(epos, Log=False):
 		focc['bin']['y']= epos.MR(focc['bin']['y in'])[0]
 		for i, ybin in enumerate(focc['bin']['y']):
 			if ybin[0]>ybin[-1]: 
-				print '\nWarning: observed bins are not increasing in size'
-				print '   {} > {}'.format(ybin[0],ybin[-1])
+				print ('\nWarning: observed bins are not increasing in size')
+				print ('   {} > {}'.format(ybin[0],ybin[-1]))
 				focc['bin']['y'][i]= focc['bin']['y'][i][::-1] 
 	else:
 		focc['bin']['y']= focc['bin']['y in']
 
-	print '\n  Observed Planets'
+	print ('\n  Observed Planets')
 	# calc n, i, occ, err, xc, yc, dlnx, dlny from x & y
 	_occ_per_bin(epos, focc['bin'], Log=Log)
 	
 	if 'model' in focc:
 		eta= focc['model']['eta']
-		print '\n  Modeled planets, eta= {:.3g}'.format(eta)
+		print ('\n  Modeled planets, eta= {:.3g}'.format(eta))
 		_model_occ_per_bin(epos, focc['bin'], focc['model'], weights=eta/epos.pfm['ns'])
 
 def poly_binned(epos, Log=False):
@@ -130,13 +133,13 @@ def poly_binned(epos, Log=False):
 	if epos.MassRadius:
 		assert False, 'implement polygons for planet mass'
 
-	print '\n  Observed Planets'
+	print ('\n  Observed Planets')
 	# calc n, occ, err, dlnxy 
 	_occ_per_polygon(epos, focc['poly'], Log=Log)
 	
 	if 'model' in focc:
 		eta= focc['model']['eta']
-		print '\n  Modeled planets, eta= {:.3g}'.format(eta)
+		print ('\n  Modeled planets, eta= {:.3g}'.format(eta))
 		_model_occ_per_polygon(epos, focc['poly'], focc['model'], 
 			weights=eta/epos.pfm['ns'])
 
@@ -144,9 +147,9 @@ def zoomed(epos, TestScore= True):
 	''' Occurrence (inverse detection efficiency) along x,y axis.'''
 	focc= epos.occurrence
 
-	print '\n  x zoom bins'
+	print ('\n  x zoom bins')
 	_occ_per_bin(epos, focc['xzoom'])
-	print '\n  y zoom bins'
+	print ('\n  y zoom bins')
 	_occ_per_bin(epos, focc['yzoom'])
 
 def _occ_per_bin(epos, foccbin, Log=False):
@@ -162,8 +165,8 @@ def _occ_per_bin(epos, foccbin, Log=False):
 		_n.append(inbin.sum())
 		_occ.append(epos.occurrence['planet']['occ'][inbin].sum())
 		
-		print '  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], n={}, occ={:.2g}'.format(
-			xbin[0],xbin[-1], ybin[0],ybin[-1], _n[-1], _occ[-1])
+		print ('  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], n={}, occ={:.2g}'.format(
+			xbin[0],xbin[-1], ybin[0],ybin[-1], _n[-1], _occ[-1]))
 		
 		_xc.append(np.sqrt(xbin[0])*np.sqrt(xbin[-1]) )
 		_yc.append(np.sqrt(ybin[0])*np.sqrt(ybin[-1]) )
@@ -196,7 +199,7 @@ def _occ_per_polygon(epos, foccpoly, Log=False):
 		shp_log=shapely.geometry.polygon.Polygon(np.log(xycoords))
 
 		points= map(shapely.geometry.Point, xyp)
-		inpoly= map(shp.contains, points)
+		inpoly= list(map(shp.contains, points))
 
 		logcenter= shp_log.centroid
 		
@@ -208,8 +211,9 @@ def _occ_per_polygon(epos, foccpoly, Log=False):
 		_xc.append(np.exp(logcenter.x))
 		_yc.append(np.exp(logcenter.y))
 
-		print '  poly, n={}, occ={:.2g}, area={:.2g}'.format(_n[-1], _occ[-1], _dlnxy[-1])
-		print '    xc= {:.2g}, yc={:.2g}'.format(_xc[-1], _yc[-1])
+		print ('  poly, n={}, occ={:.2g}, area={:.2g}'.format(
+			_n[-1], _occ[-1], _dlnxy[-1]))
+		print ('    xc= {:.2g}, yc={:.2g}'.format(_xc[-1], _yc[-1]))
 	
 	foccpoly['xc']= np.array(_xc)
 	foccpoly['yc']= np.array(_yc)	
@@ -238,8 +242,8 @@ def _model_occ_per_bin(epos, foccbin, foccmodel, weights=None):
 		_n.append(inbin.sum())
 		_occ.append(weights* inbin.sum())
 		
-		print '  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], n={}, occ={:.2g}'.format(
-			xbin[0],xbin[-1], ybin[0],ybin[-1], _n[-1], _occ[-1])
+		print ('  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], n={}, occ={:.2g}'.format(
+			xbin[0],xbin[-1], ybin[0],ybin[-1], _n[-1], _occ[-1]))
 		
 		_xc.append(np.sqrt(xbin[0])*np.sqrt(xbin[-1]) )
 		_yc.append(np.sqrt(ybin[0])*np.sqrt(ybin[-1]) )
@@ -283,8 +287,9 @@ def _model_occ_per_polygon(epos, foccpoly, foccmodel, weights=None):
 		_xc.append(np.exp(logcenter.x))
 		_yc.append(np.exp(logcenter.y))
 
-		print '  poly, n={}, occ={:.2g}, area={:.2g}'.format(_n[-1], _occ[-1], _dlnxy[-1])
-		print '    xc= {:.2g}, yc={:.2g}'.format(_xc[-1], _yc[-1])
+		print ('  poly, n={}, occ={:.2g}, area={:.2g}'.format(
+			_n[-1], _occ[-1], _dlnxy[-1]))
+		print ('    xc= {:.2g}, yc={:.2g}'.format(_xc[-1], _yc[-1]))
 		
 	_foccpoly= foccmodel['poly']= {}
 	_foccpoly['n']= np.array(_n)
@@ -307,7 +312,7 @@ def parametric(epos):
 	focc= epos.occurrence
 	
 	''' loop over all pre-defined bins '''
-	print '\n  posterior per bin'
+	print ('\n  posterior per bin')
 	xbins= focc['bin']['x']
 	ybins= focc['bin']['y in']
 	eta, gamma, area, pos, sigp, sign= _posterior_per_bin(epos, xbins, ybins, Verbose=True)
@@ -326,16 +331,17 @@ def parametric(epos):
 
 	''' bin for normalization '''
 	if hasattr(epos.fitpars, 'normkeyx') and hasattr(epos.fitpars, 'normkeyy'):
-		print '\n  normalization per unit of ln area'
+		print ('\n  normalization per unit of ln area')
 		dw= 1.01
 		xnorm= epos.fitpars.get(epos.fitpars.normkeyx)
 		ynorm= epos.fitpars.get(epos.fitpars.normkeyy)
 		xbin= [xnorm/dw, xnorm*dw]
 		ybin= [ynorm/dw, ynorm*dw]
 		eta, gamma, _, gamma_fit, gamma_p, gamma_n=  _posterior_per_bin(epos, [xbin],[ybin])
-		print '  x={:.2g}, y={:.2g}, gamma= {:.2g}'.format(xnorm, ynorm, gamma[0])
+		print ('  x={:.2g}, y={:.2g}, gamma= {:.2g}'.format(xnorm, ynorm, gamma[0]))
 		if len(gamma_fit)>0:
-			print '  gamma= {:.2g} +{:.2g} - {:.2g}'.format(gamma_fit[0], gamma_p[0], gamma_n[0])
+			print ('  gamma= {:.2g} +{:.2g} - {:.2g}'.format(
+				gamma_fit[0], gamma_p[0], gamma_n[0]))
 
 def _interpolate_occ(epos, out_xvar, out_yvar, Log=False):
 	if Log:
@@ -366,8 +372,8 @@ def _posterior_per_bin(epos, xbins, ybins, Verbose=True):
 		eta.append(gamma[-1]*area[-1])
 
 		if Verbose:
-			print '  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], area={:.2f}, eta_0={:.2g}'.format(
-				xbin[0],xbin[-1], ybin[0],ybin[-1], area[-1], eta[-1])
+			print ('  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], area={:.2f}, eta_0={:.2g}'.format(
+				xbin[0],xbin[-1], ybin[0],ybin[-1], area[-1], eta[-1]))
 
 		''' Posterior?'''
 		if hasattr(epos, 'samples'):
@@ -390,9 +396,10 @@ def _posterior_per_bin(epos, xbins, ybins, Verbose=True):
 			sig2n= (perc[2]-perc[0])
 		
 			if Verbose:
-				print '  gamma= {:.1%} +{:.1%} -{:.1%}'.format(pos[-1],sigp[-1],sign[-1])
-				print '  eta= {:.1%} +{:.1%} -{:.1%}'.format(
-					pos[-1]*area[-1],sigp[-1]*area[-1],sign[-1]*area[-1])
+				print ('  gamma= {:.1%} +{:.1%} -{:.1%}'.format(
+					pos[-1],sigp[-1],sign[-1]))
+				print ('  eta= {:.1%} +{:.1%} -{:.1%}'.format(
+					pos[-1]*area[-1],sigp[-1]*area[-1],sign[-1]*area[-1]))
 				#print '  gamma 2sig= {:.1%} +{:.1%} -{:.1%}'.format(_pos[-1],sig2p,sig2n)
 
 	return eta, gamma, area, pos, sigp, sign
@@ -423,10 +430,10 @@ def binned_metric(epos):
 		aic= EPOS.analytics.aic_rss(rss, kfree, nbins)
 		aic_c= EPOS.analytics.aic_c_rss(rss, kfree, nbins)
 
-		print '  x: (n={}, k={})'.format(nbins, kfree)
-		print '    chi^2= {:.1f}, reduced= {:.1f}'.format(rss, chi2)
-		print '    bic= {:.1f}'.format(bic)
-		print '    aic= {:.1f}, AICc= {:.1f}'.format(aic, aic_c)
+		print ('  x: (n={}, k={})'.format(nbins, kfree))
+		print ('    chi^2= {:.1f}, reduced= {:.1f}'.format(rss, chi2))
+		print ('    bic= {:.1f}'.format(bic))
+		print ('    aic= {:.1f}, AICc= {:.1f}'.format(aic, aic_c))
 
 	if 'xzoom' in epos.occurrence:
 		yc= epos.occurrence['xzoom']['yc']
@@ -451,7 +458,7 @@ def binned_metric(epos):
 		aic= EPOS.analytics.aic_rss(rss, kfree, nbins)
 		aic_c= EPOS.analytics.aic_c_rss(rss, kfree, nbins)
 
-		print '  y: (n={}, k={})'.format(nbins, kfree)
-		print '    chi^2= {:.1f}, reduced= {:.1f}'.format(rss, chi2)
-		print '    bic= {:.1f}'.format(bic)
-		print '    aic= {:.1f}, AICc= {:.1f}'.format(aic, aic_c)
+		print ('  y: (n={}, k={})'.format(nbins, kfree))
+		print ('    chi^2= {:.1f}, reduced= {:.1f}'.format(rss, chi2))
+		print ('    bic= {:.1f}'.format(bic))
+		print ('    aic= {:.1f}, AICc= {:.1f}'.format(aic, aic_c))

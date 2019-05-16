@@ -6,10 +6,10 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.colorbar as clrbar
 
-import helpers
+from . import helpers
 
 def all(epos):
-	print '\nPlotting survey...'
+	print ('\nPlotting survey...')
 
 	observed(epos, PlotBox=False)
 	completeness(epos, PlotBox=False)

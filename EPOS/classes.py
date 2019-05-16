@@ -8,7 +8,7 @@ see example.py for a simple demonstration of the class
 
 import numpy as np
 
-import cgs
+from . import cgs
 import EPOS.multi
 from EPOS.plot.helpers import set_pyplot_defaults
 from EPOS import __version__
@@ -61,7 +61,7 @@ class fitparameters:
 
 	def default(self, key, value, Verbose=True):
 		if not key in self.keysall: 
-			if Verbose: print '  Set {} to default {}'.format(key, value)
+			if Verbose: print ('  Set {} to default {}'.format(key, value))
 			self.add(key, value, fixed=True)
 	
 	def set(self, key, value):
@@ -166,7 +166,7 @@ class epos:
 		self.name=name
 		self.title=name if title is None else title
 
-		print '\n\n |~| epos {} |~|\n'.format(__version__)
+		print ('\n\n |~| epos {} |~|\n'.format(__version__))
 
 		''' Directories '''
 		self.plotdir='png/{}/'.format(name)
@@ -186,7 +186,7 @@ class epos:
 		else:
 			if type(seed) is int: self.seed= seed
 			else: self.seed= np.random.randint(0, 4294967295)
-			print '\nUsing random seed {}'.format(self.seed)
+			print ('\nUsing random seed {}'.format(self.seed))
 		
 		self.Debug= False
 		self.Parallel= True # speed up a few calculations 
@@ -242,8 +242,8 @@ class epos:
 		self.radiusError= radiusError
 		
 		# print some stuff
-		print '\nObservations:\n  {} stars'.format(int(nstars))
-		print '  {} planets'.format(self.obs_starID.size)
+		print ('\nObservations:\n  {} stars'.format(int(nstars)))
+		print ('  {} planets'.format(self.obs_starID.size))
 		EPOS.multi.indices(self.obs_starID, Verbose=True)
 		epos.multi={}
 		epos.multi['bin'], epos.multi['count']= \
@@ -288,7 +288,6 @@ class epos:
 			self.Pindex= -2./3.
 			fourpi2_GM= 4.*np.pi**2. / (cgs.G*self.Mstar*cgs.Msun)
 			self.fgeo_prefac= self.Rstar*cgs.Rsun * fourpi2_GM**(1./3.) / cgs.day**(2./3.)
-			#print self.fgeo_prefac
 			P, R= np.meshgrid(self.eff_xvar, self.eff_yvar, indexing='ij')
 			
 			self.completeness= self.eff_2D * self.fgeo_prefac*P**self.Pindex
@@ -315,26 +314,26 @@ class epos:
 		
 		''' Define the region where completeness is calculated'''
 		if xtrim is None:
-			print 'Trimming x-axis from detection efficiency'
+			print ('Trimming x-axis from detection efficiency')
 			self.xtrim= self.eff_xlim
 		else:
 			self.xtrim= [max(xtrim[0], self.eff_xlim[0]), min(xtrim[1], self.eff_xlim[1])]
 
 		if ytrim is None:
-			print 'Trimming y-axis from detection efficiency'
+			print ('Trimming y-axis from detection efficiency')
 			self.ytrim= self.eff_ylim
 		else:
 			self.ytrim= [max(ytrim[0], self.eff_ylim[0]), min(ytrim[1], self.eff_ylim[1])]
 		
 		''' Define a smaller region where observational comparison is performed'''	
 		if xzoom is None:
-			print 'Not zooming in on x-axis for model comparison'
+			print ('Not zooming in on x-axis for model comparison')
 			self.xzoom= self.xtrim
 		else:
 			self.xzoom= [max(xzoom[0], self.xtrim[0]), min(xzoom[1], self.xtrim[1])]
 
 		if yzoom is None:
-			print 'Not zooming in on y-axis for model comparison'
+			print ('Not zooming in on y-axis for model comparison')
 			self.yzoom= self.ytrim
 		else:
 			self.yzoom= [max(yzoom[0], self.ytrim[0]), min(yzoom[1], self.ytrim[1])]
@@ -343,7 +342,7 @@ class epos:
 			self.Zoom=False
 		elif (self.xzoom==self.xtrim) and (self.yzoom==self.ytrim):
 			self.Zoom=False
-			print 'Trim equal to zoom' # so??
+			print ('Trim equal to zoom') # so??
 		else:
 			self.Zoom=True
 		
@@ -569,7 +568,7 @@ class epos:
 		focc['poly']={}
 		focc['poly']['coords']=[]
 
-		print '\nTrying {} polygons'.format(len(polys))
+		print ('\nTrying {} polygons'.format(len(polys)))
 		for coords in polys:
 			npc= np.asarray(coords)
 			assert npc.ndim==2, 'coords needs to de 2dim list'
@@ -624,8 +623,8 @@ class epos:
 		# tag is fit parameter, i.e. metallicity, surface density, or model #
 
 		if Verbose:
-			print '\nArguments not used by set_population:'
-			print '  ',kwargs.keys()
+			print ('\nArguments not used by set_population:')
+			print ('  {}'.format(kwargs.keys()))
 
 		if hasattr(self, 'pfm'):
 			raise ValueError('expand: adding multiple populations?')
@@ -733,7 +732,7 @@ class epos:
 		self.mod_ylim=[min(ymin/dy, self.mod_ylim[0]),max(ymax*dy, self.mod_ylim[1])]
 	
 	def set_massradius(self, MR, name, masslimits= [0.01,1e3]):
-		print '\nMass-Radius relation from {}'.format(name)
+		print ('\nMass-Radius relation from {}'.format(name))
 		if self.MassRadius:
 			raise ValueError('Already defined a Mass-Radius conversion function ')
 		# actually radius as funtion of mass (mass-to-radius)
@@ -745,9 +744,9 @@ class epos:
 		
 		self.masslimits=masslimits 
 		meanradius= MR(masslimits)[0]
-		print 'Mass and Radius limits:'
-		print '  min M = {:.3f}-> <R> ={:.2f}'.format(masslimits[0], meanradius[0] )
-		print '  max M = {:.0f}-> <R> ={:.1f}'.format(masslimits[-1], meanradius[-1] )
+		print ('Mass and Radius limits:')
+		print ('  min M = {:.3f}-> <R> ={:.2f}'.format(masslimits[0], meanradius[0] ))
+		print ('  max M = {:.0f}-> <R> ={:.1f}'.format(masslimits[-1],meanradius[-1]))
 
 def _trimarray(array,trim):
 	# trims array of points not needed for interpolation

@@ -27,7 +27,7 @@ setup(name='epospy',
           'emcee >= 2.0',
           'corner >= 2.0',
           'h5py',
-	  'shapely'
+	        'shapely'
       ],
       classifiers=[
         "Programming Language :: Python :: 2.7",

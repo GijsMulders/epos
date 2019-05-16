@@ -1,8 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
-import matplotlib.patches as patches
-import helpers
+from . import helpers
 from EPOS import regression
 
 clrs= ['r','g','b','m'] # in epos.prep

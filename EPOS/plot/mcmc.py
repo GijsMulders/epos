@@ -2,25 +2,25 @@ import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 
-import helpers
-import parametric, periodradius, multi
+from . import helpers
+from . import parametric, periodradius, multi
 
 try:
 	import corner
 except ImportError:
-	print '\nWarning: corner.py not imported'
+	print ('\nWarning: corner.py not imported')
 	warnings.warn('corner.py not imported',ImportWarning)
 except:
-	print '??'
+	print ('??')
 
 def all(epos):
 	if hasattr(epos, 'chain'):
-		print '\nPlotting chain...'
+		print ('\nPlotting chain...')
 		chain(epos)
 		try:
 			corners(epos)
 		except NameError:
-			print '  (skipping corner plot)'
+			print ('  (skipping corner plot)')
 		
 		if epos.Parametric:
 			parametric.oneD(epos, MCMC=True)
@@ -38,7 +38,7 @@ def all(epos):
 				multi.periodinner(epos, MCMC=True)
 			
 	else:
-		print '\nNo chain to plot, did you run EPOS.run.mcmc()? \n'
+		print ('\nNo chain to plot, did you run EPOS.run.mcmc()? \n')
 	
 def chain(epos):
 	nwalker, nstep, npara= epos.chain.shape

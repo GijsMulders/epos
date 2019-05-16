@@ -37,7 +37,7 @@ def pfmodel(epos, sma_cut=1., Verbose=False):
 	s_tab+= r'\\'
 	
 	if Verbose:
-		print s_inc, s_mass, s_inner, s_ratio, s_multi
+		print (s_inc, s_mass, s_inner, s_ratio, s_multi)
 	
 	#return s_inc, s_mass, s_inner, s_ratio, s_multi
 	return s_tab

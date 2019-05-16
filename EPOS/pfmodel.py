@@ -3,7 +3,7 @@ import glob
 import numpy as np
 import sys, os
 
-import cgs
+from . import cgs
 
 ''' Helper functions to read in planet formation models'''
 
@@ -24,7 +24,7 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, smacut=np.inf, istep=None,
 	
 	''' Load hdf5 file or npz dictionary for quicker access'''
 	if os.path.isfile(fnpz) and Saved:
-		print '\nLoading saved status from {}'.format(fnpz)
+		print ('\nLoading saved status from {}'.format(fnpz))
 		npz= np.load(fnpz)
 				
 		# check if keys present
@@ -32,13 +32,13 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, smacut=np.inf, istep=None,
 			if not key in npz: 
 				raise ValueError('Key {} not present\n{}'.format(key,npz.keys()))
 	else:
-		print '\nProcessing Symba HDF5 file for {}'.format(name)
+		print ('\nProcessing Symba HDF5 file for {}'.format(name))
 		#fname= '{}/{}_set??.h5'.format(dir,name)
 		flist= glob.glob(fname)
 		if len(flist)==0: 
 			raise ValueError('file not found: {}'.format(fname))
 		else:
-			if Verbose: print '  {} files'.format(len(flist))
+			if Verbose: print ('  {} files'.format(len(flist)))
 	
 		sma, mass, inc, ecc, ID= [], [], [], [], []
 		sma0, mass0, inc0, ecc0, ID0 =[], [], [], [], []
@@ -56,17 +56,18 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, smacut=np.inf, istep=None,
 					nsteps=istep
 
 				if Verbose: 
-					print '\n{}, step {}'.format(fname, nsteps)
+					print ('\n{}, step {}'.format(fname, nsteps))
 				else:
 					amtDone= float(i)/len(flist)
-					print '\r  [{:50s}] {:5.1f}%'.format('#' * int(amtDone * 50), amtDone * 100),
+					# python 3 no line break?
+					print ('\r  [{:50s}] {:5.1f}%'.format('#' * int(amtDone * 50), amtDone * 100))
 					sys.stdout.flush() 
 			
 				L_sma, L_mass, L_inc, L_ecc= [], [], [], []
 				L_sma0, L_mass0, L_inc0, L_ecc0= [], [], [], []
 			
 				for particle in hf:
-					#if Verbose: print particle, hf.get(particle).shape[0]
+					#if Verbose: print (particle, hf.get(particle).shape[0]
 					if hf.get(particle).shape[0] == nsteps:
 						final_architecture= np.array(hf.get(particle))[-1,:]
 
@@ -83,7 +84,7 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, smacut=np.inf, istep=None,
 					if hf.get(particle).shape[0]== 1:
 						pass
 					else:
-						#print particle
+						#print (particle
 						initial_architecture= np.array(hf.get(particle))[0,:]
 						L_sma0.append(initial_architecture[2])
 						L_mass0.append(initial_architecture[8]* symbamassunit)
@@ -93,17 +94,17 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, smacut=np.inf, istep=None,
 
 						#if not 'time' in sg: sg['time']= final_architecture[0]/1e6
 				
-					# 			# print '\nLoaded subgroup {} with {} planetary systems'.format(sg['name'], sg['n'])
+					# 			# print ('\nLoaded subgroup {} with {} planetary systems'.format(sg['name'], sg['n'])
 	# 			for system in sg['system']:
-	# 				print 'system has {} planets, {:.1f} Mearth:'.format(
+	# 				print ('system has {} planets, {:.1f} Mearth:'.format(
 	# 					system['np'],np.sum(system['mass']))
 	# 				for a,m in zip(system['sma'], system['mass']):
-	# 					print '  {:.2f} au, {:.1f} Mearth'.format(a,m)
-					#print sg['all_Pratio']
+	# 					print ('  {:.2f} au, {:.1f} Mearth'.format(a,m)
+					#print (sg['all_Pratio']
 
 				
 					#initial_condition= np.array(hf.get(particle))[0,:]
-					#print hf.get(particle).shape
+					#print (hf.get(particle).shape
 					#L_sma0.append(initial_condition[2]) ?? crashes at HMSim3
 					#L_mass0.append(initial_condition[8]* symbamassunit)
 				
@@ -117,12 +118,12 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, smacut=np.inf, istep=None,
 					# -Col 8: Mean anomaly at epoch
 					# -Col 9: Mass in units where 1 solar mass = (2*pi)^2
 			
-				# print system properties:
+				# print (system properties:
 				if Verbose:
-					print 'System {} has {} planets, {:.1f} Mearth:'.format(
-						i, len(L_sma),np.sum(L_mass))
+					print ('System {} has {} planets, {:.1f} Mearth:'.format(
+						i, len(L_sma),np.sum(L_mass)))
 					for a,m in zip(L_sma, L_mass):
-						print '  {:.2f} au, {:.1f} Mearth'.format(a,m)
+						print ('  {:.2f} au, {:.1f} Mearth'.format(a,m))
 			
 				sma.extend(L_sma)
 				mass.extend(L_mass)
@@ -135,7 +136,9 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, smacut=np.inf, istep=None,
 				inc0.extend(L_inc0)
 				ecc0.extend(L_ecc0)
 
-			if not Verbose: print '\r  [{:50s}] {:.1f}%'.format('#' * int(1 * 50), 1 * 100),
+			if not Verbose: 
+				# Python 3 no linebreak
+				print ('\r  [{:50s}] {:.1f}%'.format('#' * int(1 * 50), 1 * 100))
 		
 		npz={'sma':np.asarray(sma), 'mass':np.asarray(mass), 
 			'inc':np.asarray(inc), 'starID':np.asarray(ID),
@@ -145,7 +148,7 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, smacut=np.inf, istep=None,
 			'ecc0':np.asarray(ecc0)}
 		
 		#if Saved:
-		print '\nSaving status in {}'.format(fnpz)
+		print ('\nSaving status in {}'.format(fnpz))
 		#np.save(fname, epos.chain)
 		# compression slow on loading?
 		np.savez_compressed(fnpz, **npz)
@@ -154,7 +157,7 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, smacut=np.inf, istep=None,
 	
 def mercury(fname, istep=None, icut=-np.inf, smacut=[0,np.inf], masscut= [0,np.inf],
 	Verbose=False):
-	print '\nProcessing Mercury file'
+	print ('\nProcessing Mercury file')
 	flist= glob.glob(fname)
 	if len(flist)==0: raise ValueError('file not found: {}'.format(fname))
 	sma, mass, inc, ID= [], [], [], []
@@ -162,10 +165,10 @@ def mercury(fname, istep=None, icut=-np.inf, smacut=[0,np.inf], masscut= [0,np.i
 	for i,fname in enumerate(flist):
 
 		if Verbose: 
-			print '  {}: Using planetary system at final step'.format(fname)
+			print ('  {}: Using planetary system at final step'.format(fname))
 		else:
 			amtDone= float(i)/len(flist)
-			print '\r  [{:50s}] {:5.1f}%'.format('#' * int(amtDone * 50), amtDone * 100),
+			print ('\r  [{:50s}] {:5.1f}%'.format('#' * int(amtDone * 50), amtDone * 100))
 			sys.stdout.flush() 
 		
 		try:
@@ -184,11 +187,11 @@ def mercury(fname, istep=None, icut=-np.inf, smacut=[0,np.inf], masscut= [0,np.i
 				ID.extend([i]*len(L_sma))
 
 		except ValueError:
-			print '\n(skipping {})\n'.format(fname)
+			print ('\n(skipping {})\n'.format(fname))
 
 		except: raise
 
-		if not Verbose: print '\r  [{:50s}] {:.1f}%'.format('#' * int(1 * 50), 1 * 100),
+		if not Verbose: print ('\r  [{:50s}] {:.1f}%'.format('#' * int(1 * 50), 1 * 100))
 
 	sma= np.array(sma)
 	mass=np.array(mass)
@@ -203,22 +206,6 @@ def mercury(fname, istep=None, icut=-np.inf, smacut=[0,np.inf], masscut= [0,np.i
 		'inc':inc[include], 'starID':starID[include]}
 		
 	return npz
-
-def pa_bert(name='1Dlin', dir='PA_Bert/', Verbose=False):
-	fname= '{}/Data{}.out'.format(dir,name)
-	#with open(fanem,'r') as f:
-	a= np.loadtxt(fname, unpack=True)
-	include= np.isfinite(a[4]) & (a[4]>0) # & (a[-1]<-0.2) # metallicity cut
-	sma= a[4][include]
-	mass= a[5][include]
-	FeH= a[-1][include]
-	
-	print '\nLoad Pebble Accretion from Bertram Bitsch'
-	print '  sma:  {:.2e} ... {:.1f}'.format(min(sma), max(sma))
-	print '  mass: {:.2e} ... {:.1f}'.format(min(mass), max(mass))
-	print '  Fe/H: {:.2f} ... {:.2f}'.format(min(FeH), max(FeH))
-	
-	return sma, mass, FeH
 	
 def bern(name='syntheticpop_20emb_983systems.txt', dir='Bern', 
 		smacut=[0,np.inf], masscut= [0,np.inf], Rcut=[0,np.inf], 
@@ -228,17 +215,15 @@ def bern(name='syntheticpop_20emb_983systems.txt', dir='Bern',
 	''' Read the header '''
 	header= np.genfromtxt(fname, max_rows=1, dtype=str, delimiter=',')
 	if Verbose:
-		#print header
-		print '\nColumns:'
+		print ('\nColumns:')
 		for k, colname in enumerate(header):
-			print '  a[{}]: {}'.format(k, colname)
-	#print k
+			print ('  a[{}]: {}'.format(k, colname))
 
 	''' Read the data '''
 	a= np.loadtxt(fname, unpack=True, skiprows=1)
 	if Verbose:
-		print '\nraw data: {} systems, {} planets'.format(np.unique(
-			a[0 if Single else 1]).size, a[0].size)
+		print ('\nraw data: {} systems, {} planets'.format(np.unique(
+			a[0 if Single else 1]).size, a[0].size))
 
 	# cut out certain planets
 	include= (smacut[0]<=a[2]) & (a[2]<=smacut[-1])
@@ -259,14 +244,14 @@ def bern(name='syntheticpop_20emb_983systems.txt', dir='Bern',
 	sma0= a[10][include]
 	fice= a[11][include]
 
-	print '\nLoad population synthesis model {}'.format(name)
-	print '  included {} systems, {} planets'.format(np.unique(ID).size, sma.size)
-	print '  sma:  	 {:.2e} ... {:.1f}'.format(min(sma), max(sma))
-	print '  sma0: 	 {:.2e} ... {:.1f}'.format(min(sma0), max(sma0))
-	print '  mass:   {:.2e} ... {:.1f}'.format(min(mass), max(mass))
-	print '  radius: {:.2f} ... {:.1f}'.format(min(radius), max(radius))
-	print '  inc:    {:.2e} ... {:.1f}'.format(min(inc), max(inc))
-	print '  Fe/H:   {:.2f} ... {:.2f}'.format(min(FeH), max(FeH))
+	print ('\nLoad population synthesis model {}'.format(name))
+	print ('  included {} systems, {} planets'.format(np.unique(ID).size, sma.size))
+	print ('  sma:  	 {:.2e} ... {:.1f}'.format(min(sma), max(sma)))
+	print ('  sma0: 	 {:.2e} ... {:.1f}'.format(min(sma0), max(sma0)))
+	print ('  mass:   {:.2e} ... {:.1f}'.format(min(mass), max(mass)))
+	print ('  radius: {:.2f} ... {:.1f}'.format(min(radius), max(radius)))
+	print ('  inc:    {:.2e} ... {:.1f}'.format(min(inc), max(inc)))
+	print ('  Fe/H:   {:.2f} ... {:.2f}'.format(min(FeH), max(FeH)))
 	
 	order= np.lexsort((sma,ID)) 
 	
@@ -292,7 +277,7 @@ def morby(name, fname, Verbose=False, Saved=True):
 	
 	''' Load hdf5 file or npz dictionary for quicker access'''
 	if os.path.isfile(fnpz) and Saved:
-		print '\nLoading saved status from {}'.format(fnpz)
+		print ('\nLoading saved status from {}'.format(fnpz))
 		npz= np.load(fnpz)
 				
 		# check if keys present
@@ -300,13 +285,13 @@ def morby(name, fname, Verbose=False, Saved=True):
 			if not key in npz: 
 				raise ValueError('Key {} not present\n{}'.format(key,npz.keys()))
 	else:
-		print '\nProcessing Symba HDF5 file for {}'.format(name)
+		print ('\nProcessing Symba HDF5 file for {}'.format(name))
 		#fname= '{}/{}_set??.h5'.format(dir,name)
 		flist= glob.glob(fname)
 		if len(flist)==0: 
 			raise ValueError('file not found: {}'.format(fname))
 		else:
-			if Verbose: print '  {} files'.format(len(flist))
+			if Verbose: print ('  {} files'.format(len(flist)))
 	
 		sma, mass, inc, ecc, ID= [], [], [], [], []
 	
@@ -330,27 +315,27 @@ def morby(name, fname, Verbose=False, Saved=True):
 
 					ID.append([i]*len(a[0]))
 				else:
-					print a.shape
-					print a
+					print (a.shape)
+					print (a)
 					raise ValueError('Error reading in') 
 			except (IndexError, TypeError):
-				print a.shape
-				print a
+				print (a.shape)
+				print (a)
 				raise
 
-			# print system properties:
+			# print (system properties:
 			if Verbose:
-				print 'System {} has {} planets, {:.1f} Mearth:'.format(
-					i, len(sma[-1]),np.sum(mass[-1]))
+				print ('System {} has {} planets, {:.1f} Mearth:'.format(
+					i, len(sma[-1]),np.sum(mass[-1])))
 				for items in zip(sma[-1], mass[-1], inc[-1]):
-					print '  {:.2f} au, {:.1f} Mearth, {:.3g} deg'.format(*items)
+					print ('  {:.2f} au, {:.1f} Mearth, {:.3g} deg'.format(*items))
 		
 		npz={'sma':np.concatenate(sma), 'mass':np.concatenate(mass), 
 			'inc':np.concatenate(inc), 'starID':np.concatenate(ID),
 			'ecc':np.concatenate(ecc)}
 		
 		if Saved:
-			print 'Saving status in {}'.format(fnpz)
+			print ('Saving status in {}'.format(fnpz))
 			#np.save(fname, epos.chain)
 			# compression slow on loading?
 			np.savez_compressed(fnpz, **npz)
@@ -362,7 +347,7 @@ def mordasini(name='syntheticpopmordasini1MsunJ31', dir='Mordasini', smacut=np.i
 		Rcut=0, Single=False, Verbose=False):
 	fname= '{}/{}.dat'.format(dir,name)
 	header= np.genfromtxt(fname, max_rows=1, dtype=str)
-	print header
+	print (header)
 	a= np.loadtxt(fname, unpack=True, skiprows=1, usecols=(0,1,2,3,4,6,7))
 
 	npl= a[2].size
@@ -376,13 +361,13 @@ def mordasini(name='syntheticpopmordasini1MsunJ31', dir='Mordasini', smacut=np.i
 	inc=a[5][include]
 	FeH= a[6][include]
 
-	print '\nLoad population synthesis model {}'.format(name)
-	print '  {} stars, {} planets'.format(ns, npl)
-	print '  sma:  	 {:.2e} ... {:.1f}'.format(min(sma), max(sma))
-	print '  mass:   {:.2e} ... {:.1f}'.format(min(mass), max(mass))
-	print '  radius: {:.2f} ... {:.1f}'.format(min(radius), max(radius))
-	print '  inc:    {:.2e} ... {:.1f}'.format(min(inc), max(inc))
-	print '  Fe/H:   {:.2f} ... {:.2f}'.format(min(FeH), max(FeH))
+	print ('\nLoad population synthesis model {}'.format(name))
+	print ('  {} stars, {} planets'.format(ns, npl))
+	print ('  sma:  	 {:.2e} ... {:.1f}'.format(min(sma), max(sma)))
+	print ('  mass:   {:.2e} ... {:.1f}'.format(min(mass), max(mass)))
+	print ('  radius: {:.2f} ... {:.1f}'.format(min(radius), max(radius)))
+	print ('  inc:    {:.2e} ... {:.1f}'.format(min(inc), max(inc)))
+	print ('  Fe/H:   {:.2f} ... {:.2f}'.format(min(FeH), max(FeH)))
 	
 	order= np.lexsort((sma,ID)) 
 	
@@ -397,7 +382,7 @@ def mordasini_ext(name='syntheticpopmordasini1MsunJ31extended', dir='Mordasini',
 		Rcut=0, Verbose=False):
 	fname= '{}/{}.dat'.format(dir,name)
 	header= np.genfromtxt(fname, max_rows=1, dtype=str)
-	print header
+	print (header)
 	a= np.loadtxt(fname, unpack=True, skiprows=1, usecols=(1,2,3,4,6,7,10))
 
 	npl= a[2].size
@@ -412,14 +397,14 @@ def mordasini_ext(name='syntheticpopmordasini1MsunJ31extended', dir='Mordasini',
 	FeH= a[5][include]
 	sma0= a[6][include]
 
-	print '\nLoad population synthesis model {}'.format(name)
-	print '  {} stars, {} planets'.format(ns, npl)
-	print '  sma:  	 {:.2e} ... {:.1f}'.format(min(sma), max(sma))
-	print '  sma0: 	 {:.2e} ... {:.1f}'.format(min(sma0), max(sma0))
-	print '  mass:   {:.2e} ... {:.1f}'.format(min(mass), max(mass))
-	print '  radius: {:.2f} ... {:.1f}'.format(min(radius), max(radius))
-	print '  inc:    {:.2e} ... {:.1f}'.format(min(inc), max(inc))
-	print '  Fe/H:   {:.2f} ... {:.2f}'.format(min(FeH), max(FeH))
+	print ('\nLoad population synthesis model {}'.format(name))
+	print ('  {} stars, {} planets'.format(ns, npl))
+	print ('  sma:  	 {:.2e} ... {:.1f}'.format(min(sma), max(sma)))
+	print ('  sma0: 	 {:.2e} ... {:.1f}'.format(min(sma0), max(sma0)))
+	print ('  mass:   {:.2e} ... {:.1f}'.format(min(mass), max(mass)))
+	print ('  radius: {:.2f} ... {:.1f}'.format(min(radius), max(radius)))
+	print ('  inc:    {:.2e} ... {:.1f}'.format(min(inc), max(inc)))
+	print ('  Fe/H:   {:.2f} ... {:.2f}'.format(min(FeH), max(FeH)))
 	
 	order= np.lexsort((sma,ID)) 
 	

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
 import scipy.stats
 
-import helpers
+from . import helpers
 import EPOS.multi
 from EPOS.population import periodradius as draw_PR
 from EPOS.population import periodratio as draw_dP
@@ -603,7 +603,7 @@ def polar(epos):
 			ax.set_thetamin(0)
 			ax.set_thetamax(180)
 		except AttributeError:
-			print 'Update pyplot'
+			print ('Update pyplot')
 			raise
 		
 		if Bugged:
@@ -647,7 +647,7 @@ def polar(epos):
 		ax4.set_thetamin(0)
 		ax4.set_thetamax(180)
 	except AttributeError:
-		print 'Update pyplot'
+		print ('Update pyplot')
 		raise
 	
 	ax4.plot(pop['order']*np.pi, pop['P'],
