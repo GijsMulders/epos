@@ -225,6 +225,7 @@ def _occ_per_polygon(epos, foccpoly, Log=False):
 	foccpoly['occ']= np.array(_occ)
 	foccpoly['err']= foccpoly['occ']/np.where(
 							foccpoly['n']>0,np.sqrt(foccpoly['n']),1.)
+	
 	isUL= foccpoly['n']==0
 	if isUL.sum()>0:
 		completeness_UL= _interpolate_occ(epos, foccpoly['xc'][isUL], foccpoly['yc'][isUL], Log=Log)
