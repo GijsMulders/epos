@@ -180,6 +180,53 @@ Other properties of the planetary systems can also be fit for (or not):
 
 Then proceed as in single-planet mode.
 
+Planet Formation Mode
+---------------------
+
+Example 3 is a template for using EPOS with a planet formation / population synthesis model.
+::
+   ./example_3_population_synthesis.py
+
+Generate some random data in the same format as the outcome of a planet formation model. (These are 77 systems with 8 planets each)
+
+>>> n= 616
+>>> sma= 10.**np.random.uniform(-1.3,1,n)
+>>> mass= 10.** (3.*np.random.power(0.5, n))
+>>> radius= 10.** np.random.power(0.5, n)
+>>> inc= np.random.rayleigh(2, n)
+>>> starID= np.repeat(np.arange(n/8), 8)
+
+Load the planet formaton model into EPOS as a dictionary:
+
+>>> pfm= {'sma':sma, 'mass':mass,'radius':radius, 'inc':inc, 'starID':starID}
+>>> epos.set_population('Planet Formation Model', **pfm)
+
+Set 1 in 5 stars to have planetary systems
+
+>>> epos.fitpars.add('eta', 0.2, isnorm=True) 
+
+Optionally, use a mass-radius relation if the model does not simulate planetary radii:
+
+>>> epos.set_massradius(EPOS.massradius.CK17, 'Chen & Kipping 2017', masslimits=[0.1,100])
+
+Define a polygonic bin for mini-Neptunes
+
+>>> xmin, xmax= 3, 200
+>>> ymin, ymax= 1.2, 4
+>>> xb, yb= 100, 2.2
+>>> xyMN= [[xmin,ymax],[xmax,ymax],[xmax,ymin], [xb,ymin], [xmin,yb]]
+>>> epos.set_bins_poly([xyMN], 
+  labels=['Mini-\nNeptunes')
+
+Then run epos and save/plot as usual
+
+>>> EPOS.run.once(epos)
+>>> EPOS.occurrence.all(epos)
+>>> EPOS.plot.survey.all(epos)
+>>> EPOS.plot.input.all(epos, imin=1e-4, color='C8')
+>>> EPOS.plot.occurrence.all(epos, color='C8', alpha_fac=50.)
+>>> EPOS.plot.output.all(epos, color='C8')
+
 Radial Velocity Surveys
 -----------------------
 Example 5 shows how to estimate the distribution of planets from a radial velocity survey:
