@@ -3,7 +3,6 @@ from setuptools import setup, find_packages
 from EPOS import __version__
 
 exclude= [
-  'EPOS/scriptdir/examples/example_3_population_synthesis.py'
   'EPOS/scriptdir/examples/example_4_massradius.py'
   'EPOS/scriptdir/examples/example_6_q16_catalog.py'
   'EPOS/scriptdir/examples/example_7_spectral_type.py'
@@ -27,7 +26,7 @@ setup(name='epospy',
           'emcee >= 2.0',
           'corner >= 2.0',
           'h5py',
-	  'shapely'
+	       'shapely'
       ],
       classifiers=[
         "Programming Language :: Python :: 2.7",
