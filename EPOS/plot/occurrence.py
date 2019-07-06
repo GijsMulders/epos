@@ -130,7 +130,7 @@ def colored(epos, Bins=False, Poly=False):
 			 
 			size=16 if not 'textsize' in epos.plotpars else epos.plotpars['textsize'] 
 				# 12 fit in box, 16 default
-			ax.text(xc,yc,'{:.1%}\n$\pm${:.1f}'.format(occ, err), ha='center', va='center', 
+			ax.text(xc,yc,'{:.1%}\n$\pm${:.1f}'.format(occ, err*100), ha='center', va='center', 
 				size=size)
 			#ax.text(xbin[1]/xnudge,ybin[0]*ynudge,'n={}'.format(n), ha='right',
 			#	size=size)
