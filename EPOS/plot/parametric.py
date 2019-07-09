@@ -216,7 +216,6 @@ def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False, Convert=Fal
 			ax.errorbar(occbin['yc'], occbin['occ_MLE']/occbin['dlny'], 
 				yerr= occbin['err_MLE']/occbin['dlny'], color='g', 
 				label='MLE', marker='x', ls=':', capsize=3)
-		
 			
 	# 	for y, occ, err in zip(occbin['yc'], occbin['occ']/occbin['dlny'], 
 	# 						occbin['err']/occbin['dlny']):

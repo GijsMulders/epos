@@ -55,7 +55,8 @@ def planets(epos, Log=False):
 	focc['planet']['yvar']= epos.obs_yvar	
 	focc['planet']['completeness']= completeness
 	focc['planet']['occ']= 1./completeness/epos.nstars
-	#print epos.planet_occurrence
+	#for key in focc['planet']:
+	#	print key, focc['planet'][key].shape
 
 def models(epos, Log=False):
 	'''
@@ -147,27 +148,38 @@ def zoomed(epos, TestScore= True, MLE=False):
 
 	print '\n  x zoom bins'
 	_occ_per_bin(epos, focc['xzoom'])
-	if MLE: _occ_per_bin_MLE(epos, focc['xzoom'])
+	if MLE: 
+		print '\n  x zoom MLE:'
+		_occ_per_bin_MLE(epos, focc['xzoom'])
+
 	print '\n  y zoom bins'
 	_occ_per_bin(epos, focc['yzoom'])
-	if MLE: _occ_per_bin_MLE(epos, focc['yzoom'])
+	if MLE: 
+		print '\n  y zoom MLE:'
+		_occ_per_bin_MLE(epos, focc['yzoom'])
 
 def _occ_per_bin(epos, foccbin, Log=False):
 	''' Planet occurrence (inverse detection efficiency) per bin '''	
 	_occ, _n, _inbin, _xc, _yc, _dlnx, _dlny=[],[],[],[],[],[],[]
-	
+	_comp, _compinv= [],[]
+
 	for xbin, ybin in zip(foccbin['x'],foccbin['y']):
 		inbinx= (xbin[0]<=epos.obs_xvar) & (epos.obs_xvar<xbin[1])
 		inbiny= (ybin[0]<=epos.obs_yvar) & (epos.obs_yvar<ybin[1])
-		inbin= inbinx & inbiny
+		inbin= (inbinx & inbiny)
 		
 		_inbin.append(inbin)
 		_n.append(inbin.sum())
 		_occ.append(epos.occurrence['planet']['occ'][inbin].sum())
+		_comp.append(np.mean(epos.occurrence['planet']['completeness'][inbin]))
+		#_compinv.append(np.mean(1./epos.occurrence['planet']['completeness'][inbin]))
 		
-		print '  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], n={}, occ={:.2g}'.format(
-			xbin[0],xbin[-1], ybin[0],ybin[-1], _n[-1], _occ[-1])
+		print '  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], n={}, comp={:.2g}, occ={:.2g}'.format(
+			xbin[0],xbin[-1], ybin[0],ybin[-1], _n[-1], _comp[-1], _occ[-1])
 		
+		#print '  {} =?= {}'.format(1.*_n[-1]/_comp[-1]/epos.nstars, _occ[-1])
+		#print '  {} =?= {}'.format(_compinv[-1]*_n[-1]/epos.nstars, _occ[-1])
+
 		_xc.append(np.sqrt(xbin[0])*np.sqrt(xbin[-1]) )
 		_yc.append(np.sqrt(ybin[0])*np.sqrt(ybin[-1]) )
 		_dlnx.append(np.log(xbin[-1]/xbin[0]))
@@ -239,6 +251,7 @@ def _occ_per_polygon(epos, foccpoly, Log=False):
 def _occ_per_bin_MLE(epos, foccbin, Log=False, nres= 30):
 	''' Planet occurrence (maximim likelihood estimate) per bin '''	
 	_occ, _n, _nb, _comp, _xc, _yc, _dlnx, _dlny=[],[], [],[],[],[],[],[]
+	_compinv= []
 	
 	# speedup by calculating completeness on fine grid once instead of per bin?
 	# xgrid= 
@@ -251,9 +264,16 @@ def _occ_per_bin_MLE(epos, foccbin, Log=False, nres= 30):
 		_n.append(np.sum(inbinx & inbiny)) # planets
 
 		# average completeness over bin
-		xgrid= np.geomspace(xbin[0],xbin[-1], nres)
-		ygrid= np.geomspace(ybin[0],ybin[-1], nres)
-		completeness= _interpolate_occ(epos, xgrid, ygrid, Log=Log)
+		xgrid= np.linspace(xbin[0],xbin[1], nres)
+		ygrid= np.linspace(ybin[0],ybin[1], nres)
+		xgrid_log= np.geomspace(xbin[0],xbin[1], nres)
+		ygrid_log= np.geomspace(ybin[0],ybin[1], nres)
+		completeness_lin= _interpolate_occ(epos, xgrid, ygrid, Log=Log)
+		completeness_log= _interpolate_occ(epos, xgrid_log, ygrid_log, Log=Log)
+
+		#completeness= np.concatenate([completeness_lin, completeness_log])
+		completeness= completeness_lin
+		#completeness= completeness_log
 
 		#inbinx= (xbin[0]<=epos.X) & (epos.X<xbin[1])
 		#inbiny= (ybin[0]<=epos.Y) & (epos.Y<ybin[1])
@@ -264,10 +284,13 @@ def _occ_per_bin_MLE(epos, foccbin, Log=False, nres= 30):
 		#from scipy.stats.mstats import gmean
 		#_comp.append(gmean(completeness))	
 		_comp.append(np.mean(completeness))	
-		_occ.append(1.*_n[-1]/epos.nstars/_comp[-1])
+		_occ.append(1.*_n[-1]/_comp[-1]/epos.nstars)
+
+		#_compinv.append(np.mean(1./completeness))	
+		#_occ.append(_compinv[-1]*_n[-1]/epos.nstars)
 		
-		print '  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], nb={}, occ={:.2g}'.format(
-			xbin[0],xbin[-1], ybin[0],ybin[-1], nres*nres, _occ[-1])
+		print '  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], comp={:.2g}, occ={:.2g}'.format(
+			xbin[0],xbin[-1], ybin[0],ybin[-1], _comp[-1], _occ[-1])
 		#_nb[-1]
 		
 		_xc.append(np.sqrt(xbin[0])*np.sqrt(xbin[-1]) )
@@ -275,10 +298,10 @@ def _occ_per_bin_MLE(epos, foccbin, Log=False, nres= 30):
 		_dlnx.append(np.log(xbin[-1]/xbin[0]))
 		_dlny.append(np.log(ybin[-1]/ybin[0]))
 
-	foccbin['xc']= np.array(_xc)
-	foccbin['yc']= np.array(_yc)
-	foccbin['dlnx']= np.array(_dlnx)
-	foccbin['dlny']= np.array(_dlny)
+	#foccbin['xc']= np.array(_xc)
+	#foccbin['yc']= np.array(_yc)
+	#foccbin['dlnx']= np.array(_dlnx)
+	#foccbin['dlny']= np.array(_dlny)
 
 	foccbin['n']= np.array(_n)
 	foccbin['comp']= np.array(_comp)
