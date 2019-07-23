@@ -683,7 +683,7 @@ class epos:
 		if pfm['np'] > pfm['ns']:
 			
 			order= np.lexsort((pfm['sma'],pfm['ID'])) # sort by ID, then sma
-			for key in ['ID','sma','M','P','inc','tag']:
+			for key in ['ID','sma','M','P','inc','ecc','tag','R']:
 				if key in pfm: pfm[key]=pfm[key][order]
 			
 			EPOS.multi.indices(pfm['ID'], Verbose=True)
@@ -716,7 +716,8 @@ class epos:
 				pfm['system tag']= pfm['tag'][index]
 			#pfm['tag'] == pfm['system tag'][pfm['ID']]
 		else:
-			pfm['system tag']= pfm['tag']
+			if 'tag' in pfm:
+				pfm['system tag']= pfm['tag']
 
 		pfm['M limits']=[np.min(pfm['M']),np.max(pfm['M'])]
 		pfm['P limits']=[np.min(pfm['P']),np.max(pfm['P'])]
