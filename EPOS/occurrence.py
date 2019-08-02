@@ -101,7 +101,7 @@ def binned(epos, Log=False, MLE=False):
 	focc= epos.occurrence
 
 	# set y bin
-	if epos.MassRadius:
+	if epos.MassRadius and not 'y' in focc['bin']:
 		focc['bin']['y']= epos.MR(focc['bin']['y in'])[0]
 		for i, ybin in enumerate(focc['bin']['y']):
 			if ybin[0]>ybin[-1]: 

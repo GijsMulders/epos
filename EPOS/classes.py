@@ -495,7 +495,8 @@ class epos:
 
 		#if hasattr(self, pfm):
 	
-	def set_bins(self, xbins=[[1,10]], ybins=[[1,10]],xgrid=None, ygrid=None,Grid=False):
+	def set_bins(self, xbins=[[1,10]], ybins=[[1,10]],xgrid=None, ygrid=None,
+		Grid=False, MassRadius=False):
 		'''
 		Initialize period-radius (or mass) bins for occurrence rate calculations
 		
@@ -551,6 +552,9 @@ class epos:
 				raise ValueError('unequal amount of bins. Use Grid=True?')
 			focc['bin']['x']= _xbins
 			focc['bin']['y in']= _ybins
+
+		if not MassRadius:
+			focc['bin']['y']= focc['bin']['y in']
 
 	def set_bins_poly(self, polys, labels=None):
 		'''
