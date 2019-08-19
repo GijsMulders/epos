@@ -91,9 +91,9 @@ def set_axis_size(ax, epos, Trim=False, Eff=False, In=False, IsY=True):
 def make_panels(plt, Fancy=False):
 	if Fancy:
 		gs = gridspec.GridSpec(2, 2,
-	                       width_ratios=[20,4],
-	                       height_ratios=[3, 10]
-	                       )
+						   width_ratios=[20,4],
+						   height_ratios=[3, 10]
+						   )
 		f= plt.figure()
 		f.subplots_adjust(wspace=0, hspace=0)
 
@@ -118,9 +118,9 @@ def make_panels(plt, Fancy=False):
 			bottom=False, left=True)
 	else:		
 		gs = gridspec.GridSpec(2, 2,
-	                       width_ratios=[4, 20],
-	                       height_ratios=[10, 3]
-	                       )
+						   width_ratios=[4, 20],
+						   height_ratios=[10, 3]
+						   )
 		f= plt.figure()
 		f.subplots_adjust(wspace=0, hspace=0)
 		
@@ -137,9 +137,9 @@ def make_panels(plt, Fancy=False):
 
 def make_panels_right(plt):
 	gs = gridspec.GridSpec(2, 2,
-                       width_ratios=[20, 4],
-                       height_ratios=[10, 3]
-                       )
+					   width_ratios=[20, 4],
+					   height_ratios=[10, 3]
+					   )
 	f= plt.figure()
 	f.subplots_adjust(wspace=0, hspace=0)
 	
@@ -160,9 +160,9 @@ def make_panels_right(plt):
 
 def make_panels_clrbar(plt):
 	gs = gridspec.GridSpec(2, 3,
-                       width_ratios=[4, 20, 1],
-                       height_ratios=[10, 3]
-                       )
+					   width_ratios=[4, 20, 1],
+					   height_ratios=[10, 3]
+					   )
 	f= plt.figure()
 	f.subplots_adjust(wspace=0, hspace=0)
 	
@@ -224,3 +224,59 @@ def color_array(vals, vmin=None, vmax=None, cmap='jet'):
 	#Can put any colormap you like here.
 	colours = cm.ScalarMappable(norm=norm, cmap=cmap).to_rgba(vals)
 	return colours, norm
+
+import matplotlib.pyplot as plt
+from matplotlib import transforms
+
+
+def rainbow_text(x, y, strings, colors, orientation='horizontal',
+				 ax=None, f=None, fudge=1.5, **kwargs):
+	"""
+	Modified from 
+	https://matplotlib.org/3.1.1/gallery/text_labels_and_annotations/rainbow_text.html
+
+	Take a list of *strings* and *colors* and place them next to each
+	other, with text strings[i] being shown in colors[i].
+
+	Parameters
+	----------
+	x, y : float
+		Text position in data coordinates.
+	strings : list of str
+		The strings to draw.
+	colors : list of color
+		The colors to use.
+	orientation : {'horizontal', 'vertical'}
+	ax : Axes, optional
+		The Axes to draw into. If None, the current axes will be used.
+	f : Figure, optional
+		The Figure to draw into.  
+	**kwargs
+		All other keyword arguments are passed to plt.text(), so you can
+		set the font size, family, etc.
+	"""
+	if ax is None:
+		ax = plt.gca()
+	t = ax.transData
+	canvas = ax.figure.canvas
+
+	if f is not None:
+		t= f.transFigure
+		canvas = f.canvas
+
+	assert orientation in ['horizontal', 'vertical']
+	if orientation == 'vertical':
+		kwargs.update(rotation=90, verticalalignment='bottom')
+
+	for s, c in zip(strings, colors):
+		text = ax.text(x, y, s + " ", color=c, transform=t, **kwargs)
+
+		# Need to draw to update the text position.
+		text.draw(canvas.get_renderer())
+		ex = text.get_window_extent()
+		if orientation == 'horizontal':
+			t = transforms.offset_copy(
+				text.get_transform(), x=fudge*ex.width, units='dots')
+		else:
+			t = transforms.offset_copy(
+				text.get_transform(), y=ex.height, units='dots')

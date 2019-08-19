@@ -121,7 +121,7 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 		isgiant= koi['koi_slogg'] < np.where(koi['koi_steff']>5000, 
 									13.463-0.00191*koi['koi_steff'],3.9)
 		issubgiant= ~isdwarf & ~isgiant
-		suffix='huber'
+		suffix='Huber'
 	else:
 		isdwarf= koi['koi_slogg']>4.2
 		suffix='logg42'

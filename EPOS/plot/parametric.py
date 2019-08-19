@@ -89,6 +89,11 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True):
 		ax.errorbar(occbin['xc'], occbin['occ']/occbin['dlnx'], 
 			yerr= occbin['err']/occbin['dlnx'], color='r', marker='_', ls='', capsize=3) #,capthick=2
 
+		if 'occ_MLE' in occbin:
+			ax.errorbar(occbin['xc'], occbin['occ_MLE']/occbin['dlnx'], 
+			yerr= occbin['err_MLE']/occbin['dlnx'],color='g', 
+				label='MLE', marker='x', ls=':', capsize=3)
+
 	# lognormal inner disk edge?
 	#from scipy.stats import norm
 	#gauss= 2.*norm(loc=1., scale=0.4).pdf(np.log10(epos.MC_xvar))
@@ -206,6 +211,11 @@ def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False, Convert=Fal
 		occbin= epos.occurrence['xzoom']
 		ax.errorbar(occbin['yc'], occbin['occ']/occbin['dlny'], 
 			yerr= occbin['err']/occbin['dlny'], color='r', marker='_', ls='', capsize=3)
+
+		if 'occ_MLE' in occbin:
+			ax.errorbar(occbin['yc'], occbin['occ_MLE']/occbin['dlny'], 
+				yerr= occbin['err_MLE']/occbin['dlny'], color='g', 
+				label='MLE', marker='x', ls=':', capsize=3)
 			
 	# 	for y, occ, err in zip(occbin['yc'], occbin['occ']/occbin['dlny'], 
 	# 						occbin['err']/occbin['dlny']):

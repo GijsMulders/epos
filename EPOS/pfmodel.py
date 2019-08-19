@@ -237,7 +237,7 @@ def bern(name='syntheticpop_20emb_983systems.txt', dir='Bern',
 	mass= a[3][include]
 	radius= a[4][include]
 	ecc= a[5][include]
-	inc=a[6][include]
+	inc=a[6][include] * (180./np.pi) # rad -> degrees
 	FeH= a[7][include]
 	Mcore= a[8][include]
 	Menv= a[9][include]

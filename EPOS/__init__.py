@@ -1,5 +1,6 @@
 __shortversion__= u'3.0'
-__version__= u'3.0.0.dev0' # [N!]N(.N)*[{a|b|rc}N][.postN][.devN]
+__version__= u'3.0.0.dev1' # [N!]N(.N)*[{a|b|rc}N][.postN][.devN]
+
 
 __all__ = ['epos','fitparameters','kepler','rv','run','population','plot','occurrence',
 	'fitfunctions','pfmodel','massradius','regression','multi','analytics','save',

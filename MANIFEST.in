@@ -1,6 +1,5 @@
 include EPOS/files/*
 include EPOS/scriptdir/*/*.py
-exclude EPOS/scriptdir/examples/example_3_*.py
 exclude EPOS/scriptdir/examples/example_4_*.py
 exclude EPOS/scriptdir/examples/example_6_*.py
 exclude EPOS/scriptdir/examples/example_7_*.py

@@ -1,3 +1,3 @@
-__all__ = ['survey', 'input','output','model','mcmc','occurrence'] 
-from . import survey, input, output, model, mcmc, occurrence
+__all__ = ['survey', 'input','output','model','mcmc','occurrence','workflow'] 
+from . import survey, input, output, model, mcmc, occurrence, workflow
 #import architecture

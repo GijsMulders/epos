@@ -494,7 +494,8 @@ class epos:
 
 		#if hasattr(self, pfm):
 	
-	def set_bins(self, xbins=[[1,10]], ybins=[[1,10]],xgrid=None, ygrid=None,Grid=False):
+	def set_bins(self, xbins=[[1,10]], ybins=[[1,10]],xgrid=None, ygrid=None,
+		Grid=False, MassRadius=False):
 		'''
 		Initialize period-radius (or mass) bins for occurrence rate calculations
 		
@@ -550,6 +551,9 @@ class epos:
 				raise ValueError('unequal amount of bins. Use Grid=True?')
 			focc['bin']['x']= _xbins
 			focc['bin']['y in']= _ybins
+
+		if not MassRadius:
+			focc['bin']['y']= focc['bin']['y in']
 
 	def set_bins_poly(self, polys, labels=None):
 		'''
@@ -682,7 +686,7 @@ class epos:
 		if pfm['np'] > pfm['ns']:
 			
 			order= np.lexsort((pfm['sma'],pfm['ID'])) # sort by ID, then sma
-			for key in ['ID','sma','M','P','inc','tag']:
+			for key in ['ID','sma','M','P','inc','ecc','tag','R']:
 				if key in pfm: pfm[key]=pfm[key][order]
 			
 			EPOS.multi.indices(pfm['ID'], Verbose=True)
@@ -715,7 +719,8 @@ class epos:
 				pfm['system tag']= pfm['tag'][index]
 			#pfm['tag'] == pfm['system tag'][pfm['ID']]
 		else:
-			pfm['system tag']= pfm['tag']
+			if 'tag' in pfm:
+				pfm['system tag']= pfm['tag']
 
 		pfm['M limits']=[np.min(pfm['M']),np.max(pfm['M'])]
 		pfm['P limits']=[np.min(pfm['P']),np.max(pfm['P'])]

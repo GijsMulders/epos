@@ -999,7 +999,7 @@ def istransit(epos, allID, allI, allP, f_iso, f_inc, Verbose=False):
 		print ('  Average mutual inc={:.1f} degrees'.format(np.median(allI)))
 		if f_inc != 1.0:
 			print ('f_inc= {:.2g}, inc= {:.1f} deg'.format(f_inc, np.median(mutual_inc)))
-	delta_inc= mutual_inc *np.cos(np.random.uniform(0,np.pi,allP.size)) * np.pi/180.
+	delta_inc= mutual_inc *np.cos(np.random.uniform(0,np.pi,allP.size)) *np.pi/180. #rad
 	itrans= np.abs(inc_pl+delta_inc) < np.arcsin(R_a)
 
 	# allow for a fraction of isotropic systems
