@@ -36,6 +36,7 @@ Output wil appear in the terminal and plots in the ``png/`` folder.
    :caption: Detailed Instructions:
 
    instructions
+   ../notebooks/example1.ipynb
 
 API Documentation
 -----------------

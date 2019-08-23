@@ -40,7 +40,7 @@ def all(epos):
 	else:
 		print ('\nNo chain to plot, did you run EPOS.run.mcmc()? \n')
 	
-def chain(epos):
+def chain(epos, NB=False):
 	nwalker, nstep, npara= epos.chain.shape
 
 	# axes grid
@@ -75,9 +75,9 @@ def chain(epos):
 	
 	f.subplots_adjust(hspace=0.15, wspace=0.4)
 			
-	helpers.save(plt, '{}mcmc/chain'.format(epos.plotdir))	
+	helpers.save(plt, '{}mcmc/chain'.format(epos.plotdir), NB=NB)	
 
-def corners(epos):
+def corners(epos, dpi=150, NB=False):
 	if hasattr(epos.fitpars,'latexkeys'):
 		labels= [epos.fitpars.latexkeys[key] if key in epos.fitpars.latexkeys else key for key in epos.fitpars.keysfit]
 	else:
@@ -86,5 +86,6 @@ def corners(epos):
 	fig = corner.corner(epos.samples, labels=labels,
                       truths=epos.fitpars.getfit(Init=True), 
                       quantiles=[0.16, 0.5, 0.84], show_titles=True)
-	fig.savefig('{}mcmc/triangle.png'.format(epos.plotdir))
+	
+	helpers.save(plt, '{}mcmc/triangle'.format(epos.plotdir), NB=NB)
 		

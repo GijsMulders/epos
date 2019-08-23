@@ -5,7 +5,7 @@ import matplotlib.patches as patches
 import matplotlib.cm as cm
 import matplotlib.gridspec as gridspec
 
-import helpers
+from EPOS.plot import helpers
 
 
 def periodradius_2x2(epos):

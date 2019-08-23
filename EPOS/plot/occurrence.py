@@ -139,7 +139,7 @@ def colored(epos, Bins=False, Poly=False):
 	else:
 		helpers.save(plt, epos.plotdir+'occurrence/colored')
 		
-def integrated(epos, MCMC=False, Planets=False):
+def integrated(epos, MCMC=False, Planets=False, NB=True):
 	
 	f, (ax, axb) = plt.subplots(1,2, gridspec_kw = {'width_ratios':[20, 1]})
 	f.subplots_adjust(wspace=0)
@@ -198,7 +198,7 @@ def integrated(epos, MCMC=False, Planets=False):
 
 	fname= 'posterior' if MCMC else 'integrated'
 	if Planets: fname+= '.planets'
-	helpers.save(plt, epos.plotdir+'occurrence/'+fname)
+	helpers.save(plt, epos.plotdir+'occurrence/'+fname, NB=NB)
 
 def model(epos, color='C0', alpha_fac=None, Bins=False, Poly=False, Gradient=False):
 	

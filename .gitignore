@@ -17,3 +17,4 @@ json/
 temp/
 build/
 install.txt
+.ipynb_checkpoints

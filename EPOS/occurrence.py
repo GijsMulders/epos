@@ -159,7 +159,7 @@ def zoomed(epos, TestScore= True, MLE=False):
 
 	_occ_per_bin(epos, focc['yzoom'])
 	if MLE: 
-		print '\n  y zoom MLE:'
+		print ('\n  y zoom MLE:')
 		_occ_per_bin_MLE(epos, focc['yzoom'])
 
 def _occ_per_bin(epos, foccbin, Log=False):
@@ -178,8 +178,8 @@ def _occ_per_bin(epos, foccbin, Log=False):
 		_comp.append(np.mean(epos.occurrence['planet']['completeness'][inbin]))
 		#_compinv.append(np.mean(1./epos.occurrence['planet']['completeness'][inbin]))
 		
-		print '  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], n={}, comp={:.2g}, occ={:.2g}'.format(
-			xbin[0],xbin[-1], ybin[0],ybin[-1], _n[-1], _comp[-1], _occ[-1])
+		print ('  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], n={}, comp={:.2g}, occ={:.2g}'.format(
+			xbin[0],xbin[-1], ybin[0],ybin[-1], _n[-1], _comp[-1], _occ[-1]))
 		
 		#print '  {} =?= {}'.format(1.*_n[-1]/_comp[-1]/epos.nstars, _occ[-1])
 		#print '  {} =?= {}'.format(_compinv[-1]*_n[-1]/epos.nstars, _occ[-1])
@@ -220,7 +220,7 @@ def _occ_per_polygon(epos, foccpoly, Log=False):
 		shp=shapely.geometry.polygon.Polygon(xycoords)
 		shp_log=shapely.geometry.polygon.Polygon(np.log(xycoords))
 
-		points= map(shapely.geometry.Point, xyp)
+		points= map(shapely.geometry.Point, xyp) # list?
 		inpoly= list(map(shp.contains, points))
 
 		logcenter= shp_log.centroid
@@ -294,8 +294,8 @@ def _occ_per_bin_MLE(epos, foccbin, Log=False, nres= 30):
 		#_compinv.append(np.mean(1./completeness))	
 		#_occ.append(_compinv[-1]*_n[-1]/epos.nstars)
 		
-		print '  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], comp={:.2g}, occ={:.2g}'.format(
-			xbin[0],xbin[-1], ybin[0],ybin[-1], _comp[-1], _occ[-1])
+		print ('  x: [{:.3g},{:.3g}], y: [{:.2g},{:.2g}], comp={:.2g}, occ={:.2g}'.format(
+			xbin[0],xbin[-1], ybin[0],ybin[-1], _comp[-1], _occ[-1]))
 		#_nb[-1]
 		
 		_xc.append(np.sqrt(xbin[0])*np.sqrt(xbin[-1]) )
@@ -359,8 +359,8 @@ def _model_occ_per_polygon(epos, foccpoly, foccmodel, weights=None):
 		shp=shapely.geometry.polygon.Polygon(xycoords)
 		shp_log=shapely.geometry.polygon.Polygon(np.log(xycoords))
 
-		points= map(shapely.geometry.Point, xyp)
-		inpoly= map(shp.contains, points)
+		points= map(shapely.geometry.Point, xyp) # list?
+		inpoly= list(map(shp.contains, points))
 
 		logcenter= shp_log.centroid
 		

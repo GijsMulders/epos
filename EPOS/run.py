@@ -3,6 +3,7 @@ from scipy import interpolate
 from scipy.stats import ks_2samp, anderson_ksamp, norm, chi2_contingency, kstest
 import os, sys, logging, time
 from functools import partial
+from tqdm import tqdm
 
 from . import cgs
 from . import multi
@@ -92,7 +93,8 @@ def once(epos, fac=1.0, Extra=None, goftype='KS'):
 	print ('Finished one {} in {:.3f} sec'.format(runtype, tMC-tstart))
 	epos.tMC= tMC-tstart
 	
-def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1, npos=30, Saved=True):
+def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1, npos=30, Saved=True, 
+	TQDM=True):
 	if not 'emcee' in sys.modules:
 		raise ImportError('You need to install emcee')
 	assert epos.Prep
@@ -171,11 +173,15 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1, npos=30, Save
 		''' run the chain '''
 		if True:
 			# chop to pieces for progress bar?
-			for i, result in enumerate(sampler.sample(p0, iterations=nMC)):
-				amtDone= float(i)/nMC
-				# remove line break for python 3
-				print ('\r  [{:50s}] {:5.1f}%'.format('#' * int(amtDone * 50), amtDone * 100))
-				os.sys.stdout.flush() 
+			if TQDM:
+				for i in tqdm(enumerate(sampler.sample(p0, iterations=nMC)), total=nMC):
+					pass
+			else:
+				for i, result in enumerate(sampler.sample(p0, iterations=nMC)):
+					amtDone= float(i)/nMC
+					# remove line break for python 3
+					print ('\r  [{:50s}] {:5.1f}%'.format('#' * int(amtDone * 50), amtDone * 100))
+					os.sys.stdout.flush() 
 		else:
 			sampler.run_mcmc(p0, nMC)
 		
@@ -203,9 +209,9 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1, npos=30, Save
 	''' the posterior samples after burn-in '''
 	epos.samples= epos.chain[:, nburn:, :].reshape((-1, ndim))
 	epos.burnin= nburn
-	fitpars = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
+	fitpars = list(map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
                              zip(*np.percentile(epos.samples, [16, 50, 84],
-                                                axis=0)))
+                                                axis=0))))
 	epos.fitpars.setfit([p[0] for p in fitpars])
 	
 	''' Generate posterior populations '''

@@ -206,15 +206,18 @@ def default_pyplot2_colors(colors):
 	colors.ColorConverter.colors['C8']='#bcbd22'
 	colors.ColorConverter.colors['C9']='#17becf'
 
-def save(plt, name, dpi=150):
+def save(plt, name, dpi=150, NB=False):
 
-	# make sure path exists
-	ipath= name.rfind('/')
-	if ipath!= -1:
-		#print name[:ipath]
-		if not os.path.isdir(name[:ipath]): os.makedirs(name[:ipath])
+	if NB:
+		plt.show()
+	else:
+		# make sure path exists
+		ipath= name.rfind('/')
+		if ipath!= -1:
+			#print name[:ipath]
+			if not os.path.isdir(name[:ipath]): os.makedirs(name[:ipath])
 	
-	plt.savefig(name+'.png',bbox_inches='tight', dpi=dpi)
+		plt.savefig(name+'.png',bbox_inches='tight', dpi=dpi)
 	plt.close()
 
 def color_array(vals, vmin=None, vmax=None, cmap='jet'):

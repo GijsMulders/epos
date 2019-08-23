@@ -16,7 +16,7 @@ def oneD(epos, PlotZoom=False, MCMC=False, Occ=False):
 		# works with occ??
 		oneD_y(epos, PlotZoom=PlotZoom, MCMC=MCMC, PlotQ=True)
 
-def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True):	
+def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True, NB=False):	
 
 	if Occ:
 		fname= 'occurrence/posterior' if MCMC else 'occurrence/input'
@@ -111,10 +111,10 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True):
 	if MCMC:
 		ax.legend(loc='upper left')
     
-	helpers.save(plt, epos.plotdir+fname+'_x')
+	helpers.save(plt, epos.plotdir+fname+'_x', NB=NB)
 	#print epos.plotdir+fname+'_x'
 
-def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False, Convert=False):
+def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False, Convert=False, NB=False):
 	if Occ:
 		fname= 'occurrence/posterior' if MCMC else 'occurrence/input'
 		xbin= epos.xzoom
@@ -225,7 +225,8 @@ def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False, Convert=Fal
 	if MCMC or (Occ and Convert):
 		ax.legend(loc='upper right')
 
-	helpers.save(plt, epos.plotdir+fname+('_q' if PlotQ else '_y')+('_convert' if Convert else''))
+	helpers.save(plt, epos.plotdir+fname+('_q' if PlotQ else '_y')+('_convert' if Convert else''), 
+		NB=NB)
 
 def twoD(epos, PlotZoom=False, MCMC=False, Convert=False):
 	
@@ -263,7 +264,7 @@ def twoD(epos, PlotZoom=False, MCMC=False, Convert=False):
 	fname= 'mcmc/posterior' if MCMC else 'input/parametric_initial'
 	helpers.save(plt, epos.plotdir+fname+('_convert' if Convert else''))
 
-def panels(epos, PlotZoom=False, MCMC=False, Convert=False):
+def panels(epos, PlotZoom=False, MCMC=False, Convert=False, NB=False):
 	''' Initial distribution, panel layout'''
 	f, (ax, axb, axR, axP)= helpers.make_panels_clrbar(plt)
 
@@ -317,4 +318,7 @@ def panels(epos, PlotZoom=False, MCMC=False, Convert=False):
 	axb.tick_params(axis='y', direction='out')
 	axb.set_title('%')
 	
-	helpers.save(plt, epos.plotdir+'input/panels'+('_convert' if Convert else''))
+	if NB:
+		plt.show()
+	else:
+		helpers.save(plt, epos.plotdir+'input/panels'+('_convert' if Convert else''))

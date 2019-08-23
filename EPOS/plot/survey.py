@@ -36,7 +36,7 @@ def all(epos):
 	if hasattr(epos,'obs_score'):
 		observed(epos, PlotBox=False, PlotScore=True)
 
-def observed(epos, PlotBox=True, PlotScore=False):
+def observed(epos, PlotBox=True, PlotScore=False, NB=False):
 	assert epos.Observation
 
 	if PlotScore:
@@ -77,9 +77,9 @@ def observed(epos, PlotBox=True, PlotScore=False):
 			ax.add_patch(patches.Rectangle( (epos.xzoom[0],epos.yzoom[0]), 
 				epos.xzoom[1]-epos.xzoom[0], epos.yzoom[1]-epos.yzoom[0],fill=False, zorder=1) )
 
-	helpers.save(plt, epos.plotdir+'survey/planets'+fname)
+	helpers.save(plt, epos.plotdir+'survey/planets'+fname, NB=NB)
 	
-def completeness(epos, PlotBox=False, Transit=False, Vetting=True):
+def completeness(epos, PlotBox=False, Transit=False, Vetting=True, NB=False):
 	assert epos.DetectionEfficiency
 
 	f, (ax, axb) = plt.subplots(1,2, gridspec_kw = {'width_ratios':[20, 1]})
@@ -143,9 +143,9 @@ def completeness(epos, PlotBox=False, Transit=False, Vetting=True):
 
 	if not Vetting: fname+= '.novet'
 	helpers.save(plt, epos.plotdir+'survey/'+('efficiency' if Transit else 'completeness')+ \
-				fname)
+				fname, NB=NB)
 
-def vetting(epos, PlotBox=False):
+def vetting(epos, PlotBox=False, NB=False):
 	assert hasattr(epos, 'vetting')
 
 	f, (ax, axb) = plt.subplots(1,2, gridspec_kw = {'width_ratios':[20, 1]})
@@ -190,4 +190,4 @@ def vetting(epos, PlotBox=False):
 			ax.set_xlim(*epos.xtrim)
 			ax.set_ylim(*epos.ytrim)
 
-	helpers.save(plt, epos.plotdir+'survey/vetting'+ fname)
+	helpers.save(plt, epos.plotdir+'survey/vetting'+ fname, NB=NB)

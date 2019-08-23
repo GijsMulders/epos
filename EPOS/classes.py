@@ -37,6 +37,10 @@ class fitparameters:
 			is2D(bool): use this parameter in the 2D parametric :meth:`EPOS.fitfunctions`
 			isnorm(bool): this parameter is the normalization factor for the number of planet per star :meth:`EPOS.fitfunctions`
 		'''
+		if key in self.keysall:
+			print ('Skipped adding key {}, it was already defined before'.format(key))
+			return
+
 		fp=self.fitpars[key]= {}
 		
 		# list of keys
@@ -308,7 +312,10 @@ class epos:
 	def set_ranges(self, xtrim=None, ytrim=None, xzoom=None, yzoom=None, 
 		LogArea=False, Occ=False, UnitTicks=True, plotxgrid= None, plotygrid=None):
 		
-		if self.Range: raise ValueError('Range already defined')
+		if self.Range: 
+			#raise ValueError('Range already defined')
+			print ('Ranges already defined')
+			return
 		if not self.Observation: raise ValueError('No observation defined')
 		if not self.DetectionEfficiency: raise ValueError('No detection effifiency defined')
 		

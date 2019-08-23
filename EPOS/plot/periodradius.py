@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
+import matplotlib.patches as patches
 from . import helpers
 from EPOS import regression
 
@@ -111,7 +112,7 @@ def periodradius(epos, SNR=True, Model=False, color='C1'):
 	#ax.legend(loc='lower left', shadow=False, prop={'size':14}, numpoints=1)
 	helpers.save(plt, '{}output/periodradius.{}'.format(epos.plotdir,fsuffix))
 
-def panels(epos, MCMC=False, color='C1'):
+def panels(epos, MCMC=False, color='C1', NB=False):
 
 	f, (ax, axR, axP)= helpers.make_panels(plt)
 	
@@ -197,7 +198,7 @@ def panels(epos, MCMC=False, color='C1'):
 	#ax.legend(loc='lower left', shadow=False, prop={'size':14}, numpoints=1)
 	
 	fdir= 'mcmc' if MCMC else 'output'
-	helpers.save(plt, '{}{}/pdf.zoom'.format(epos.plotdir, fdir))
+	helpers.save(plt, '{}{}/pdf.zoom'.format(epos.plotdir, fdir), NB=NB)
 
 def pdf_3d(epos):
 	#plot in 3D
@@ -368,7 +369,7 @@ def pdf(epos):
 	
 	helpers.save(plt, epos.plotdir+'output/pdf.diag')
 
-def cdf(epos, color='C1'):
+def cdf(epos, color='C1', NB=False):
 	
 	f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 	f.set_size_inches(9, 7) # default 7, 5
@@ -456,4 +457,4 @@ def cdf(epos, color='C1'):
 	ax4.plot(np.sort(R), np.arange(R.size, dtype=float)/R.size, ls='-', marker='', color='C3')		
 		
 	f.tight_layout()
-	helpers.save(plt, epos.plotdir+'output/cdf.diag')
+	helpers.save(plt, epos.plotdir+'output/cdf.diag', NB=NB)
