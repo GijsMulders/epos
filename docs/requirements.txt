@@ -6,3 +6,4 @@ astropy
 shapely
 tqdm
 nbsphinx
+ipykernel

@@ -41,7 +41,10 @@ templates_path = ['.templates']
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ['.rst', '.ipynb']
+
+# For nbspinx, if it ever works
+#nbsphinx_execute = 'never'
 
 # The master toctree document.
 master_doc = 'index'

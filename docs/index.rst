@@ -3,49 +3,61 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-EPOS
+the Exoplanet Population Observation Simulator
 ==============================================
 
-the Exoplanet Population Observation Simulator
-----------------------------------------------
+EPOS is a software package to simulate observations of exoplanet populations. It provides an interface between planet formation simulations and exoplanet surveys such as Kepler, accounting for detection biases in transit and radial velocity surveys.
 
-EPOS is a software package to simulate observations of exoplanet populations. It provides an interface between planet formation simulations and exoplanet surveys such as Kepler. EPOS can also be used to estimate planet occurrence rates and the orbital architectures of planetary systems.
+.. image:: epos-arrows.png
 
-EPOS is written in Python and hosted on `github  <https://github.com/GijsMulders/epos>`_. 
-Follow the instructions there to download and install.
 
-**NEW** You can now install EPOS with pip:
+Usage
+-----
+
+Use EPOS to calculate:
+
+* Planet occurrence rate distributions (`notebook <example_notebooks/parameteric_mode.ipynb>`_)
+* Planetary system architectures
+* Synthetic observations of planet formation models
+* Planet populations in radial velocity surveys
+* Binned planet occurrence rates
+
+Install
+-------
+
+EPOS is written in Python 3 and hosted on `github  <https://github.com/GijsMulders/epos>`_. 
+
+The quickest way to install epos is via pip:
 ::
+
    pip install epospy
 
-(possibly preceded by ``sudo -H``)
+.. (possibly preceded by ``sudo -H``)
 
-How to use
-----------
+Getting Started
+---------------
 
-EPOS runs from the command line. The quickest way to familiarize yourself with the code is to copy the test and example scripts to a local directory:
-
->>> import EPOS
->>> EPOS.scripts.install()
-
-These scripts demonstrate some of the basic functionality of EPOS.
-Output wil appear in the terminal and plots in the ``png/`` folder.
+Familiarize yourself with the code is to take a look at the :doc:`notebooks`
 
 .. toctree::
    :maxdepth: 2
-   :caption: Detailed Instructions:
+   :caption: Getting Started
 
    instructions
-   ../notebooks/example1.ipynb
-
-API Documentation
------------------
+   notebooks
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Example Notebooks
+
+   example_notebooks/parameteric_mode.ipynb
+
+.. toctree::
+   :maxdepth: 2
+   :caption: API Documentation
 
    api
+   modules
 
 License / Attribution
 ---------------------

@@ -184,6 +184,7 @@ Planet Formation Mode
 ---------------------
 
 Example 3 is a template for using EPOS with a planet formation / population synthesis model.
+
 ::
    ./example_3_population_synthesis.py
 
@@ -230,7 +231,9 @@ Then run epos and save/plot as usual
 Radial Velocity Surveys
 -----------------------
 Example 5 shows how to estimate the distribution of planets from a radial velocity survey:
+
 ::
+
    ./example_5_radial_velocity.py
 
 Two commands are different from fitting a transit survey:
