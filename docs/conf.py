@@ -129,6 +129,11 @@ html_sidebars = {
     ]
 }
 
+# logo in sidebar
+html_logo= 'logo-epos.png'
+logo_only= False
+# convert logo-2.png -background white -alpha remove logo-2-white.png
+
 # add stuff to sidebar:
 # https://stackoverflow.com/questions/33029008/how-to-edit-sidebar-under-sphinx-alabaster-theme?rq=1
 

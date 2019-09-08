@@ -209,7 +209,7 @@ class epos:
 		self.plotpars={} # dictionary to hold some customization keywords
 
 	def set_observation(self, xvar, yvar, starID, nstars=1.6862e5, 
-		radiusError=0.1, score=None):
+		radiusError=0.1, score=None, Verbose=True):
 		''' Observed planet population
 		
 		Args:
@@ -246,15 +246,18 @@ class epos:
 		self.radiusError= radiusError
 		
 		# print some stuff
-		print ('\nObservations:\n  {} stars'.format(int(nstars)))
-		print ('  {} planets'.format(self.obs_starID.size))
-		EPOS.multi.indices(self.obs_starID, Verbose=True)
+		if Verbose:
+			print ('\nObservations:\n  {} stars'.format(int(nstars)))
+			print ('  {} planets'.format(self.obs_starID.size))
+		EPOS.multi.indices(self.obs_starID, Verbose=Verbose)
+
 		epos.multi={}
 		epos.multi['bin'], epos.multi['count']= \
-			EPOS.multi.frequency(self.obs_starID, Verbose=True)
+			EPOS.multi.frequency(self.obs_starID, Verbose=Verbose)
 		epos.multi['pl cnt']= epos.multi['bin']* epos.multi['count']
 		epos.multi['Pratio'], epos.multi['Pinner'], epos.multi['Rpair']= \
-			EPOS.multi.periodratio(self.obs_starID, self.obs_xvar, R=self.obs_yvar, Verbose=True)
+			EPOS.multi.periodratio(self.obs_starID, self.obs_xvar, R=self.obs_yvar, 
+				Verbose=Verbose)
 		epos.multi['cdf']= EPOS.multi.cdf(self.obs_starID, Verbose=True)	
 	
 	def set_survey(self, xvar, yvar, eff_2D, Rstar=1.0, Mstar=1.0, vet_2D=None):

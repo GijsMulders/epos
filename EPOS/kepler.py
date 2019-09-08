@@ -12,7 +12,7 @@ except ImportError:
 
 fpath= os.path.dirname(EPOS.__file__)
 
-def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
+def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False, Verbose=True):
 	'''
 	Generates Kepler DR25 planet population and detection efficiency
 	
@@ -121,7 +121,7 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 		isgiant= koi['koi_slogg'] < np.where(koi['koi_steff']>5000, 
 									13.463-0.00191*koi['koi_steff'],3.9)
 		issubgiant= ~isdwarf & ~isgiant
-		suffix='Huber'
+		suffix='huber'
 	else:
 		isdwarf= koi['koi_slogg']>4.2
 		suffix='logg42'
@@ -129,11 +129,12 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 	''' Select reliable candidates '''
 	iscandidate= koi['koi_pdisposition']=='CANDIDATE'
 	isreliable= koi['koi_score']>=score # removes rolling band, ~ 500 planets
-	print ('  {}/{} dwarfs'.format(isdwarf.sum(), isdwarf.size))
-	print ('  {} candidates, {} false positives'.format((isdwarf&iscandidate).sum(), 
-				(isdwarf&~iscandidate).sum() ))
-	print ('  {}+{} with score > {:.2f}'.format((isdwarf&iscandidate&isreliable).sum(), 
-				(isdwarf&~iscandidate&isreliable).sum(),score ))
+	if Verbose:
+		print ('  {}/{} dwarfs'.format(isdwarf.sum(), isdwarf.size))
+		print ('  {} candidates, {} false positives'.format((isdwarf&iscandidate).sum(), 
+					(isdwarf&~iscandidate).sum() ))
+		print ('  {}+{} with score > {:.2f}'.format((isdwarf&iscandidate&isreliable).sum(), 
+					(isdwarf&~iscandidate&isreliable).sum(),score ))
 
 	if score >= 0.5:
 		isall= isdwarf & isreliable # reliability score cuts out false positives

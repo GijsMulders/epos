@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colorbar as clrbar
 from matplotlib.colors import Normalize
+from matplotlib.cm import get_cmap
 
 from . import helpers
 from EPOS import cgs
@@ -312,7 +313,8 @@ def panels(epos, PlotZoom=False, MCMC=False, Convert=False, NB=False):
 	
 	# colorbar?
 	norm = Normalize(vmin=vmin, vmax=vmax)
-	cb1 = clrbar.ColorbarBase(axb, cmap=cmap, norm=norm, ticks=ticks,
+	cmap_obj = get_cmap(cmap)
+	cb1 = clrbar.ColorbarBase(axb, cmap=cmap_obj, norm=norm, ticks=ticks,
                                 orientation='vertical') # horizontal
 	axb.set_yticklabels(100*10.**ticks)
 	axb.tick_params(axis='y', direction='out')

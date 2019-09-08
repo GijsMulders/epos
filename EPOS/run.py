@@ -330,7 +330,7 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 			
 		elif epos.RandomPairing:			
 			# set ID, nth planet in system
-			isys= np.arange(sysX.size/npl)
+			isys= np.arange(sysX.size/npl, dtype=int)
 			allID= np.repeat(isys,npl)
 			order= np.lexsort((sysX,allID)) # sort by ID, then P
 			assert np.all(allID[order]==allID)
@@ -669,6 +669,8 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		pop= epos.population={}
 		pop['order']= order
 		pop['P']= allP
+		pop['Y']= allY
+		pop['ID']= allID	
 		pop['k']= allN
 		pop['inc']= allI
 		for key, subset in zip(['system', 'single', 'multi'],[isysdet, isingle, imulti]):

@@ -5,6 +5,7 @@ Examples
 --------
 
 * :ref:`/example_notebooks/parameteric_mode.ipynb`  (:download:`save to disk </example_notebooks/parameteric_mode.ipynb>`)
+* :ref:`/example_notebooks/multiplanet_mode.ipynb`  (:download:`save to disk </example_notebooks/multiplanet_mode.ipynb>`)
 *
 
 The notebooks are also viewable on `github  <https://github.com/GijsMulders/epos/docs/example_notebooks>`_

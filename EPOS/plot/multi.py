@@ -124,7 +124,7 @@ def periodradius(epos, Nth=False, MC=True):
 
 	helpers.save(plt, '{}{}/PR.multi{}'.format(epos.plotdir, outdir, suffix))
 
-def multiplicity(epos, MC=False, Planets=False, MCMC=False, color='C1'):
+def multiplicity(epos, MC=False, Planets=False, MCMC=False, color='C1', NB=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
 	ax.set_title('Multi-Planet Frequency')
@@ -202,7 +202,7 @@ def multiplicity(epos, MC=False, Planets=False, MCMC=False, color='C1'):
 	if MCMC: prefix= 'mcmc'
 	suffix='.planets' if Planets else ''
 	
-	helpers.save(plt, '{}{}/multiplicity{}'.format(epos.plotdir,prefix,suffix))
+	helpers.save(plt, '{}{}/multiplicity{}'.format(epos.plotdir,prefix,suffix), NB=NB)
 
 def multiplicity_cdf(epos, MC=False, color='C1'):
 	# plot multiplicity cdf
@@ -241,7 +241,7 @@ def multiplicity_cdf(epos, MC=False, color='C1'):
 	
 	helpers.save(plt, '{}{}/cdf'.format(epos.plotdir,prefix))
 	
-def periodratio(epos, MC=False, N=False, Input=False, MCMC=False, color='C1'):
+def periodratio(epos, MC=False, N=False, Input=False, MCMC=False, color='C1', NB=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
 	ax.set_title('Period Ratio of Adjacent Planets')
@@ -325,9 +325,9 @@ def periodratio(epos, MC=False, N=False, Input=False, MCMC=False, color='C1'):
 	if Input: suffix+= '.input' 
 	if MCMC: prefix= 'mcmc'
 
-	if MC: ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
+	if MC or NB: ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
 		
-	helpers.save(plt, '{}{}/periodratio{}'.format(epos.plotdir, prefix, suffix))	
+	helpers.save(plt, '{}{}/periodratio{}'.format(epos.plotdir, prefix, suffix), NB=NB)	
 
 def periodratio_cdf(epos, Input=True, MC=False, color='C1'):
 
@@ -390,7 +390,7 @@ def periodratio_cdf(epos, Input=True, MC=False, color='C1'):
 
 ''' these are practically identical to periodratio -> merge?'''
 
-def periodinner(epos, MC=False, N=False, Input=False, MCMC=False, color='C1'):
+def periodinner(epos, MC=False, N=False, Input=False, MCMC=False, color='C1', NB=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
 	ax.set_title('Period of the Innermost Planet')
@@ -472,7 +472,7 @@ def periodinner(epos, MC=False, N=False, Input=False, MCMC=False, color='C1'):
 
 	if MC: ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
 		
-	helpers.save(plt, '{}{}/innerperiod{}'.format(epos.plotdir, prefix,suffix))	
+	helpers.save(plt, '{}{}/innerperiod{}'.format(epos.plotdir, prefix,suffix), NB=NB)	
 
 def periodinner_cdf(epos, MC=False, color='C1'):
 	# plot multiplicity

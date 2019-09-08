@@ -231,7 +231,6 @@ def color_array(vals, vmin=None, vmax=None, cmap='jet'):
 import matplotlib.pyplot as plt
 from matplotlib import transforms
 
-
 def rainbow_text(x, y, strings, colors, orientation='horizontal',
 				 ax=None, f=None, fudge=1.5, **kwargs):
 	"""

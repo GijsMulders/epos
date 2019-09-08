@@ -150,3 +150,30 @@ def serialize_numpy_array(obj):
 		return obj.tolist()
 	else:
 		raise TypeError('Not serializable')
+
+
+def to_csv(fname, **args):
+	heads=[]
+	cols=[]
+	fmts=[]
+	for key, value in args.items():
+		cols.append(value)
+		heads.append(key)
+
+		fmttype= type(value[0])
+		if fmttype in [int, np.int64]:
+			fmts.append('%d')
+		elif fmttype in [float, np.float64]:
+			fmts.append('%.8e')
+		else:
+			print ('key {}, type {}, length {}'.format(key, type(value), len(value) ))
+			raise ValueError('Type {} not recognized'.format(fmttype))
+
+	# make sure path exists
+	ipath= fname.rfind('/')
+	if ipath!= -1:
+		if not os.path.isdir(fname[:ipath]): os.makedirs(fname[:ipath])
+
+	#print (fmts)
+	header= ','.join(heads)
+	np.savetxt(fname+'.csv',np.column_stack(cols),delimiter=',', header=header, fmt=fmts)
