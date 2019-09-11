@@ -16,7 +16,7 @@ try:
 except ImportError:
 	print ('#WARNING# emcee could not be imported')
 
-def once(epos, fac=1.0, Extra=None, goftype='KS'):
+def once(epos, fac=1.0, Extra=None, goftype='KS', Verbose=False):
 	'''
 	Run EPOS once
 	
@@ -88,7 +88,7 @@ def once(epos, fac=1.0, Extra=None, goftype='KS'):
 		print ('\nStarting extra {} run {}'.format(runtype, Extra))
 	tstart=time.time()
 	runonce= MC if epos.MonteCarlo else noMC
-	runonce(epos, fpara, Store=True, Extra=Extra)
+	runonce(epos, fpara, Store=True, Extra=Extra, Verbose=Verbose)
 	tMC= time.time()
 	print ('Finished one {} in {:.3f} sec'.format(runtype, tMC-tstart))
 	epos.tMC= tMC-tstart
@@ -275,8 +275,8 @@ def prep_obs(epos):
 	z['multi']['bin'], z['multi']['count']= multi.frequency(epos.obs_starID[ix&iy])
 	z['multi']['pl cnt']= z['multi']['bin']*z['multi']['count']
 	
-	z['multi']['Pratio'], z['multi']['Pinner']= \
-		multi.periodratio(epos.obs_starID[ix&iy], epos.obs_xvar[ix&iy])
+	z['multi']['Pratio'], z['multi']['Pinner'], z['multi']['Rratio']= \
+		multi.periodratio(epos.obs_starID[ix&iy], epos.obs_xvar[ix&iy], R=epos.obs_yvar[ix&iy])
 	z['multi']['cdf']= multi.cdf(epos.obs_starID[ix&iy])
 
 def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None, 
@@ -475,7 +475,7 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 	if Verbose and epos.Multi and not epos.RV: 
 		print ('\n  {} planets, {} transit their star'.format(
 			itrans.size, itrans.sum()))
-		multi.frequency(allID[itrans], Verbose=True)
+		multi.frequency(allID[itrans], Verbose=Verbose)
 	
 	'''
 	remove planets according to transit probability
@@ -551,7 +551,7 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 
 	if Verbose and epos.Multi: 		
 		print ('  {} transiting planets, {} detectable'.format(idet.size, idet.sum()))
-		multi.frequency(det_ID, Verbose=True)
+		multi.frequency(det_ID, Verbose=Verbose)
 
 	'''
 	Probability that simulated data matches observables
@@ -615,17 +615,19 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 			
 		with np.errstate(divide='ignore'): lnp['Nk']= np.log(prob['Nk'])			
 		
-		''' Period ratio, innermost planet '''
-		sim_dP, sim_Pinner= multi.periodratio(det_ID[ix&iy], det_P[ix&iy])
+		''' Period ratio, radius ratio, innermost planet '''
+		sim_dP, sim_Pinner, sim_dR= multi.periodratio(det_ID[ix&iy], det_P[ix&iy], 
+			R=det_Y[ix&iy])
 
 		if (len(sim_dP)>0) & (len(sim_Pinner)>0): 
 			prob['dP'],lnp['dP']= prob_2samp(epos.obs_zoom['multi']['Pratio'],f_dP*sim_dP)					
 			prob['Pin'],lnp['Pin']= prob_2samp(epos.obs_zoom['multi']['Pinner'],
 											sim_Pinner)
+			prob['dR'],lnp['dR']= prob_2samp(epos.obs_zoom['multi']['Rratio'],sim_dR)
 		else:
 			logging.debug('no multi-planet statistics, {}'.format(len(sim_dP)))
-			prob['dP'], prob['Pin']= 0, 0 
-			lnp['dP'], lnp['Pin']= -np.inf, -np.inf
+			prob['dP'], prob['Pin'], prob['dR']= 0, 0, 0 
+			lnp['dP'], lnp['Pin'], lnp['dR']= -np.inf, -np.inf, -np.inf
 
 	''' combine with Fischer's rule: '''
 	lnprob= np.sum([lnp[key] for key in epos.summarystatistic])
@@ -641,6 +643,7 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		if 'Nk' in prob:	print ('  - p(N_k)={:.2g}'.format(prob['Nk']))
 		if 'dP' in prob:	print ('  - p(P ratio)={:.2g}'.format(prob['dP']))
 		if 'Pin' in prob:	print ('  - p(P inner)={:.2g}'.format(prob['Pin']))
+		if 'dR' in prob:	print ('  - p(R ratio)={:.2g}'.format(prob['dR']))
 
 		if BestFit: 
 			''' Akaike/Bayesian information criterion'''
@@ -698,8 +701,8 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 			ss['multi']={}
 			ss['multi']['bin'], ss['multi']['count']= multi.frequency(det_ID[ix&iy])
 			ss['multi']['pl cnt']=ss['multi']['bin']* ss['multi']['count']
-			ss['multi']['Pratio'], ss['multi']['Pinner']= \
-				multi.periodratio(det_ID[ix&iy], det_P[ix&iy]) # *f_dP
+			ss['multi']['Pratio'], ss['multi']['Pinner'], ss['multi']['Rratio']= \
+				multi.periodratio(det_ID[ix&iy], det_P[ix&iy], R=det_Y[ix&iy])
 			ss['multi']['cdf']= multi.cdf(det_ID[ix&iy])
 			if not epos.RV and epos.Parametric:
 				ss['multi']['PN'],ss['multi']['dPN']= multi.periodratio(

@@ -49,8 +49,16 @@ Familiarize yourself with the code is to take a look at the :doc:`notebooks`
    :maxdepth: 2
    :caption: Tutorials
 
-   example_notebooks/parameteric_mode.ipynb
-   example_notebooks/multiplanet_mode.ipynb
+   tutorials/parameteric_mode.ipynb
+   tutorials/multiplanet_mode.ipynb
+   tutorials/radial_velocity.ipynb
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Papers
+
+   papers/fernandes_2019.ipynb
+   papers/pascucci_2019.ipynb
 
 .. toctree::
    :maxdepth: 2

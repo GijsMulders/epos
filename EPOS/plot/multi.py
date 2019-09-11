@@ -514,6 +514,86 @@ def periodinner_cdf(epos, MC=False, color='C1'):
 		
 	helpers.save(plt, '{}{}/innerperiod.cdf'.format(epos.plotdir, prefix))	
 
+''' Radius ratio '''
+def radiusratio(epos, MC=False, Input=False, MCMC=False, color='C1', NB=False):
+
+	# plot multiplicity
+	f, ax = plt.subplots()
+	ax.set_title('Radius Ratio of Adjacent Planets')
+	ax.set_xlabel(r'$\mathcal{R}$ = Radius Outer/Inner')
+	ax.set_ylabel('Planet Counts')
+
+	ax.set_xlim(0.1, 10)
+	ax.set_xscale('log')
+	#for s in [ax.set_xticks,ax.set_xticklabels]: s([1,2,3,4,5,7,10])
+	#ax.set_xticks([], minor=True) # minor ticks generate labels
+
+	bins=np.geomspace(0.1,10, 25) # 1,10
+	
+	# MC data
+	if MC or MCMC:
+		ss=epos.synthetic_survey
+		if MCMC:
+			for ss in epos.ss_sample:
+				# bar?
+				dR= ss['multi']['Rratio'][ss['multi']['Pratio']>1]
+				ax.hist(dR, bins=bins, histtype='step', color='b', alpha=0.1)
+				#ax.hist(ss['multi']['Pratio'], bins=bins, color='b', alpha=1./len(epos.ss_sample))
+		else:
+			dR= ss['multi']['Rratio'][ss['multi']['Pratio']>1]
+			ax.hist(dR, bins=bins,
+					color=color, histtype='stepfilled', label='Simulated')
+	
+			if hasattr(epos, 'pfm'):
+				dR_mod= epos.pfm['dR'][epos.pfm['dP']>1.]
+				scale= 1.*dR.size/dR_mod.size
+				ax.hist(dR_mod, bins=bins, weights=np.full_like(dR_mod, scale),
+					color='C7',label='Input/{:.2f}'.format(scale), histtype='step', ls=':')
+		
+		if hasattr(epos, 'ss_extra'):
+			# advance color cycle
+			# ax._get_lines.get_next_color()
+			ax.plot([], [])
+			ax.plot([], [])
+			ax.plot([], [])
+			
+			# plot extra epos runs
+			for ss in epos.ss_extra:
+				ax.hist(ss['multi']['Pratio'], bins=bins, 
+					histtype='step', label=ss['name'])
+
+		# Observed zoom
+		dR_obs= epos.obs_zoom['multi']['Rratio'][epos.obs_zoom['multi']['Pratio']>1.]
+		ax.hist(dR_obs, bins=bins, color='C3', histtype='step', ls='--', label='Kepler')
+
+
+	else:
+		# observed all
+		ax.hist(epos.multi['Rratio'], bins=bins, color='0.7', label='Kepler all')
+		#ax.axvline(np.median(epos.multi['Pratio']), color='0.7', ls='--')
+	
+	''' input distribution '''	
+	if Input and epos.Parametric:
+		dR= epos.fitpars.get('dR')
+		Rgrid= np.logspace(-1,1, 25)
+		pdf= scipy.stats.normal(np.log10(Rgrid), loc=0, scale=dR)
+		pdf*= 0.95* ax.get_ylim()[1] / max(pdf)	
+		ax.plot(Rgrid, pdf, marker='', ls='-', color='r',label='Intrinsic')
+
+	elif epos.Zoom:
+		if not MCMC:
+			ax.axvline(np.median(epos.obs_zoom['multi']['Rratio']), color='C1', ls='--')
+	
+	prefix= 'output' if MC else 'survey'
+	suffix= ''
+	if Input: suffix+= '.input' 
+	if MCMC: prefix= 'mcmc'
+
+	if MC or NB: ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
+		
+	helpers.save(plt, '{}{}/radiusratio{}'.format(epos.plotdir, prefix, suffix), NB=NB)	
+
+
 ''' Plot planet population '''
 
 def inner(epos):

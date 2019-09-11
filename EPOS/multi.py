@@ -108,23 +108,23 @@ def periodratio(ID, P, N=None, R=None, Verbose=False):
 	Pinner= P[i1[counts>1]] # innerplanet in multi
 	
 	Pratio= []
-	Rpair= [] # size of inner planet in pair
+	Rratio= []
 	for i in range(2,len(np.bincount(counts)) ):
 		#print ('\nmultiplicity: {}'.format(i)
 		im= i1[counts>=i] # multis with 
 		_dP= P[im+(i-1)]/P[im+(i-2)]
 		if R is not None:
-			_R= R[im+(i-1)] # size of outer planet
+			_dR= R[im+(i-1)]/R[im+(i-2)] # radius ratio
 		#for k, _dP in zip(im,Pratio):
 		#	print (' ID {}, P={}, dP= {}'.format(ID[k], P[ID==ID[k]], _dP)
 		#print ('i={}: {}'.format(i,dP.size)
 		Pratio.extend(_dP)
 		if R is not None:
-			Rpair.extend(_R)
+			Rratio.extend(_dR)
 	#print ('n dP= {}'.format(len(Pratio))
 	
 	if R is not None:
-		return np.array(Pratio), Pinner, Rpair
+		return np.array(Pratio), Pinner, np.array(Rratio)
 	elif N is None:
 		return np.array(Pratio), Pinner
 	else:

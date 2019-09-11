@@ -43,10 +43,11 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False, Verb
 		fkoi= 'temp/q1_q17_dr25_koi.npz'
 		
 	if os.path.isfile(fkoi):
-		print ('\nLoading planets from {}'.format(fkoi))
+		if Verbose: print ('\nLoading planets from {}'.format(fkoi))
 		koi= np.load(fkoi)
 	else:
-		print ('\nReading planet candidates from IPAC file')
+		if Verbose:
+			print ('\nReading planet candidates from IPAC file')
 		try:
 			ipac=Table.read(fpath+'/files/q1_q17_dr25_koi.tbl',format='ipac')
 		except NameError:
@@ -54,7 +55,7 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False, Verb
 
 		nonzero= (ipac['koi_srad']>0)
 		nremove= ipac['koi_srad'].size- ipac['koi_srad'][nonzero].size
-		print ('  removed {} planets with no stellar radii'.format(nremove))
+		if Verbose: print ('  removed {} planets with no stellar radii'.format(nremove))
 		koi= {key: np.array(ipac[key][nonzero]) for key in 
 				['kepid','koi_prad','koi_period',
 				'koi_steff', 'koi_slogg', 'koi_srad', 'koi_depth',
@@ -72,15 +73,17 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False, Verb
 			assert np.all(np.sort(a[0])==a[0]), 'Whoops II'
 			
 			common= np.intersect1d(koi['kepid'], a[0], assume_unique=False)
-			print ('  {} common out {} kois and {} stars in gaia'.format(common.size, 
+			if Verbose:
+				print ('  {} common out {} kois and {} stars in gaia'.format(common.size, 
 							koi['kepid'].size, a[0].size))
 			
 			# remove kois w/ no gaia data
 			koi_in_gaia= np.in1d(koi['kepid'], a[0])
 			for key in koi:
 				koi[key]= koi[key][koi_in_gaia]
-			print ('  {} stars, {} kois in gaia'.format(koi['kepid'].size, 
-				np.unique(koi['kepid']).size))
+			if Verbose:
+				print ('  {} stars, {} kois in gaia'.format(koi['kepid'].size, 
+					np.unique(koi['kepid']).size))
 			
 			# remove gaia data w/ no koi
 			gaia_in_koi= np.in1d(a[0], koi['kepid'])
@@ -89,7 +92,7 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False, Verb
 					  distance=a[4][gaia_in_koi],
 					  Rst= a[7][gaia_in_koi],
 					  giantflag= a[11][gaia_in_koi])
-			print ('  {} gaia stars that are kois'.format(gaia['starID'].size))
+			if Verbose: print ('  {} gaia stars that are kois'.format(gaia['starID'].size))
 			assert gaia['starID'].size == np.unique(koi['kepid']).size
 			
 			# stars w/ multiple planet candidates		
@@ -99,7 +102,7 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False, Verb
 			# update radii
 			with np.errstate(divide='ignore'):
 				increase= np.nanmedian(gaia['Rst'][st_to_pl]/ koi['koi_srad'])-1.
-			print ('  KOI radii increased by {:.1%}'.format(increase))
+			if Verbose: print ('  KOI radii increased by {:.1%}'.format(increase))
 			
 			koi['koi_steff']= gaia['Teff'][st_to_pl]
 			with np.errstate(divide='ignore', invalid='ignore'):

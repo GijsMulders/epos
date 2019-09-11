@@ -13,11 +13,12 @@ The notebooks are also viewable on `github  <https://github.com/GijsMulders/epos
 Papers
 ------
 
-* Mulders+ 2018
+* Mulders+ 2018 (see tutorials :ref:`/example_notebooks/parameteric_mode.ipynb` and :ref:`/example_notebooks/multiplanet_mode.ipynb`)
 * Fernandes+ 2019
 * Mulders+ 2019 (in prep)
 
 .. * Pascucci+ 2018
+.. * Pascucci+ 2019
 
 These script are are also viewable on `this github folder <https://github.com/GijsMulders/epos/tree/master/EPOS/scriptdir/papers>`_ 
 and you can copy these scripts to a local directory with:

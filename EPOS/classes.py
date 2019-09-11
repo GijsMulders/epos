@@ -144,6 +144,7 @@ class epos:
 
 	Args:
 		name (str): name to use for directories
+		survey(str): Survey data to load. ['Kepler', 'RV']. Default None
 		RV(bool): Compare to radial velocity instead of transits
 		MC(bool): Generate planet population by random draws 
 		Msini(bool): Convert the planet mass distribution into an Msini distribution
@@ -157,20 +158,19 @@ class epos:
 		RV(bool): Compare to Radial Velocity instead of transit data
 		Multi(bool): Do multi-planet statistics
 		RandomPairing(bool): multis are randomly paired
-		Isotropic(bool): Assume isotropic mutual inclinations
 		Parametric(bool): parametric planet population?
 		Debug(bool): Verbose logging
 		seed(): Random seed, can be any of int, True, or None
 	"""
 	def __init__(self, name, Debug=False, seed=True, title=None, 
-		RV=False, Norm=False, MC=True, Msini=False):
+		RV=False, Norm=False, MC=True, Msini=False, survey=None):
 		"""
 		Initialize the class
 		"""
 		self.name=name
 		self.title=name if title is None else title
 
-		print ('\n\n |~| epos {} |~|\n'.format(__version__))
+		print ('\n |~| epos {} |~|\n'.format(__version__))
 
 		''' Directories '''
 		self.plotdir='png/{}/'.format(name)
@@ -182,7 +182,6 @@ class epos:
 		self.Msini= Msini # do an M -> Msini conversion
 		self.Multi=False
 		self.RandomPairing= False
-		self.Isotropic= False # phase out?
 		self.MonteCarlo= MC
 		
 		# Seed for the random number generator
@@ -207,6 +206,22 @@ class epos:
 		self.PDF=False
 		
 		self.plotpars={} # dictionary to hold some customization keywords
+
+		''' Load Default Settings for each Survey '''
+		if survey is 'Kepler':
+			print ('\nSurvey: Kepler-Gaia all dwarfs')
+			obs, survey= EPOS.kepler.dr25(Huber=False, Gaia=True, Vetting=True, score=0.9, 
+				Verbose=False)
+			self.set_observation(Verbose=False, radiusError=0.02, **obs)
+			self.set_survey(**survey)
+			self.set_ranges(xtrim=[0,730],ytrim=[0.3,20.],xzoom=[2,400],yzoom=[1,6], Occ=True)
+		elif survey is 'RV':
+			print ('Survey: Radial Velocity HARPS-CORALIE')
+			self.RV=True
+			raise ValueError('To do')
+		else:
+			print ('Survey: None selected')
+
 
 	def set_observation(self, xvar, yvar, starID, nstars=1.6862e5, 
 		radiusError=0.1, score=None, Verbose=True):
@@ -417,12 +432,12 @@ class epos:
 				self.scale_in_y= self.scale_y 
 				self.scale_in= self.scale
 				self.X_in, self.Y_in= np.meshgrid(self.MC_xvar,self.in_yvar,indexing='ij')	
-			else:
-				self.in_ytrim= self.ytrim
-				self.in_yvar= self.MC_yvar
-				self.scale_in_y= self.scale_y 
-				self.scale_in= self.scale
-				self.X_in, self.Y_in= self.X, self.Y
+		else:
+			self.in_ytrim= self.ytrim
+			self.in_yvar= self.MC_yvar
+			self.scale_in_y= self.scale_y 
+			self.scale_in= self.scale
+			self.X_in, self.Y_in= self.X, self.Y
 			
 		''' plot ticks '''
 		yr= 365.24
@@ -629,7 +644,7 @@ class epos:
 		self.spacing= spacing # None, brokenpowerlaw, dimensionless
 
 		# skipping yvar here
-		self.summarystatistic= ['N','xvar','Nk','dP','Pin']
+		self.summarystatistic= ['N','xvar','Nk','dP','Pin'] # dR?
 	
 	def set_population(self, name, sma, mass, 
 		radius=None, inc=None, starID=None, ecc=None, tag=None, 
@@ -704,7 +719,7 @@ class epos:
 			
 			# period ratio, multi-planet index
 			single, multi, ksys, multis= EPOS.multi.nth_planet(pfm['ID'],pfm['P'])
-			pfm['dP']=np.ones_like(pfm['P'])
+			pfm['dP']=np.ones_like(pfm['P'])	
 			pfm['kth']=np.zeros_like(pfm['P'], dtype=int)
 
 			pfm['dP'][single]= 0 #np.nan
@@ -712,11 +727,12 @@ class epos:
 				# 2nd, 3rd, 4th??
 				pfm['dP'][km]= pfm['P'][km]/pfm['P'][np.array(km)-1]
 				pfm['kth'][km]= k+1
-			#print pfm['ID'][1:6]
-			#print pfm['P'][1:6]
-			#print pfm['dP'] # not ok?	
-			#for a,b in zip(pfm['ID'], pfm['kth']):
-			#	print a,b
+
+			if radius is not None:
+				pfm['dR']=np.ones_like(pfm['R'])
+				pfm['dR'][single]= 0 #np.nan
+				for k, km in enumerate(multis[1:]):
+					pfm['dR'][km]= pfm['R'][km]/pfm['R'][np.array(km)-1]
 
 			# innermost planet in multi
 			pfm['Pin']= np.squeeze(pfm['P'][np.array(multis[1])-1])
