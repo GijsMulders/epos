@@ -185,8 +185,8 @@ def panels(epos, MCMC=False, color='C1', NB=False):
 		axR.plot(sim['Y zoom pdf']*yscale, sim['Y zoom'], marker='', ls='-')
 
 	''' Observations'''
-	axP.hist(epos.obs_zoom['x'], bins=xbins,histtype='step', color='C1')
-	axR.hist(epos.obs_zoom['y'], bins=ybins, orientation='horizontal',histtype='step', color='C1')
+	axP.hist(epos.obs_zoom['x'], bins=xbins,histtype='step', color='C3')
+	axR.hist(epos.obs_zoom['y'], bins=ybins, orientation='horizontal',histtype='step', color='C3')
 	
 	''' Box/ lines'''
 	if epos.Zoom:
@@ -386,7 +386,7 @@ def cdf(epos, color='C1', NB=False):
 		ax1.plot(sim['P'], sim['Y'], ls='', marker='.', mew=0, ms=5.0, color=color, alpha=0.5)
 	else:
 		levels= np.linspace(0,np.max(sim['pdf']))		
-		ax1.contourf(epos.MC_xvar, epos.MC_yvar, sim['pdf'].T, cmap='Reds', levels=levels)
+		ax1.contourf(epos.MC_xvar, epos.MC_yvar, sim['pdf'].T, cmap='Blues', levels=levels)
 	
 	if epos.Zoom:
 		ax1.add_patch(patches.Rectangle( (epos.xzoom[0],epos.yzoom[0]), 
@@ -422,7 +422,7 @@ def cdf(epos, color='C1', NB=False):
 		P= sim['P zoom']
 		ax3.plot(np.sort(P), np.arange(P.size, dtype=float)/P.size, ls='-', marker='', color=color)
 	else:
-		ax3.plot(sim['P zoom'], sim['P zoom cdf'], ls='-', marker='', color='r')
+		ax3.plot(sim['P zoom'], sim['P zoom cdf'], ls='-', marker='', color='C0')
 	
 	#obs histogram x
 	P= epos.obs_zoom['x']
@@ -450,7 +450,7 @@ def cdf(epos, color='C1', NB=False):
 		R= sim['Y zoom']
 		ax4.plot(np.sort(R), np.arange(R.size, dtype=float)/R.size, ls='-', marker='', color=color)
 	else:
-		ax4.plot(sim['Y zoom'], sim['Y zoom cdf'], ls='-', marker='', color=color)
+		ax4.plot(sim['Y zoom'], sim['Y zoom cdf'], ls='-', marker='', color='C0')
 
 	#obs histogram x
 	R= epos.obs_zoom['y']
