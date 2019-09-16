@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.colorbar as clrbar
 import matplotlib.colors
+from matplotlib.cm import get_cmap
 import numpy as np
 
 from . import helpers, parametric
@@ -78,11 +79,11 @@ def colored(epos, Bins=False, Poly=False):
 	vmin, vmax= -4, 0
 	ticks=np.linspace(vmin, vmax, (vmax-vmin)+1)
 	clrs, norm= helpers.color_array(np.log10(epos.occurrence['planet']['completeness']),
-		vmin=vmin,vmax=vmax, cmap=cmap)
+		vmin=vmin,vmax=vmax, cmap=get_cmap(cmap))
 	ax.scatter(epos.obs_xvar, epos.obs_yvar, color=clrs, s=4)
 	
 	# colorbar?
-	cb1 = clrbar.ColorbarBase(axb, cmap=cmap, norm=norm, ticks=ticks,
+	cb1 = clrbar.ColorbarBase(axb, cmap=get_cmap(cmap), norm=norm, ticks=ticks,
                                 orientation='vertical') # horizontal
 	axb.set_yticklabels(100*10.**ticks)
 	axb.tick_params(axis='y', direction='out')

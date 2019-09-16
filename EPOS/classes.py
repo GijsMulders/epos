@@ -222,7 +222,6 @@ class epos:
 		else:
 			print ('Survey: None selected')
 
-
 	def set_observation(self, xvar, yvar, starID, nstars=1.6862e5, 
 		radiusError=0.1, score=None, Verbose=True):
 		''' Observed planet population
@@ -692,6 +691,9 @@ class epos:
 			
 		if radius is not None:
 			pfm['R']= np.asarray(radius)
+		elif hasattr(self, 'MR'):
+			pfm['R'], _= self.MR(pfm['M']) # no scatter
+
 		if ecc is not None:
 			pfm['ecc']= np.asarray(ecc)			
 		if tag is not None:
@@ -728,11 +730,17 @@ class epos:
 				pfm['dP'][km]= pfm['P'][km]/pfm['P'][np.array(km)-1]
 				pfm['kth'][km]= k+1
 
-			if radius is not None:
+			if 'R' in pfm:
 				pfm['dR']=np.ones_like(pfm['R'])
 				pfm['dR'][single]= 0 #np.nan
 				for k, km in enumerate(multis[1:]):
 					pfm['dR'][km]= pfm['R'][km]/pfm['R'][np.array(km)-1]
+
+			if 'M' in pfm:
+				pfm['dM']=np.ones_like(pfm['M'])
+				pfm['dM'][single]= 0 #np.nan
+				for k, km in enumerate(multis[1:]):
+					pfm['dM'][km]= pfm['M'][km]/pfm['M'][np.array(km)-1]
 
 			# innermost planet in multi
 			pfm['Pin']= np.squeeze(pfm['P'][np.array(multis[1])-1])

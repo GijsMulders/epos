@@ -307,7 +307,6 @@ def periodratio(epos, color='C0', clr_obs='C3', Simple=False, Fancy=True):
 		f, (ax, axR, axP)= helpers.make_panels_right(plt)
 		ax.set_title('Input Multi-planets {}'.format(epos.title))
 
-
 	''' Inc-sma'''	
 	ax.set_xlabel('Semi-Major Axis [au]')
 	ax.set_ylabel('Period ratio')
@@ -546,6 +545,169 @@ def periodratio_inc(epos, color='C1', imin=1e-2):
 	#helpers.set_axis_distance(axP, epos, Trim=True)
 
 	helpers.save(plt, epos.plotdir+'model/Pratio-inc')
+
+def massratio(epos, color='C0', clr_obs='C3', Fancy=True):
+	pfm=epos.pfm
+	
+	if Fancy:
+		f, (ax, axR, axP)= helpers.make_panels(plt, Fancy=True)
+		f.suptitle('Multi-planets {}'.format(epos.title))
+	else:
+		f, (ax, axR, axP)= helpers.make_panels_right(plt)
+		ax.set_title('Input Multi-planets {}'.format(epos.title))
+
+	''' Inc-sma'''	
+	ax.set_xlabel('Semi-Major Axis [au]')
+	ax.set_ylabel('Mass ratio')
+
+	#ax.set_xlim(epos.mod_xlim)
+	ax.set_ylim(0.1,10)
+
+	ax.set_xscale('log')
+	ax.set_yscale('log')
+
+	#ax.axhline(np.median(pfm['inc']), ls='--')
+	single= pfm['dP'] == np.nan
+	inner= pfm['dP'] == 1
+	nth= pfm['dP']> 1
+	
+	# print pfm['dP'][single]
+	# print pfm['dP'][nth]
+	# print pfm['dP'][inner]
+	# print pfm['dP'][nth].size, pfm['np'] # ok
+	
+	ax.plot(pfm['sma'][single], pfm['dM'][single], color='0.7', **fmt_symbol)
+	ax.plot(pfm['sma'][nth], pfm['dM'][nth], color=color, **fmt_symbol)
+	ax.plot(pfm['sma'][inner], pfm['dM'][inner], color='C1', **fmt_symbol)
+
+	''' Histogram Period Ratio'''
+	axR.set_yscale('log')
+	axR.set_ylim(0.1,10)
+
+	dM= np.logspace(-1,1, 25)
+	axR.hist(pfm['dM'][nth], bins=dM, orientation='horizontal', color=color)
+	
+	#Model best-fit
+	dM= np.logspace(-1,1)
+	xmax= axR.get_xlim()[-1]
+
+	pdf= scipy.stats.norm(loc=0, scale=0.25).pdf(np.log10(dM)) # 0.25--0.5 for diff MR indices
+	pdf*= xmax/max(pdf)
+	axR.plot(pdf, dM, ls='-', color=clr_obs)
+
+	''' Histogram Inner Planet'''
+	axP.set_xscale('log')
+	axP.set_xlim(ax.get_xlim())
+	sma= np.geomspace(*ax.get_xlim(), num=25)
+	axP.hist(pfm['sma'][inner], bins=sma, color='C1', label='Inner Planet')
+	
+	ymax= axP.get_ylim()[-1]
+	P= np.geomspace(0.5,730)
+	smaP= (P/365.25)**(1./1.5)
+	pdf= brokenpowerlaw1D(P, 10,1.5,-0.8)
+	pdf*= ymax/max(pdf)
+	
+	#axP.legend(frameon=False)
+	if Fancy:
+		ax.text(0.02,0.98,'Inner Planet',ha='left',va='top',color='C1', 
+			transform=ax.transAxes)
+		ax.text(0.02,0.98,'\nOuter Planet(s)',ha='left',va='top',color=color, 
+			transform=ax.transAxes)
+	else:
+		axP.text(0.98,0.95,'Inner Planet',ha='right',va='top',color='C1', 
+			transform=axP.transAxes)
+	
+	axP.plot(smaP, pdf, ls='-', color=clr_obs)
+
+	
+	#helpers.set_axes(ax, epos, Trim=True)
+	#helpers.set_axis_distance(axP, epos, Trim=True)
+	#helpers.set_axis_size(axR, epos, Trim=True) #, In= epos.MassRadius)
+
+	helpers.save(plt, epos.plotdir+'model/Mratio-sma')
+
+def radiusratio(epos, color='C0', clr_obs='C3', Fancy=True):
+	pfm=epos.pfm
+	
+	if Fancy:
+		f, (ax, axR, axP)= helpers.make_panels(plt, Fancy=True)
+		f.suptitle('Multi-planets {}'.format(epos.title))
+	else:
+		f, (ax, axR, axP)= helpers.make_panels_right(plt)
+		ax.set_title('Input Multi-planets {}'.format(epos.title))
+
+	''' Inc-sma'''	
+	ax.set_xlabel('Semi-Major Axis [au]')
+	ax.set_ylabel('Radius ratio')
+
+	#ax.set_xlim(epos.mod_xlim)
+	ax.set_ylim(0.1,10)
+
+	ax.set_xscale('log')
+	ax.set_yscale('log')
+
+	#ax.axhline(np.median(pfm['inc']), ls='--')
+	single= pfm['dP'] == np.nan
+	inner= pfm['dP'] == 1
+	nth= pfm['dP']> 1
+	
+	# print pfm['dP'][single]
+	# print pfm['dP'][nth]
+	# print pfm['dP'][inner]
+	# print pfm['dP'][nth].size, pfm['np'] # ok
+	
+	ax.plot(pfm['sma'][single], pfm['dR'][single], color='0.7', **fmt_symbol)
+	ax.plot(pfm['sma'][nth], pfm['dR'][nth], color=color, **fmt_symbol)
+	ax.plot(pfm['sma'][inner], pfm['dR'][inner], color='C1', **fmt_symbol)
+
+	''' Histogram Period Ratio'''
+	axR.set_yscale('log')
+	axR.set_ylim(0.1,10)
+
+	dR= np.logspace(-1,1, 25)
+	axR.hist(pfm['dR'][nth], bins=dR, orientation='horizontal', color=color)
+	
+	#Model best-fit
+	dR= np.logspace(-1,1)
+	xmax= axR.get_xlim()[-1]
+
+	pdf= scipy.stats.norm(loc=0, scale=0.15).pdf(np.log10(dR))
+	pdf*= xmax/max(pdf)
+	axR.plot(pdf, dR, ls='-', color=clr_obs)
+
+	#ax.axhline(pscale, color=clr_obs, ls='--')	
+
+
+	''' Histogram Inner Planet'''
+	axP.set_xscale('log')
+	axP.set_xlim(ax.get_xlim())
+	sma= np.geomspace(*ax.get_xlim(), num=25)
+	axP.hist(pfm['sma'][inner], bins=sma, color='C1', label='Inner Planet')
+	
+	ymax= axP.get_ylim()[-1]
+	P= np.geomspace(0.5,730)
+	smaP= (P/365.25)**(1./1.5)
+	pdf= brokenpowerlaw1D(P, 10,1.5,-0.8)
+	pdf*= ymax/max(pdf)
+	
+	#axP.legend(frameon=False)
+	if Fancy:
+		ax.text(0.02,0.98,'Inner Planet',ha='left',va='top',color='C1', 
+			transform=ax.transAxes)
+		ax.text(0.02,0.98,'\nOuter Planet(s)',ha='left',va='top',color=color, 
+			transform=ax.transAxes)
+	else:
+		axP.text(0.98,0.95,'Inner Planet',ha='right',va='top',color='C1', 
+			transform=axP.transAxes)
+	
+	axP.plot(smaP, pdf, ls='-', color=clr_obs)
+
+	
+	#helpers.set_axes(ax, epos, Trim=True)
+	#helpers.set_axis_distance(axP, epos, Trim=True)
+	#helpers.set_axis_size(axR, epos, Trim=True) #, In= epos.MassRadius)
+
+	helpers.save(plt, epos.plotdir+'model/Rratio-sma')
 
 def multiplicity(epos, color='C1', Planets=False, Kepler=False):
 	# plot multiplicity

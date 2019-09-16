@@ -70,6 +70,11 @@ def all(epos, color=None, imin=1e-2):
 			if 'inc' in epos.pfm:
 				model.periodratio_inc(epos, color=color, imin=imin)
 
+		if 'dM' in epos.pfm:
+			model.massratio(epos, color=color)
+		if 'dR' in epos.pfm:
+			model.radiusratio(epos, color=color)
+
 	if epos.Multi:
 		if epos.Parametric:
 			multi.periodradius(epos, MC=False)
