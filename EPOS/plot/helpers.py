@@ -206,7 +206,7 @@ def default_pyplot2_colors(colors):
 	colors.ColorConverter.colors['C8']='#bcbd22'
 	colors.ColorConverter.colors['C9']='#17becf'
 
-def save(plt, name, dpi=150):
+def save(plt, name, dpi=300):
 
 	# make sure path exists
 	ipath= name.rfind('/')
