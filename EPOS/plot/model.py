@@ -260,7 +260,7 @@ def inclination(epos, color='C0', clr_obs='C3', imin=1e-2, Simple=False):
 
 	ax.set_xlabel('Semi-Major Axis [au]')
 	#ax.set_ylabel(r'Planet Mass [M$_\bigoplus$]')
-	ax.set_ylabel('Inclination [degree]')
+	ax.set_ylabel('Mutual Inclination [degree]')
 
 	#ax.set_xlim(epos.mod_xlim)
 	ax.set_ylim(imin,90)
