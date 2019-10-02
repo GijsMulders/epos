@@ -176,20 +176,7 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False, Verb
 	''' Add vetting completeness '''
 	if Vetting:
 		X,Y= np.meshgrid(eff['P'], eff['Rp'], indexing='ij')
-		if subsample=='all' and score == 0.9:
-			if Gaia:
-				vetpars= 0.84, 55., -0.07, -0.37, 8.2, 0.13, 0.13
-			else:
-				vetpars= 0.88, 53., -0.07, -0.39, 5.7, 0.19, 0.19
-								
-		elif subsample=='all' and score == 0.0:
-			if Gaia:
-				vetpars= 0.88, 210, -0.0035, -0.24, 6.9, -0.029, -0.029
-			else:
-				vetpars= 0.86, 210, 0.002, -0.22, 5.5, -0.057, -0.057
-		else:
-			raise ValueError('no vetting completeness for {} with score={}'.format(subsample, score))
-		
+		vetpars=vetting_parameters(score, subsample, Gaia=Gaia)		
 		vet_2D= fbpl2d( (X,Y), *vetpars)
 		survey['vet_2D']= vet_2D
 		assert vet_2D.shape == eff['fsnr'].shape
@@ -244,6 +231,51 @@ def single():
 			'Mstar': 1.0, 'Rstar':1.0}
 
 	return obs, survey
+
+def vetting_parameters(score=0.9, subsample='all', Gaia=True):
+	''' Returns the fit parameters to reconstruct the vetting efficiency '''
+	errormessage= 'no vetting completeness for {} with score={}'.format(subsample, score)
+
+	if Gaia:
+		if score == 0.9:
+			if subsample=='all':
+				vetpars= 0.9, 50, -0.07, -0.4, 5.7, 0.1, 0.1 #-2.7 # Rachel
+				# 0.84, 55., -0.07, -0.37, 8.2, 0.13, 0.13 # previous
+			elif subsample=='F':
+				vetpars= 0.58, 200, -0.12, -0.77, 7.6, 0.096, 0.096 #-1.1
+			elif subsample=='G':
+				vetpars= 0.5, 180, -0.13, -0.77, 2.3, 0.11, 0.11 #0.28
+			elif subsample=='K':
+				vetpars= 0.65, 190, -0.13, -0.98, 3.1, 0.3, 0.3 #0.21
+			elif subsample=='M':
+				vetpars= 0.8, 16, -0.01, -0.3, 6.9, 0.0009, 0.0009 #3.8
+			else:
+				raise ValueError(errormessage)
+
+		elif score == 0.0:
+			if subsample=='all':
+				vetpars= 0.78, 210, -0.00091, -0.25, 52, -0.048, -0.048 # 3.3 # Rachel
+				# 0.88, 210, -0.0035, -0.24, 6.9, -0.029, -0.029 # previous
+			elif subsample=='F':
+				vetpars= 0.74, 210, -0.013, -0.22, 41, -0.075, -0.075 #3.3
+			elif subsample=='G':
+				vetpars= 0.89, 200, -0.019, -0.23, 62, -0.0062, -0.0062 #3.3
+			elif subsample=='K':
+				vetpars= 0.89, 200, -0.0048, -0.32, 30, -0.018, -0.018 # 3.3
+			elif subsample=='M':
+				vetpars= 0.8, 86, -0.0079, -0.31, 4.4, -0.1, 3.3
+			else:
+				raise ValueError(errormessage)
+		else:
+			raise ValueError('Score cut must be 0 or 0.9')
+
+	else:
+		if subsample=='all' and score == 0.9:
+			vetpars= 0.88, 53., -0.07, -0.39, 5.7, 0.19, 0.19
+		elif subsample=='all' and score == 0.0:
+			vetpars= 0.86, 210, 0.002, -0.22, 5.5, -0.057, -0.057
+		else:
+			raise ValueError(errormessage)
 
 
 '''
