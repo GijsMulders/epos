@@ -559,7 +559,7 @@ def radiusratio(epos, MC=False, Input=False, MCMC=False, color='C1', NB=False):
 			
 			# plot extra epos runs
 			for ss in epos.ss_extra:
-				ax.hist(ss['multi']['Pratio'], bins=bins, 
+				ax.hist(ss['multi']['Rratio'], bins=bins, 
 					histtype='step', label=ss['name'])
 
 		# Observed zoom

@@ -58,7 +58,7 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False, Verb
 		if Verbose: print ('  removed {} planets with no stellar radii'.format(nremove))
 		koi= {key: np.array(ipac[key][nonzero]) for key in 
 				['kepid','koi_prad','koi_period',
-				'koi_steff', 'koi_slogg', 'koi_srad', 'koi_depth',
+				'koi_steff', 'koi_slogg', 'koi_srad', 'koi_depth', 'koi_duration',
 				'koi_pdisposition','koi_score'] }
 
 		if Gaia:
@@ -160,9 +160,10 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False, Verb
 	#if Huber: slice['subgiants']=issubgiant
 	
 	obs= {'xvar':koi['koi_period'][slice],
-		'yvar':koi['koi_prad'][slice], 
+		'yvar':koi['koi_prad'][slice],
 		'starID':koi['kepid'][slice],
-		'score':koi['koi_score'][slice]}
+		'score':koi['koi_score'][slice],
+		'tdur':koi['koi_duration'][slice]}
 	
 	''' Load pre-calculated detection efficiencies '''
 	# from dr25_epos.py
@@ -276,6 +277,8 @@ def vetting_parameters(score=0.9, subsample='all', Gaia=True):
 			vetpars= 0.86, 210, 0.002, -0.22, 5.5, -0.057, -0.057
 		else:
 			raise ValueError(errormessage)
+
+	return vetpars
 
 
 '''

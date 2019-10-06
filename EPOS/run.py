@@ -264,8 +264,9 @@ def prep_obs(epos):
 	
 	x= epos.obs_xvar[ix&iy]
 	y= epos.obs_yvar[ix&iy]
+	t= epos.obs_tdur[ix&iy]
 
-	for key, var in zip(['x','y'], [x,y]):
+	for key, var in zip(['x','y','t'], [x,y,t]):
 		z[key]= np.sort(var) # add (x0,0) and (x1,1)?
 		z[key+' cum']= np.arange(z[key].size,dtype=float)
 		z[key+' cdf']= z[key+' cum']/z[key+' cum'][-1]
@@ -370,7 +371,7 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 			
 			''' Draw multiplanet distributions '''
 			allX, allY, allI, allN, allID= \
-				draw_multi(epos, sysX, sysY, npl, dInc, dR, fpara, Store)
+				draw_multi(epos, sysX, sysY, npl, dInc, dR, fpara, Store, epos.Correlated)
 					
 		''' convert to observable parameters '''
 		allP= allX
@@ -469,7 +470,8 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		itrans= p_trans >= np.random.uniform(0,1,allP.size)
 	else:
 		#multi-transit probability
-		itrans= istransit(epos, allID, allI, allP, f_iso, f_inc, Verbose=Verbose)
+		itrans, allB, allTd= \
+			istransit(epos, allID, allI, allP, allY, f_iso, f_inc, Verbose=Verbose)
 		
 	# print (multi statistics	
 	if Verbose and epos.Multi and not epos.RV: 
@@ -508,6 +510,9 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		''' uncertainty in stellar radius? '''
 		MC_Y=MC_R * (1.+epos.radiusError*np.random.normal(size=MC_R.size) )
 
+		if epos.Multi and (dInc!=None):
+			MC_B=allB[itrans]
+			MC_Td=allTd[itrans]
 	
 	'''
 	Store (transiting) planet sample for verification plot
@@ -676,12 +681,16 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		pop['ID']= allID	
 		pop['k']= allN
 		pop['inc']= allI
+		pop['b']= allB
+		pop['tdur']= allTd
 		for key, subset in zip(['system', 'single', 'multi'],[isysdet, isingle, imulti]):
 			pop[key]={}
 			pop[key]['Y']= allY[subset] # R? M?
 			pop[key]['P']= allP[subset]
 			pop[key]['ID']= allID[subset]
 			pop[key]['inc']= allI[subset]
+			pop[key]['b']= allB[subset]
+			pop[key]['tdur']= allTd[subset]
 			pop[key]['order']= order[subset]
 			pop[key]['detectable']= itransdet[subset]
 	
@@ -706,7 +715,12 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 			ss['multi']['cdf']= multi.cdf(det_ID[ix&iy])
 			if not epos.RV and epos.Parametric:
 				ss['multi']['PN'],ss['multi']['dPN']= multi.periodratio(
-						det_ID[ix&iy], det_P[ix&iy], N=det_N[ix&iy]) 
+						det_ID[ix&iy], det_P[ix&iy], N=det_N[ix&iy])
+
+			# impact, transit duration
+			if (dInc!=None):
+				ss['b']= MC_B[idet]
+				ss['tdur']= MC_Td[idet]
 		
 		epos.prob=prob
 		epos.lnprob=lnprob
@@ -902,7 +916,7 @@ def draw_from_2D_distribution(epos, pps, fpara, npl=1):
 	
 	return allX, allY
 
-def draw_multi(epos, sysX, sysY, npl, dInc, dR, fpara, Store):
+def draw_multi(epos, sysX, sysY, npl, dInc, dR, fpara, Store, Correlated=False):
 	''' assign ID to each system '''
 	sysID= np.arange(sysX.size)
 	#allID= np.repeat(sysID, npl) # array with star ID for each planet
@@ -920,7 +934,15 @@ def draw_multi(epos, sysX, sysY, npl, dInc, dR, fpara, Store):
 	_, toplanet, sysnpl= np.unique(allID, return_inverse=True,return_counts=True)
 	allX= sysX[toplanet]
 	allY= sysY[toplanet]
-	allI= np.random.rayleigh(dInc, allID.size)
+
+	# correlated mutual inc, spacing, size
+	if Correlated:
+		xcor= np.random.uniform(0,1,allID.size)
+		grid_inc= np.geomspace(1e-3,90.)
+		cdf_inc= 1.-np.exp(-.5*(grid_inc/dInc)**2.)
+		allI= np.interp(xcor, cdf_inc, grid_inc)
+	else:
+		allI= np.random.rayleigh(dInc, allID.size)
 	#allN= np.ones_like(allID) # index to planet in system
 	allN= np.where(allX>=epos.xzoom[0],1,0) # also yzoom?
 	#print (allX[:3]
@@ -964,12 +986,26 @@ def draw_multi(epos, sysX, sysY, npl, dInc, dR, fpara, Store):
 		im= i1[sysnpl>=i] # index to ith planet in each system
 		#print ('  planet {} in system, {} systems'.format(i,im.size)
 		#dP= draw_from_function(brokenpowerlaw1D,xgrid,im.size, dPbreak, dP1, dP2)
-		dP= np.interp(np.random.uniform(cdf[0],cdf[-1],im.size), cdf, Pgrid)
+
+		if Correlated:
+			dP_all= np.interp(cdf[0]+xcor*(cdf[-1]-cdf[0]), cdf, Pgrid)
+			dP= dP_all[im+(i-1)]
+		else:
+			dP= np.interp(np.random.uniform(cdf[0],cdf[-1],im.size), cdf, Pgrid)
 		allX[im+(i-1)]= allX[im+(i-2)]* dP
+		
 		#np.random.uniform(dP-0.7, dP+0.7, im.size)
 		#print (allX[:3]
 		#np.random.norm()
-		allY[im+(i-1)]= allY[im+(i-2)]* 10.**np.random.normal(0, dR, im.size)
+
+		if Correlated:
+			grid_dR= np.linspace(-5.*dR,5*dR) # 5 stdev range
+			cdf_dR= norm(0,dR).cdf(grid_dR)
+			dR_all= np.interp(xcor, cdf_dR, grid_dR)
+			#allY[im+(i-1)]= allY[im]* 10.**dR_all[im+(i-1)]
+			allY[im+(i-1)]= allY[im+(i-2)]* 10.**dR_all[im+(i-1)]
+		else:
+			allY[im+(i-1)]= allY[im+(i-2)]* 10.**np.random.normal(0, dR, im.size)
 		
 		# nth planet in system (zoom range)
 		#allN[im+(i-1)]= allN[im+(i-2)]+1
@@ -992,7 +1028,7 @@ def draw_multi(epos, sysX, sysY, npl, dInc, dR, fpara, Store):
 	
 	return allX, allY, allI, allN, allID
 	
-def istransit(epos, allID, allI, allP, f_iso, f_inc, Verbose=False):
+def istransit(epos, allID, allI, allP, allR, f_iso, f_inc, Verbose=False):
 	# draw same numbers for multi-planet systems
 	IDsys, toplanet= np.unique(allID, return_inverse=True) # return_counts=True
 	if Verbose: print ('  {}/{} systems'.format(IDsys.size, allID.size))
@@ -1003,6 +1039,7 @@ def istransit(epos, allID, allI, allP, f_iso, f_inc, Verbose=False):
 	assert inc_pl.size == allP.size
 	
 	R_a= epos.fgeo_prefac *allP**epos.Pindex # == p_trans
+
 	mutual_inc= allI * f_inc
 	#mutual_inc= 0.0 # planar distribution
 	#mutual_inc= 1.0 # fit 
@@ -1013,16 +1050,26 @@ def istransit(epos, allID, allI, allP, f_iso, f_inc, Verbose=False):
 	delta_inc= mutual_inc *np.cos(np.random.uniform(0,np.pi,allP.size)) *np.pi/180. #rad
 	itrans= np.abs(inc_pl+delta_inc) < np.arcsin(R_a)
 
+	# transit duration, impact
+	impact= np.abs(np.sin((inc_pl+delta_inc))/R_a)
+
 	# allow for a fraction of isotropic systems
 	if f_iso > 0:
 		p_trans= epos.fgeo_prefac *allP**epos.Pindex
-		itrans_iso= p_trans >= np.random.uniform(0,1,allP.size)
+		rand_fgeo= np.random.uniform(0,1,allP.size)
+		itrans_iso= p_trans >= rand_fgeo
 		
 		iso_sys= (np.random.uniform(0,1,IDsys.size) < f_iso)
 		iso_pl= iso_sys[toplanet]
 		itrans = np.where(iso_pl, itrans_iso, itrans)
+
+		impact_iso= np.abs(rand_fgeo/R_a)
+		impact = np.where(iso_pl, impact_iso,impact) 
+
+	t_d= allP*(cgs.day/cgs.hour)/np.pi* \
+		np.arcsin(R_a*np.sqrt(np.maximum((1.+allR*cgs.Rearth/cgs.Rsun)**2.-impact**2.,0)))
 		
-	return itrans
+	return itrans, impact, t_d
 
 def storepopulation(allID, allP, det_ID, idetected):
 	# add f_iso?

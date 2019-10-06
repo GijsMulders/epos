@@ -223,7 +223,7 @@ class epos:
 			print ('Survey: None selected')
 
 	def set_observation(self, xvar, yvar, starID, nstars=1.6862e5, 
-		radiusError=0.1, score=None, Verbose=True):
+		radiusError=0.1, score=None, tdur=None, Verbose=True):
 		''' Observed planet population
 		
 		Args:
@@ -244,6 +244,9 @@ class epos:
 
 		if score is not None:
 			self.obs_score= np.asarray(score)[order]
+
+		if tdur is not None:
+			self.obs_tdur= np.asarray(tdur)[order]
 		
 		assert self.obs_xvar.ndim == self.obs_yvar.ndim == self.obs_starID.ndim == 1, 'only 1D arrays'
 		assert self.obs_xvar.size == self.obs_yvar.size == self.obs_starID.size, 'arrays not same length'
@@ -634,13 +637,15 @@ class epos:
 		self.fitpars=self.pdfpars
 		self.summarystatistic= ['N','xvar','yvar']
 	
-	def set_multi(self, spacing=None):
+	def set_multi(self, spacing=None, Correlated=False):
 		if not self.Parametric:
 			raise ValueError('Define a parametric planet population first')
 		self.Multi=True
 		
 		self.RandomPairing= (spacing==None)
 		self.spacing= spacing # None, brokenpowerlaw, dimensionless
+
+		self.Correlated=Correlated
 
 		# skipping yvar here
 		self.summarystatistic= ['N','xvar','Nk','dP','Pin'] # dR?
