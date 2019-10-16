@@ -6,6 +6,12 @@
 EPOS
 ==============================================
 
+.. image:: https://img.shields.io/badge/ascl-1909.013-blue.svg?colorB=262255
+   :target: http://ascl.net/1909.013
+
+.. image:: https://zenodo.org/badge/132065382.svg
+   :target: https://zenodo.org/badge/latestdoi/132065382
+   
 the Exoplanet Population Observation Simulator
 ----------------------------------------------
 

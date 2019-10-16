@@ -25,11 +25,14 @@ Download the source from `github <https://github.com/GijsMulders/epos>`_, prefer
 
    git clone https://github.com/GijsMulders/epos
 
+You can then do a local install::
+
+   ipython setup.py sdist
+   sudo -H pip install -e .
+
 In the future you can update to the latest version with::
 
    git pull
-
-You will need to add the EPOS directory to your path if you want to run from outside the main folder.
 
 Dependencies
 ------------

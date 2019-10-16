@@ -1,5 +1,8 @@
 # README #
 
+<a href="http://ascl.net/1909.013"><img src="https://img.shields.io/badge/ascl-1909.013-blue.svg?colorB=262255" alt="ascl:1909.013" /></a>
+<a href="https://doi.org/10.5281/zenodo.1247570"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.1247570.svg" alt="DOI"></a>
+
 Welcome to the Exoplanet Population Observation Simulator!
 The documentation will be hosted [here](http://epos.readthedocs.io/en/latest)
 
