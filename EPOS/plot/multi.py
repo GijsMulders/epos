@@ -593,6 +593,53 @@ def radiusratio(epos, MC=False, Input=False, MCMC=False, color='C1', NB=False):
 		
 	helpers.save(plt, '{}{}/radiusratio{}'.format(epos.plotdir, prefix, suffix), NB=NB)	
 
+def radiusratio_cdf(epos, Input=True, MC=False, color='C1'):
+
+	# plot radius ratio CDF
+	f, ax = plt.subplots()
+	ax.set_title('Radius Ratio Adjacent Planets')
+	ax.set_xlabel('$\mathcal{P}$ = Radius Outer/Inner')
+	ax.set_ylabel('CDF')
+
+	ax.set_xlim(0.1, 10)
+
+	ax.set_xscale('log')
+	#for s in [ax.set_xticks,ax.set_xticklabels]: s([1,2,3,4,5,7,10])
+	#ax.set_xticks([], minor=True) # minor ticks generate labels
+	
+	# MC data
+	if MC:
+		ss=epos.synthetic_survey
+		dR= ss['multi']['Rratio'][ss['multi']['Pratio']>1.]
+		Rsort= np.sort(dR)
+		cdf= np.arange(Rsort.size, dtype=float)/Rsort.size
+		ax.plot(Rsort, cdf, color=color, label=epos.name)
+	
+		# Observed zoom
+		dR_obs= epos.obs_zoom['multi']['Rratio'][epos.obs_zoom['multi']['Pratio']>1.]
+		Rsort= np.sort(dR_obs)
+		cdf= np.arange(Rsort.size, dtype=float)/Rsort.size
+		ax.plot(Rsort, cdf, color='C3', label='Kepler', ls='--')
+
+		if hasattr(epos, 'pfm'):
+			dR= epos.pfm['dR'][epos.pfm['dP']>1.]
+			Rsort= np.sort(dR)
+			cdf= np.arange(Rsort.size, dtype=float)/Rsort.size
+			ax.plot(Rsort, cdf, color=color, ls=':', label='Input')			
+
+	else:
+		# all observed
+		dR= epos.multi['Rratio'][epos.multi['Pratio']>1]
+		Rsort= np.sort(dR)
+		cdf= np.arange(Rsort.size, dtype=float)/Rsort.size
+		ax.plot(Rsort, cdf ,color='C7', ls=':', label='Kepler all')	
+	
+	prefix= 'output' if MC else 'survey'
+	
+	if MC: ax.legend(loc='lower right', shadow=False, prop={'size':14}, numpoints=1)
+		
+	helpers.save(plt, '{}{}/radiusratio.cdf'.format(epos.plotdir,prefix))	
+
 
 ''' Plot planet population '''
 

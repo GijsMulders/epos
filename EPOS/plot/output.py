@@ -30,17 +30,19 @@ def all(epos, color='C1'):
 			multi.multiplicity(epos, MC=True, color=color)
 			multi.multiplicity(epos, MC=True, Planets=True, color=color)
 			multi.multiplicity_cdf(epos, MC=True)
+
 			multi.periodratio(epos, MC=True, color=color)
 			if epos.Parametric and epos.spacing is not None:
 				multi.periodratio(epos, MC=True, Input=True, color=color)
 			multi.periodratio_cdf(epos, MC=True, color=color)
+
 			multi.periodinner(epos, MC=True, color=color)
 			if epos.Parametric and epos.spacing is not None:
 				multi.periodinner(epos, MC=True, Input=True, color=color)
 			multi.periodinner_cdf(epos, MC=True, color=color)
-			# pdf per subgroup
-			#periodradius.pdf(epos)
-			#periodradius.pdf_3d(epos)
+			
+			multi.radiusratio(epos, MC=True, color=color)
+			multi.radiusratio_cdf(epos, MC=True, color=color)			
 
 		if epos.MassRadius:
 			massradius.massradius(epos, MC=True, color=color)
