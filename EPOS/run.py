@@ -63,9 +63,9 @@ def once(epos, fac=1.0, Extra=None, goftype='KS', Verbose=False):
 
 		else:
 			# set defaults for planet formation models here
-			epos.fitpars.default('eta',0.5)
+			epos.fitpars.default('eta',0.3, isnorm=True)
 			epos.fitpars.default('f_cor',0.5)
-			epos.fitpars.default('f_iso',0.5)
+			epos.fitpars.default('f_iso',0.5) # 1.0
 			epos.fitpars.default('f_inc',1.0)
 			epos.fitpars.default('f_dP',1.0)
 

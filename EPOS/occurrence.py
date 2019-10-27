@@ -11,7 +11,7 @@ except:
 from EPOS.population import periodradius
 import EPOS.analytics
 
-def all(epos, BinnedMetric=False, MLE=False):
+def all(epos, BinnedMetric=False, MLE=False, Verbose=True):
 	if hasattr(epos,'occurrence'):
 		planets(epos)
 
@@ -86,12 +86,17 @@ def models(epos, Log=False):
 		#print completeness
 	else:
 		# if zeros in detection efficiency?
-		pl_comp= interpolate.RectBivariateSpline(epos.eff_xvar, 
-			epos.eff_yvar, epos.completeness)
-		completeness= pl_comp(pfm['P'], pfm['R'], grid=False)
+		pl_ftot= interpolate.RectBivariateSpline(epos.eff_xvar, epos.eff_yvar, epos.completeness)
+		pl_fgeo= interpolate.RectBivariateSpline(epos.eff_xvar, epos.eff_yvar, epos.fgeo)
+		pl_fdet= interpolate.RectBivariateSpline(epos.eff_xvar, epos.eff_yvar, epos.eff_2D)
+		pl_fvet= interpolate.RectBivariateSpline(epos.eff_xvar, epos.eff_yvar, epos.vetting)
 		
 	focc['model']={}
-	focc['model']['completeness']= completeness
+	focc['model']['completeness']= pl_ftot(pfm['P'], pfm['R'], grid=False)
+	focc['model']['fgeo']= pl_fgeo(pfm['P'], pfm['R'], grid=False)
+	focc['model']['eff_2D']= pl_fdet(pfm['P'], pfm['R'], grid=False)
+	focc['model']['vetting']= pl_fvet(pfm['P'], pfm['R'], grid=False)
+
 	focc['model']['eta']= epos.fitpars.getpps() if hasattr(epos, 'fitpars') else 1.
 	#focc['model']['occ']= focc['model']['eta']/completeness/epos.nstars
 	#print epos.planet_occurrence

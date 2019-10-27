@@ -63,10 +63,10 @@ class fitparameters:
 			dx=0.1*value if dx is None else dx
 			fp['dx']=abs(dx) if (dx!=0) else 0.1
 
-	def default(self, key, value, Verbose=True):
+	def default(self, key, value, isnorm=False, Verbose=True):
 		if not key in self.keysall: 
 			if Verbose: print ('  Set {} to default {}'.format(key, value))
-			self.add(key, value, fixed=True)
+			self.add(key, value, fixed=True, isnorm=isnorm)
 	
 	def set(self, key, value):
 		self.fitpars[key]['value_init']=value
@@ -209,7 +209,7 @@ class epos:
 
 		''' Load Default Settings for each Survey '''
 		if survey is 'Kepler':
-			print ('\nSurvey: Kepler-Gaia all dwarfs')
+			print ('\nSurvey: Kepler-Gaia all dwarfs, reliability > 0.9')
 			obs, survey= EPOS.kepler.dr25(Huber=False, Gaia=True, Vetting=True, score=0.9, 
 				Verbose=False)
 			self.set_observation(Verbose=False, radiusError=0.02, **obs)
@@ -314,7 +314,8 @@ class epos:
 			self.fgeo_prefac= self.Rstar*cgs.Rsun * fourpi2_GM**(1./3.) / cgs.day**(2./3.)
 			P, R= np.meshgrid(self.eff_xvar, self.eff_yvar, indexing='ij')
 			
-			self.completeness= self.eff_2D * self.fgeo_prefac*P**self.Pindex
+			self.fgeo= self.fgeo_prefac*P**self.Pindex
+			self.completeness= self.eff_2D * self.fgeo
 		
 		if vet_2D is not None:
 			self.vetting= np.asarray(vet_2D)
@@ -718,6 +719,7 @@ class epos:
 		if pfm['np'] > pfm['ns']:
 			
 			order= np.lexsort((pfm['sma'],pfm['ID'])) # sort by ID, then sma
+			pfm['order']=order
 			for key in ['ID','sma','M','P','inc','ecc','tag','R']:
 				if key in pfm: pfm[key]=pfm[key][order]
 			
@@ -760,6 +762,8 @@ class epos:
 		else:
 			if 'tag' in pfm:
 				pfm['system tag']= pfm['tag']
+
+			pfm['order']= np.arange(len(sma))
 
 		pfm['M limits']=[np.min(pfm['M']),np.max(pfm['M'])]
 		pfm['P limits']=[np.min(pfm['P']),np.max(pfm['P'])]

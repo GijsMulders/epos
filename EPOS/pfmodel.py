@@ -8,7 +8,7 @@ from . import cgs
 ''' Helper functions to read in planet formation models'''
 
 #def symba(name='HMSim1', dir='hdf5/Sim1', plts_mass=0, istep=None, Verbose=False):
-def symba(name, fname, plts_mass=0, cut=-np.inf, smacut=np.inf, istep=None, 
+def symba(name, fname, plts_mass=0, cut=None, smacut=None, istep=None, 
 	Verbose=False, Saved=True):
 	''' 
 	returns a list of planetary systems
@@ -17,11 +17,20 @@ def symba(name, fname, plts_mass=0, cut=-np.inf, smacut=np.inf, istep=None,
 	remove planetesimals (m < plt_mass)
 	cut planets that are still forming (m < cut*au)
 	'''
-	
-	dir= 'npz/{}'.format(name)
+
+	dir= 'npz'
 	if not os.path.exists(dir): os.makedirs(dir)
-	fnpz= '{}/{}.npz'.format(dir, name)	
-	
+
+	print (cut, smacut)
+	if cut is None and smacut is None:
+		cut=-np.inf
+		smacut=np.inf
+		fnpz= '{}/{}.npz'.format(dir, name)	
+	else:
+		if cut is None: cut=-np.inf
+		if smacut is None: smacut=np.inf
+		fnpz= '{}/{}-cut.npz'.format(dir, name)	
+
 	''' Load hdf5 file or npz dictionary for quicker access'''
 	if os.path.isfile(fnpz) and Saved:
 		print ('\nLoading saved status from {}'.format(fnpz))
