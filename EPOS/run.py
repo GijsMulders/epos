@@ -416,9 +416,12 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 					epos.nstars, ndraw, pps))
 		
 			allP= np.tile(pfm['P'], ndraw)
-			allM= np.tile(pfm['M'], ndraw)
-			if 'R' in pfm:
+			if epos.MassRadius or epos.RV:
+				allM= np.tile(pfm['M'], ndraw)
+				allY= allM
+			else:
 				allR= np.tile(pfm['R'], ndraw)
+				allY= allR
 		
 			if epos.Multi:
 				allI= np.tile(pfm['inc'], ndraw)
@@ -454,7 +457,7 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 			
 			if Verbose: print ('  {} planets'.format(allP.size))
 		
-		allY= allM
+			allY= allM
 			
 		dInc=False # Isotropic inclinations not implemented
 			
@@ -683,6 +686,8 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		pop['inc']= allI
 		pop['b']= allB
 		pop['tdur']= allTd
+		pop['detectable']= itransdet
+
 		for key, subset in zip(['system', 'single', 'multi'],[isysdet, isingle, imulti]):
 			pop[key]={}
 			pop[key]['Y']= allY[subset] # R? M?
@@ -706,10 +711,11 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		
 		#if len(alldP)>0
 		if epos.Multi:
-			ss['ID']= det_ID
+			ss['ID']= det_ID # ?? det_ID[ix&iy]
 			ss['multi']={}
 			ss['multi']['bin'], ss['multi']['count']= multi.frequency(det_ID[ix&iy])
 			ss['multi']['pl cnt']=ss['multi']['bin']* ss['multi']['count']
+			_, ss['multi']['n']= np.unique(det_ID[ix&iy],return_counts=True)
 			ss['multi']['Pratio'], ss['multi']['Pinner'], ss['multi']['Rratio']= \
 				multi.periodratio(det_ID[ix&iy], det_P[ix&iy], R=det_Y[ix&iy])
 			ss['multi']['cdf']= multi.cdf(det_ID[ix&iy])

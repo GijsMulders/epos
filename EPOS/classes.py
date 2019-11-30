@@ -171,7 +171,7 @@ class epos:
 		self.title=name if title is None else title
 
 		print ('\n |~| epos {} |~|\n'.format(__version__))
-
+		print ('Initializing \'{}\''.format(name))
 		''' Directories '''
 		self.plotdir='png/{}/'.format(name)
 		self.jsondir='json/{}/'.format(name)
@@ -651,7 +651,7 @@ class epos:
 		# skipping yvar here
 		self.summarystatistic= ['N','xvar','Nk','dP','Pin'] # dR?
 	
-	def set_population(self, name, sma, mass, 
+	def set_population(self, name, sma, mass=None, 
 		radius=None, inc=None, starID=None, ecc=None, tag=None, 
 		Verbose=False, **kwargs):
 		# tag is fit parameter, i.e. metallicity, surface density, or model #
@@ -667,38 +667,55 @@ class epos:
 		self.modelpars= fitparameters()
 		self.fitpars= self.modelpars
 		
+		# the summary statistic to use for the MCMC fitting
 		if inc is None:
 			self.summarystatistic= ['N'] # xvar, yvar?
 		else:
 			self.summarystatistic= ['N','Nk','dP'] #,'Pin']
 		
-		# length checks
-		try:
-			if len(sma) != len(mass): 
-				raise ValueError('sma ({}) and mass ({}) not same length'.format(len(sma),len(mass)))
-		except: 
-			raise ValueError('sma ({}) and mass ({}) have to be iterable'.format(type(sma), type(mass)))
-		
-		# model has mutual inclinations?
-		self.Multi= (inc != None)
-		
+		# store the planet formation models in a dictionary
 		pfm= self.pfm= {}
 		pfm['name']= name
 		
-		# lexsort?
 		pfm['sma']= np.asarray(sma)
-		pfm['M']= np.asarray(mass)
-		
+
 		# ID is array 0...ns with np elements
 		if starID is None:
 			pfm['ID']= np.arange(len(sma))
 		else:
 			_, pfm['ID']= np.unique(starID, return_inverse=True)
-			
+
+		# size is mass, radius, or both?
+		if mass is None and radius is None:
+			raise ValueError('Set either mass or radius')
+
+		if mass is not None:
+			try:
+				if len(sma) != len(mass): 
+					raise ValueError('sma ({}) and mass ({}) not same length'.format(
+						len(sma),len(mass)))
+			except TypeError:
+				raise ValueError('sma ({}) and mass ({}) have to be iterable'.format(
+					type(sma), type(mass)))
+			pfm['M']= np.asarray(mass)
+
 		if radius is not None:
-			pfm['R']= np.asarray(radius)
+			try: 
+				if len(sma) != len(radius): 
+					raise ValueError('sma ({}) and radius ({}) not same length'.format(
+						len(sma),len(radius)))
+				pfm['R']= np.asarray(radius)
+			except TypeError:
+				raise ValueError('sma ({}) and radius ({}) have to be iterable'.format(
+					type(sma), type(radius)))
+			pfm['R']=np.asarray(radius)
+
 		elif hasattr(self, 'MR'):
 			pfm['R'], _= self.MR(pfm['M']) # no scatter
+
+				
+		# model has mutual inclinations?
+		self.Multi= (inc != None)
 
 		if ecc is not None:
 			pfm['ecc']= np.asarray(ecc)			
@@ -718,6 +735,10 @@ class epos:
 		''' If multiple planets per stars: Lexsort, period ratio'''
 		if pfm['np'] > pfm['ns']:
 			
+			_ , pfm['n']= np.unique(pfm['ID'],return_counts=True)
+			#pfm['dP'], pfm['Pin'], pfm['dM']= EPOS.multi.periodratio(pfm['ID'], pfm['P'], 
+			#R=pfm['mass'])
+
 			order= np.lexsort((pfm['sma'],pfm['ID'])) # sort by ID, then sma
 			pfm['order']=order
 			for key in ['ID','sma','M','P','inc','ecc','tag','R']:
@@ -765,12 +786,18 @@ class epos:
 
 			pfm['order']= np.arange(len(sma))
 
-		pfm['M limits']=[np.min(pfm['M']),np.max(pfm['M'])]
+		if 'M' in pfm:
+			pfm['M limits']=[np.min(pfm['M']),np.max(pfm['M'])]
+
 		pfm['P limits']=[np.min(pfm['P']),np.max(pfm['P'])]
 		
 		# set plot limits in model 5% wider than data
 		xmin,xmax= min(pfm['P']), max(pfm['P'])
-		ymin,ymax= min(pfm['M']), max(pfm['M'])
+		if 'M' in pfm:
+			ymin,ymax= min(pfm['M']), max(pfm['M'])
+		else:
+			ymin,ymax= min(pfm['R']), max(pfm['R'])
+
 		dx= (xmax/xmin)**0.05
 		dy= (ymax/ymin)**0.05
 		self.mod_xlim=[xmin/dx, xmax*dx]
