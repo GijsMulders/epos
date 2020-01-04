@@ -92,7 +92,7 @@ def cdf(ID, Verbose=False):
 	#if Verbose: print ('  multi cdf planets: {}'.format(len(np.concatenate(xlist)))
 	return np.concatenate(xlist)
 
-def periodratio(ID, P, N=None, R=None, Verbose=False):
+def periodratio(ID, P, N=None, R=None, Pair=False, Verbose=False):
 	'''
 	returns the period ratios of adjacent planets as a list
 	'''
@@ -109,6 +109,8 @@ def periodratio(ID, P, N=None, R=None, Verbose=False):
 	
 	Pratio= []
 	Rratio= []
+	pair_out= []
+	pair_in= []
 	for i in range(2,len(np.bincount(counts)) ):
 		#print ('\nmultiplicity: {}'.format(i)
 		im= i1[counts>=i] # multis with 
@@ -121,9 +123,15 @@ def periodratio(ID, P, N=None, R=None, Verbose=False):
 		Pratio.extend(_dP)
 		if R is not None:
 			Rratio.extend(_dR)
+
+		if Pair:
+			pair_out.extend(im+(i-1))
+			pair_in.extend(im+(i-2))
 	#print ('n dP= {}'.format(len(Pratio))
 	
-	if R is not None:
+	if Pair:
+		return pair_in, pair_out
+	elif R is not None:
 		return np.array(Pratio), Pinner, np.array(Rratio)
 	elif N is None:
 		return np.array(Pratio), Pinner

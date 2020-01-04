@@ -247,6 +247,7 @@ def twoD(epos, PlotZoom=False, MCMC=False, Convert=False):
 
 	''' color scale? '''
 	cmap='jet'
+	cmap_obj = get_cmap(cmap)
 	vmin, vmax= -5, 0
 	ticks=np.linspace(vmin, vmax, (vmax-vmin)+1)
 	levels= np.linspace(vmin, vmax)
@@ -257,7 +258,7 @@ def twoD(epos, PlotZoom=False, MCMC=False, Convert=False):
 	
 	# colorbar?
 	norm = Normalize(vmin=vmin, vmax=vmax)
-	cb1 = clrbar.ColorbarBase(axb, cmap=cmap, norm=norm, ticks=ticks,
+	cb1 = clrbar.ColorbarBase(axb, cmap=cmap_obj, norm=norm, ticks=ticks,
                                 orientation='vertical') # horizontal
 	axb.set_yticklabels(100*10.**ticks)
 	axb.tick_params(axis='y', direction='out')

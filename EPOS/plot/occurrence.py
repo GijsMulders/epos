@@ -140,7 +140,7 @@ def colored(epos, Bins=False, Poly=False):
 	else:
 		helpers.save(plt, epos.plotdir+'occurrence/colored')
 		
-def integrated(epos, MCMC=False, Planets=False, NB=True):
+def integrated(epos, MCMC=False, Planets=False, NB=False):
 	
 	f, (ax, axb) = plt.subplots(1,2, gridspec_kw = {'width_ratios':[20, 1]})
 	f.subplots_adjust(wspace=0)

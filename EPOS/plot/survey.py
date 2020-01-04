@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.colorbar as clrbar
+from matplotlib.cm import get_cmap
 
 from . import helpers
 
@@ -58,7 +59,8 @@ def observed(epos, PlotBox=True, PlotScore=False, NB=False):
 		ax.scatter(epos.obs_xvar, epos.obs_yvar, color=clrs, s=3)
 
 		# colorbar?
-		cb1 = clrbar.ColorbarBase(axb, cmap=cmap, norm=norm,
+		cmap_obj = get_cmap(cmap)
+		cb1 = clrbar.ColorbarBase(axb, cmap=cmap_obj, norm=norm,
 	                                orientation='vertical') # horizontal
 		axb.tick_params(axis='y', direction='out')
 

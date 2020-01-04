@@ -434,7 +434,14 @@ class epos:
 				self.in_ytrim= self.in_yvar[([0,-1])]
 				self.scale_in_y= self.scale_y 
 				self.scale_in= self.scale
-				self.X_in, self.Y_in= np.meshgrid(self.MC_xvar,self.in_yvar,indexing='ij')	
+				self.X_in, self.Y_in= np.meshgrid(self.MC_xvar,self.in_yvar,indexing='ij')
+			else:
+				self.in_ytrim= self.ytrim
+				self.in_yvar= self.MC_yvar
+				self.scale_in_y= self.scale_y 
+				self.scale_in= self.scale
+				self.X_in, self.Y_in= self.X, self.Y
+				
 		else:
 			self.in_ytrim= self.ytrim
 			self.in_yvar= self.MC_yvar

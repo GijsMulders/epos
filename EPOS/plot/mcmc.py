@@ -44,7 +44,7 @@ def chain(epos, NB=False):
 	nwalker, nstep, npara= epos.chain.shape
 
 	# axes grid
-	f, axlist = plt.subplots((npara+1)/2, 2, sharex=True)
+	f, axlist = plt.subplots(round((npara+1)/2), 2, sharex=True)
 	f.set_size_inches(8,8)
 
 	#axlis.set_title('')

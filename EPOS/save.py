@@ -72,10 +72,17 @@ def occurrence(epos, Verbose=False):
 			if 'occ' in focc['poly']:
 				keys=['occ', 'err', 'n']+gridkeys
 				save_to_json(epos, 'occurrence.poly.inverse', focc['poly'], keys)
-		# occurrence along x and y axes
-		if 'xzoom' in epos.occurrence and 'yzoom' in epos.occurrence:
-			pass
 		
+		# occurrence along x and y axes
+		if 'xzoom' in epos.occurrence:
+			keys= ['yc', 'dlny', 'y', 'occ', 'err', 'n']
+			save_to_json(epos, 'occurrence.xzoom', focc['xzoom'], keys)
+
+		if 'yzoom' in epos.occurrence:
+			keys= ['xc', 'dlnx', 'x', 'occ', 'err', 'n']
+			save_to_json(epos, 'occurrence.yzoom', focc['yzoom'], keys)
+
+
 	else:
 		print ('No occurrence rates found, did run use epos.occurrence.all() ?')
 

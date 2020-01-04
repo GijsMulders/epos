@@ -4,6 +4,7 @@ from scipy.stats import ks_2samp, anderson_ksamp, norm, chi2_contingency, kstest
 import os, sys, logging, time
 from functools import partial
 from tqdm import tqdm
+from multiprocessing import Pool
 
 from . import cgs
 from . import multi
@@ -168,8 +169,21 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1, npos=30, Save
 		dx=np.array(epos.fitpars.getfit(attr='dx'))
 		p0 = [np.array(fpara)+dx*np.random.uniform(-1,1,len(fpara)) 
 				for i in range(nwalkers)]
-		sampler = emcee.EnsembleSampler(nwalkers, len(fpara), lnmc, threads=threads)
-	
+
+		# parallezation with pool
+		if threads == 1:
+			sampler = emcee.EnsembleSampler(nwalkers, len(fpara), lnmc)
+		elif threads==0:
+			# automagically select number of threads
+			#with Pool() as pool:
+			sampler = emcee.EnsembleSampler(nwalkers, len(fpara), lnmc, 
+				pool=Pool())
+			#pool.close()
+			#pool.join()
+		else:
+			sampler = emcee.EnsembleSampler(nwalkers, len(fpara), lnmc, 
+				pool=Pool(processes=threads))
+
 		''' run the chain '''
 		if True:
 			# chop to pieces for progress bar?
@@ -278,6 +292,7 @@ def prep_obs(epos):
 	
 	z['multi']['Pratio'], z['multi']['Pinner'], z['multi']['Rratio']= \
 		multi.periodratio(epos.obs_starID[ix&iy], epos.obs_xvar[ix&iy], R=epos.obs_yvar[ix&iy])
+	_, z['multi']['n']= np.unique(epos.obs_starID[ix&iy],return_counts=True)
 	z['multi']['cdf']= multi.cdf(epos.obs_starID[ix&iy])
 
 def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None, 
@@ -591,6 +606,10 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 
 	if 'xvar' in epos.summarystatistic:
 		prob['xvar'], lnp['xvar']=  prob_2samp(epos.obs_zoom['x'], det_P[ix&iy])
+		#print (prob['xvar'], lnp['xvar'])
+		#print (epos.obs_zoom['x'].shape)
+		#print (det_P[ix&iy].shape)
+		#raise ValueError('Use mode=asymp ?') 
 	if 'yvar' in epos.summarystatistic:
 		prob['yvar'], lnp['yvar']=  prob_2samp(epos.obs_zoom['y'], det_Y[ix&iy])
 
@@ -693,6 +712,7 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 			pop[key]['Y']= allY[subset] # R? M?
 			pop[key]['P']= allP[subset]
 			pop[key]['ID']= allID[subset]
+			pop[key]['k']= allN[subset]
 			pop[key]['inc']= allI[subset]
 			pop[key]['b']= allB[subset]
 			pop[key]['tdur']= allTd[subset]
@@ -711,7 +731,8 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		
 		#if len(alldP)>0
 		if epos.Multi:
-			ss['ID']= det_ID # ?? det_ID[ix&iy]
+			ss['ID']= det_ID # ?? 
+			#ss['ID']= det_ID[ix&iy] 
 			ss['multi']={}
 			ss['multi']['bin'], ss['multi']['count']= multi.frequency(det_ID[ix&iy])
 			ss['multi']['pl cnt']=ss['multi']['bin']* ss['multi']['count']
@@ -727,6 +748,10 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 			if (dInc!=None):
 				ss['b']= MC_B[idet]
 				ss['tdur']= MC_Td[idet]
+
+				itransdet= np.copy(itrans)
+				itransdet[itrans]= idet
+				ss['inc']= allI[itransdet]
 		
 		epos.prob=prob
 		epos.lnprob=lnprob
@@ -1117,8 +1142,9 @@ def _prob_ks_func(a,func):
 		lnprob= np.log(prob)
 	return prob, lnprob
 
-def _prob_ks(a,b):
+def _prob_ks(a,b, mode= 'auto'):
 	_, prob= ks_2samp(a,b)
+	#print (ks_2samp(a,b, mode=mode))
 	with np.errstate(divide='ignore'):
 		lnprob= np.log(prob)
 	return prob, lnprob
@@ -1136,10 +1162,3 @@ def _prob_ad(a,b):
 		print (b)
 		print (prob, lnprob)
 	return prob, lnprob
-
-''' Old code '''
-# def draw_from_function(f, grid, ndraw, *args):
-# 	cdf= np.cumsum(f(grid, *args))
-# 	return np.interp(np.random.uniform(0,cdf[-1],ndraw), cdf, grid)
-
-#def make_pdf(epos, norm=None, Init=False):

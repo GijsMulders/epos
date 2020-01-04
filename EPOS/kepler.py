@@ -264,7 +264,7 @@ def vetting_parameters(score=0.9, subsample='all', Gaia=True):
 			elif subsample=='K':
 				vetpars= 0.89, 200, -0.0048, -0.32, 30, -0.018, -0.018 # 3.3
 			elif subsample=='M':
-				vetpars= 0.8, 86, -0.0079, -0.31, 4.4, -0.1, 3.3
+				vetpars= 0.8, 86, -0.0079, -0.31, 4.4, -0.1, -0.1 # 3.3
 			else:
 				raise ValueError(errormessage)
 		else:
