@@ -4,16 +4,16 @@ Notebooks
 Examples
 --------
 
-* :ref:`/example_notebooks/parameteric_mode.ipynb`  (:download:`save to disk </example_notebooks/parameteric_mode.ipynb>`)
-* :ref:`/example_notebooks/multiplanet_mode.ipynb`  (:download:`save to disk </example_notebooks/multiplanet_mode.ipynb>`)
+* :ref:`/tutorials/parameteric_mode.ipynb`  (:download:`save to disk </tutorials/parameteric_mode.ipynb>`)
+* :ref:`/tutorials/multiplanet_mode.ipynb`  (:download:`save to disk </tutorials/multiplanet_mode.ipynb>`)
 *
 
-The notebooks are also viewable on `github  <https://github.com/GijsMulders/epos/docs/example_notebooks>`_
+The notebooks are also viewable on `github  <https://github.com/GijsMulders/epos/docs/tutorials>`_
 
 Papers
 ------
 
-* Mulders+ 2018 (see tutorials :ref:`/example_notebooks/parameteric_mode.ipynb` and :ref:`/example_notebooks/multiplanet_mode.ipynb`)
+* Mulders+ 2018 (see tutorials :ref:`/tutorials/parameteric_mode.ipynb` and :ref:`/tutorials/multiplanet_mode.ipynb`)
 * Fernandes+ 2019
 * Mulders+ 2019 (in prep)
 
@@ -27,4 +27,4 @@ and you can copy these scripts to a local directory with:
 >>> EPOS.scripts.install()
 
 .. link_
-.. _link: example_notebooks/parameteric_mode.ipynb
+.. _link: tutorials/parameteric_mode.ipynb

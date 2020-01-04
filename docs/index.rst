@@ -15,8 +15,8 @@ Applications
 
 Use EPOS to calculate:
 
-* Planet occurrence rate distributions (`notebook <example_notebooks/parameteric_mode.ipynb>`_)
-* Planetary system architectures (`notebook <example_notebooks/multiplanet_mode.ipynb>`_)
+* Planet occurrence rate distributions (`notebook <tutorials/parameteric_mode.ipynb>`_)
+* Planetary system architectures (`notebook <tutorials/multiplanet_mode.ipynb>`_)
 * Synthetic observations of planet formation models
 * Planet populations in radial velocity surveys
 * Binned planet occurrence rates
