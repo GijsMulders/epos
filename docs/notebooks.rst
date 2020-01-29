@@ -6,7 +6,7 @@ Examples
 
 * :ref:`/tutorials/parameteric_mode.ipynb`  (:download:`save to disk </tutorials/parameteric_mode.ipynb>`)
 * :ref:`/tutorials/multiplanet_mode.ipynb`  (:download:`save to disk </tutorials/multiplanet_mode.ipynb>`)
-* :ref:`/tutorials/custom_survey.ipynb`  (:download:`save to disk </tutorials/custom_survey.ipynb.ipynb>`)
+* :ref:`/tutorials/custom_survey.ipynb`  (:download:`save to disk </tutorials/custom_survey.ipynb>`)
 
 
 The notebooks are also viewable on `github  <https://github.com/GijsMulders/epos/docs/tutorials>`_
