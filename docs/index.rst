@@ -52,6 +52,7 @@ Familiarize yourself with the code is to take a look at the :doc:`notebooks`
    tutorials/parameteric_mode.ipynb
    tutorials/multiplanet_mode.ipynb
    tutorials/radial_velocity.ipynb
+   tutorials/custom_survey.ipynb
 
 .. toctree::
    :maxdepth: 2
@@ -98,10 +99,11 @@ Version Notes:
 
 :1.0.1: first public release
 :1.0.2: pip installable version
-:1.1.0: radial velocity without Monte Carlo |ImageLink|_
+:1.1.0: radial velocity without Monte Carlo
+:2.0.2: planet formation models |ImageLink|_
 
-.. |ImageLink| image:: https://zenodo.org/badge/132065382.svg
-.. _ImageLink: https://zenodo.org/badge/latestdoi/132065382
+.. |ImageLink| image:: https://zenodo.org/DOI/10.5281/zenodo.3515380.svg
+.. _ImageLink: https://doi.org/10.5281/zenodo.3515380
 
 Indices and tables
 ------------------

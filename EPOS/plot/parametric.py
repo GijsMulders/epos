@@ -17,7 +17,7 @@ def oneD(epos, PlotZoom=False, MCMC=False, Occ=False):
 		# works with occ??
 		oneD_y(epos, PlotZoom=PlotZoom, MCMC=MCMC, PlotQ=True)
 
-def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True, NB=False):	
+def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True, Init=True, NB=False):	
 
 	if Occ:
 		fname= 'occurrence/posterior' if MCMC else 'occurrence/input'
@@ -33,7 +33,8 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True, NB=False):
 		fname+= '.linear'
 
 	# initial guess
-	pps, _, pdf0_X, _= periodradius(epos, Init=True, ybin=ybin)
+	if Init:
+		pps, _, pdf0_X, _= periodradius(epos, Init=True, ybin=ybin)
 	if MCMC:
 		# best-fit parameters
 		pps, _, pdf_X, _= periodradius(epos, ybin=ybin)
@@ -69,7 +70,7 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True, NB=False):
 					label='Starting Guess')
 		ax.plot(epos.MC_xvar, pdf_X, marker='',ls='-',color='k',
 					label='Best Fit')
-	else:
+	elif Init:
 		if 'P break' in epos.fitpars.keys2d:
 			ax.axvline(epos.fitpars.get('P break', Init=True), ls='-', color='gray')
 		ax.plot(epos.MC_xvar, pdf0_X, marker='',ls='-',color='k')
@@ -115,7 +116,7 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True, NB=False):
 	helpers.save(plt, epos.plotdir+fname+'_x', NB=NB)
 	#print epos.plotdir+fname+'_x'
 
-def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False, Convert=False, NB=False):
+def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False, Convert=False, NB=False, Init=True):
 	if Occ:
 		fname= 'occurrence/posterior' if MCMC else 'occurrence/input'
 		xbin= epos.xzoom
@@ -127,7 +128,8 @@ def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False, Convert=Fal
 		title= 'Marginalized Distribution ({:.2g}-{:.0f} days)'.format(*epos.xtrim)
 	
 	# initial guess
-	pps, _, _, pdf0_Y= periodradius(epos, Init=True, xbin=xbin, Convert=Convert)
+	if Init:
+		pps, _, _, pdf0_Y= periodradius(epos, Init=True, xbin=xbin, Convert=Convert)
 	if MCMC:
 		# best-fit parameters
 		pps, _, _, pdf_Y= periodradius(epos, xbin=xbin, Convert=Convert)
@@ -182,7 +184,7 @@ def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False, Convert=Fal
 			ax.plot(yvar, ypdf*yscale, color='b', alpha=0.1)
 		ax.plot(yvar, pdf0_Y*yscale, marker='',ls=':',color='k', label='starting guess')
 		ax.plot(yvar, pdf_Y*yscale, marker='',ls='-',color='k', label='best-fit')
-	else:
+	elif Init:
 		if 'R break' in epos.fitpars.keys2d:
 			ax.axvline(epos.fitpars.get('R break', Init=True), ls='-', color='gray')
 

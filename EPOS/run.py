@@ -278,12 +278,18 @@ def prep_obs(epos):
 	
 	x= epos.obs_xvar[ix&iy]
 	y= epos.obs_yvar[ix&iy]
-	t= epos.obs_tdur[ix&iy]
-
-	for key, var in zip(['x','y','t'], [x,y,t]):
+	for key, var in zip(['x','y'], [x,y]):
 		z[key]= np.sort(var) # add (x0,0) and (x1,1)?
 		z[key+' cum']= np.arange(z[key].size,dtype=float)
 		z[key+' cdf']= z[key+' cum']/z[key+' cum'][-1]
+
+	if hasattr(epos, 'obs_tdur') and not epos.RV:
+		t= epos.obs_tdur[ix&iy]
+
+		for key, var in zip(['t'], [t]):
+			z[key]= np.sort(var) # add (x0,0) and (x1,1)?
+			z[key+' cum']= np.arange(z[key].size,dtype=float)
+			z[key+' cdf']= z[key+' cum']/z[key+' cum'][-1]
 	
 	# multis
 	z['multi']={}
