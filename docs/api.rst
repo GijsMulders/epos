@@ -1,5 +1,5 @@
-EPOS API
-========
+API
+===
 
 This generates the API, showing some documented functions
 

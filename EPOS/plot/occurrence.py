@@ -3,9 +3,10 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.colorbar as clrbar
 import matplotlib.colors
+from matplotlib.cm import get_cmap
 import numpy as np
 
-import helpers, parametric
+from . import helpers, parametric
 from EPOS.population import periodradius
 
 clrs= ['r','g','b','m'] # in epos.prep
@@ -56,9 +57,9 @@ def all(epos, color=None, alpha_fac=None):
 					 if epos.Msini:
 					 	parametric.oneD_y(epos, Occ=True, MCMC=True, Convert=True)
 	else:
-		print '\nNo occurrence to plot, did you run EPOS.occurrence.all()? \n'
+		print ('\nNo occurrence to plot, did you run EPOS.occurrence.all()? \n')
 	
-def colored(epos, Bins=False, Poly=False):
+def colored(epos, Bins=False, Poly=False, NB=False):
 	
 	f, (ax, axb) = plt.subplots(1,2, gridspec_kw = {'width_ratios':[20, 1]})
 	f.subplots_adjust(wspace=0)
@@ -68,7 +69,7 @@ def colored(epos, Bins=False, Poly=False):
 	ax.set_title(name)
 	
 	helpers.set_axes(ax, epos, Trim=True)
-	#if epos.plot['']
+	#helpers.set_axes(ax, epos, Trim=hasattr(epos, 'xtrim'))
 	
 	#ax.plot(epos.obs_xvar, epos.obs_yvar, ls='', marker='.', mew=0, ms=5.0, color='k')
 
@@ -78,11 +79,11 @@ def colored(epos, Bins=False, Poly=False):
 	vmin, vmax= -4, 0
 	ticks=np.linspace(vmin, vmax, (vmax-vmin)+1)
 	clrs, norm= helpers.color_array(np.log10(epos.occurrence['planet']['completeness']),
-		vmin=vmin,vmax=vmax, cmap=cmap)
+		vmin=vmin,vmax=vmax, cmap=get_cmap(cmap))
 	ax.scatter(epos.obs_xvar, epos.obs_yvar, color=clrs, s=4)
 	
 	# colorbar?
-	cb1 = clrbar.ColorbarBase(axb, cmap=cmap, norm=norm, ticks=ticks,
+	cb1 = clrbar.ColorbarBase(axb, cmap=get_cmap(cmap), norm=norm, ticks=ticks,
                                 orientation='vertical') # horizontal
 	axb.set_yticklabels(100*10.**ticks)
 	axb.tick_params(axis='y', direction='out')
@@ -116,7 +117,7 @@ def colored(epos, Bins=False, Poly=False):
 			ax.text(xbin[1]/xnudge,ybin[0]*ynudge,'n={}'.format(n), ha='right',
 				size=size)
 	
-		helpers.save(plt, epos.plotdir+'occurrence/bins')
+		helpers.save(plt, epos.plotdir+'occurrence/bins', NB=NB)
 	elif Poly:
 		occpoly= epos.occurrence['poly']
 		for k, (xc, yc, coords, n, inbin, occ, err) in enumerate(
@@ -135,11 +136,11 @@ def colored(epos, Bins=False, Poly=False):
 			#ax.text(xbin[1]/xnudge,ybin[0]*ynudge,'n={}'.format(n), ha='right',
 			#	size=size)
 	
-		helpers.save(plt, epos.plotdir+'occurrence/poly')
+		helpers.save(plt, epos.plotdir+'occurrence/poly', NB=NB)
 	else:
-		helpers.save(plt, epos.plotdir+'occurrence/colored')
+		helpers.save(plt, epos.plotdir+'occurrence/colored', NB=NB)
 		
-def integrated(epos, MCMC=False, Planets=False):
+def integrated(epos, MCMC=False, Planets=False, NB=False):
 	
 	f, (ax, axb) = plt.subplots(1,2, gridspec_kw = {'width_ratios':[20, 1]})
 	f.subplots_adjust(wspace=0)
@@ -198,7 +199,7 @@ def integrated(epos, MCMC=False, Planets=False):
 
 	fname= 'posterior' if MCMC else 'integrated'
 	if Planets: fname+= '.planets'
-	helpers.save(plt, epos.plotdir+'occurrence/'+fname)
+	helpers.save(plt, epos.plotdir+'occurrence/'+fname, NB=NB)
 
 def model(epos, color='C0', alpha_fac=None, Bins=False, Poly=False, Gradient=False):
 	

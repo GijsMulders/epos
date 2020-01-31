@@ -8,10 +8,10 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
 
-import parametric, multi, massradius, helpers, model
+from . import parametric, multi, massradius, helpers, model
 
 def all(epos, color=None, imin=1e-2):
-	print '\nPlotting input...'
+	print ('\nPlotting input...')
 	
 	#add decorators for zoom T/F?
 	# color into epos?
@@ -69,6 +69,11 @@ def all(epos, color=None, imin=1e-2):
 				model.periodratio_size(epos, color=color)
 			if 'inc' in epos.pfm:
 				model.periodratio_inc(epos, color=color, imin=imin)
+
+		if 'dM' in epos.pfm:
+			model.massratio(epos, color=color)
+		if 'dR' in epos.pfm:
+			model.radiusratio(epos, color=color)
 
 	if epos.Multi:
 		if epos.Parametric:

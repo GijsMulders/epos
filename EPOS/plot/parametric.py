@@ -2,8 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colorbar as clrbar
 from matplotlib.colors import Normalize
+from matplotlib.cm import get_cmap
 
-import helpers
+from . import helpers
 from EPOS import cgs
 from EPOS.population import periodradius
 
@@ -16,7 +17,7 @@ def oneD(epos, PlotZoom=False, MCMC=False, Occ=False):
 		# works with occ??
 		oneD_y(epos, PlotZoom=PlotZoom, MCMC=MCMC, PlotQ=True)
 
-def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True):	
+def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True, Init=True, NB=False):	
 
 	if Occ:
 		fname= 'occurrence/posterior' if MCMC else 'occurrence/input'
@@ -32,7 +33,8 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True):
 		fname+= '.linear'
 
 	# initial guess
-	pps, _, pdf0_X, _= periodradius(epos, Init=True, ybin=ybin)
+	if Init:
+		pps, _, pdf0_X, _= periodradius(epos, Init=True, ybin=ybin)
 	if MCMC:
 		# best-fit parameters
 		pps, _, pdf_X, _= periodradius(epos, ybin=ybin)
@@ -68,7 +70,7 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True):
 					label='Starting Guess')
 		ax.plot(epos.MC_xvar, pdf_X, marker='',ls='-',color='k',
 					label='Best Fit')
-	else:
+	elif Init:
 		if 'P break' in epos.fitpars.keys2d:
 			ax.axvline(epos.fitpars.get('P break', Init=True), ls='-', color='gray')
 		ax.plot(epos.MC_xvar, pdf0_X, marker='',ls='-',color='k')
@@ -111,10 +113,10 @@ def oneD_x(epos, PlotZoom=False, MCMC=False, Occ=False, Log=True):
 	if MCMC:
 		ax.legend(loc='upper left')
     
-	helpers.save(plt, epos.plotdir+fname+'_x')
+	helpers.save(plt, epos.plotdir+fname+'_x', NB=NB)
 	#print epos.plotdir+fname+'_x'
 
-def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False, Convert=False):
+def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False, Convert=False, NB=False, Init=True):
 	if Occ:
 		fname= 'occurrence/posterior' if MCMC else 'occurrence/input'
 		xbin= epos.xzoom
@@ -126,7 +128,8 @@ def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False, Convert=Fal
 		title= 'Marginalized Distribution ({:.2g}-{:.0f} days)'.format(*epos.xtrim)
 	
 	# initial guess
-	pps, _, _, pdf0_Y= periodradius(epos, Init=True, xbin=xbin, Convert=Convert)
+	if Init:
+		pps, _, _, pdf0_Y= periodradius(epos, Init=True, xbin=xbin, Convert=Convert)
 	if MCMC:
 		# best-fit parameters
 		pps, _, _, pdf_Y= periodradius(epos, xbin=xbin, Convert=Convert)
@@ -181,7 +184,7 @@ def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False, Convert=Fal
 			ax.plot(yvar, ypdf*yscale, color='b', alpha=0.1)
 		ax.plot(yvar, pdf0_Y*yscale, marker='',ls=':',color='k', label='starting guess')
 		ax.plot(yvar, pdf_Y*yscale, marker='',ls='-',color='k', label='best-fit')
-	else:
+	elif Init:
 		if 'R break' in epos.fitpars.keys2d:
 			ax.axvline(epos.fitpars.get('R break', Init=True), ls='-', color='gray')
 
@@ -225,7 +228,8 @@ def oneD_y(epos, PlotZoom=False, MCMC=False, PlotQ=False, Occ=False, Convert=Fal
 	if MCMC or (Occ and Convert):
 		ax.legend(loc='upper right')
 
-	helpers.save(plt, epos.plotdir+fname+('_q' if PlotQ else '_y')+('_convert' if Convert else''))
+	helpers.save(plt, epos.plotdir+fname+('_q' if PlotQ else '_y')+('_convert' if Convert else''), 
+		NB=NB)
 
 def twoD(epos, PlotZoom=False, MCMC=False, Convert=False):
 	
@@ -245,6 +249,7 @@ def twoD(epos, PlotZoom=False, MCMC=False, Convert=False):
 
 	''' color scale? '''
 	cmap='jet'
+	cmap_obj = get_cmap(cmap)
 	vmin, vmax= -5, 0
 	ticks=np.linspace(vmin, vmax, (vmax-vmin)+1)
 	levels= np.linspace(vmin, vmax)
@@ -255,7 +260,7 @@ def twoD(epos, PlotZoom=False, MCMC=False, Convert=False):
 	
 	# colorbar?
 	norm = Normalize(vmin=vmin, vmax=vmax)
-	cb1 = clrbar.ColorbarBase(axb, cmap=cmap, norm=norm, ticks=ticks,
+	cb1 = clrbar.ColorbarBase(axb, cmap=cmap_obj, norm=norm, ticks=ticks,
                                 orientation='vertical') # horizontal
 	axb.set_yticklabels(100*10.**ticks)
 	axb.tick_params(axis='y', direction='out')
@@ -263,7 +268,7 @@ def twoD(epos, PlotZoom=False, MCMC=False, Convert=False):
 	fname= 'mcmc/posterior' if MCMC else 'input/parametric_initial'
 	helpers.save(plt, epos.plotdir+fname+('_convert' if Convert else''))
 
-def panels(epos, PlotZoom=False, MCMC=False, Convert=False):
+def panels(epos, PlotZoom=False, MCMC=False, Convert=False, NB=False):
 	''' Initial distribution, panel layout'''
 	f, (ax, axb, axR, axP)= helpers.make_panels_clrbar(plt)
 
@@ -311,10 +316,14 @@ def panels(epos, PlotZoom=False, MCMC=False, Convert=False):
 	
 	# colorbar?
 	norm = Normalize(vmin=vmin, vmax=vmax)
-	cb1 = clrbar.ColorbarBase(axb, cmap=cmap, norm=norm, ticks=ticks,
+	cmap_obj = get_cmap(cmap)
+	cb1 = clrbar.ColorbarBase(axb, cmap=cmap_obj, norm=norm, ticks=ticks,
                                 orientation='vertical') # horizontal
 	axb.set_yticklabels(100*10.**ticks)
 	axb.tick_params(axis='y', direction='out')
 	axb.set_title('%')
 	
-	helpers.save(plt, epos.plotdir+'input/panels'+('_convert' if Convert else''))
+	if NB:
+		plt.show()
+	else:
+		helpers.save(plt, epos.plotdir+'input/panels'+('_convert' if Convert else''))

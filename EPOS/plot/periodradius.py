@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
 import matplotlib.patches as patches
-import helpers
+from . import helpers
 from EPOS import regression
 
 clrs= ['r','g','b','m'] # in epos.prep
@@ -112,7 +112,7 @@ def periodradius(epos, SNR=True, Model=False, color='C1'):
 	#ax.legend(loc='lower left', shadow=False, prop={'size':14}, numpoints=1)
 	helpers.save(plt, '{}output/periodradius.{}'.format(epos.plotdir,fsuffix))
 
-def panels(epos, MCMC=False, color='C1'):
+def panels(epos, MCMC=False, color='C1', NB=False):
 
 	f, (ax, axR, axP)= helpers.make_panels(plt)
 	
@@ -185,8 +185,8 @@ def panels(epos, MCMC=False, color='C1'):
 		axR.plot(sim['Y zoom pdf']*yscale, sim['Y zoom'], marker='', ls='-')
 
 	''' Observations'''
-	axP.hist(epos.obs_zoom['x'], bins=xbins,histtype='step', color='C1')
-	axR.hist(epos.obs_zoom['y'], bins=ybins, orientation='horizontal',histtype='step', color='C1')
+	axP.hist(epos.obs_zoom['x'], bins=xbins,histtype='step', color='C3')
+	axR.hist(epos.obs_zoom['y'], bins=ybins, orientation='horizontal',histtype='step', color='C3')
 	
 	''' Box/ lines'''
 	if epos.Zoom:
@@ -198,7 +198,7 @@ def panels(epos, MCMC=False, color='C1'):
 	#ax.legend(loc='lower left', shadow=False, prop={'size':14}, numpoints=1)
 	
 	fdir= 'mcmc' if MCMC else 'output'
-	helpers.save(plt, '{}{}/pdf.zoom'.format(epos.plotdir, fdir))
+	helpers.save(plt, '{}{}/pdf.zoom'.format(epos.plotdir, fdir), NB=NB)
 
 def pdf_3d(epos):
 	#plot in 3D
@@ -369,7 +369,7 @@ def pdf(epos):
 	
 	helpers.save(plt, epos.plotdir+'output/pdf.diag')
 
-def cdf(epos, color='C1'):
+def cdf(epos, color='C1', NB=False):
 	
 	f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
 	f.set_size_inches(9, 7) # default 7, 5
@@ -386,7 +386,7 @@ def cdf(epos, color='C1'):
 		ax1.plot(sim['P'], sim['Y'], ls='', marker='.', mew=0, ms=5.0, color=color, alpha=0.5)
 	else:
 		levels= np.linspace(0,np.max(sim['pdf']))		
-		ax1.contourf(epos.MC_xvar, epos.MC_yvar, sim['pdf'].T, cmap='Reds', levels=levels)
+		ax1.contourf(epos.MC_xvar, epos.MC_yvar, sim['pdf'].T, cmap='Blues', levels=levels)
 	
 	if epos.Zoom:
 		ax1.add_patch(patches.Rectangle( (epos.xzoom[0],epos.yzoom[0]), 
@@ -422,7 +422,7 @@ def cdf(epos, color='C1'):
 		P= sim['P zoom']
 		ax3.plot(np.sort(P), np.arange(P.size, dtype=float)/P.size, ls='-', marker='', color=color)
 	else:
-		ax3.plot(sim['P zoom'], sim['P zoom cdf'], ls='-', marker='', color='r')
+		ax3.plot(sim['P zoom'], sim['P zoom cdf'], ls='-', marker='', color='C0')
 	
 	#obs histogram x
 	P= epos.obs_zoom['x']
@@ -450,11 +450,11 @@ def cdf(epos, color='C1'):
 		R= sim['Y zoom']
 		ax4.plot(np.sort(R), np.arange(R.size, dtype=float)/R.size, ls='-', marker='', color=color)
 	else:
-		ax4.plot(sim['Y zoom'], sim['Y zoom cdf'], ls='-', marker='', color=color)
+		ax4.plot(sim['Y zoom'], sim['Y zoom cdf'], ls='-', marker='', color='C0')
 
 	#obs histogram x
 	R= epos.obs_zoom['y']
 	ax4.plot(np.sort(R), np.arange(R.size, dtype=float)/R.size, ls='-', marker='', color='C3')		
 		
 	f.tight_layout()
-	helpers.save(plt, epos.plotdir+'output/cdf.diag')
+	helpers.save(plt, epos.plotdir+'output/cdf.diag', NB=NB)

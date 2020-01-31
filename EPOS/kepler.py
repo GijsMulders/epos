@@ -8,11 +8,11 @@ import EPOS
 try:
 	from astropy.table import Table
 except ImportError:
-	print '\nWarning: Could not import astropy.table'
+	print ('\nWarning: Could not import astropy.table')
 
 fpath= os.path.dirname(EPOS.__file__)
 
-def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
+def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False, Verbose=True):
 	'''
 	Generates Kepler DR25 planet population and detection efficiency
 	
@@ -43,28 +43,23 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 		fkoi= 'temp/q1_q17_dr25_koi.npz'
 		
 	if os.path.isfile(fkoi):
-		print '\nLoading planets from {}'.format(fkoi)
+		if Verbose: print ('\nLoading planets from {}'.format(fkoi))
 		koi= np.load(fkoi)
 	else:
-		print '\nReading planet candidates from IPAC file' 
+		if Verbose:
+			print ('\nReading planet candidates from IPAC file')
 		try:
 			ipac=Table.read(fpath+'/files/q1_q17_dr25_koi.tbl',format='ipac')
 		except NameError:
 			raise ImportError('You need to install astropy for this step')
-		#print ipac.keys()
+
 		nonzero= (ipac['koi_srad']>0)
 		nremove= ipac['koi_srad'].size- ipac['koi_srad'][nonzero].size
-		print '  removed {} planets with no stellar radii'.format(nremove)
+		if Verbose: print ('  removed {} planets with no stellar radii'.format(nremove))
 		koi= {key: np.array(ipac[key][nonzero]) for key in 
 				['kepid','koi_prad','koi_period',
-				'koi_steff', 'koi_slogg', 'koi_srad', 'koi_depth',
+				'koi_steff', 'koi_slogg', 'koi_srad', 'koi_depth', 'koi_duration',
 				'koi_pdisposition','koi_score'] }
-		# isnan= ~(koi['koi_srad']>0)
-		# print isnan.size
-		# print koi['kepid'][isnan]
-		# print koi['koi_srad'][isnan]
-		# print koi['koi_pdisposition'][isnan]
-		# print koi['koi_prad'][isnan]
 
 		if Gaia:
 			# Stellar radius table from Berger+ in prep., revision 2
@@ -78,15 +73,17 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 			assert np.all(np.sort(a[0])==a[0]), 'Whoops II'
 			
 			common= np.intersect1d(koi['kepid'], a[0], assume_unique=False)
-			print '  {} common out {} kois and {} stars in gaia'.format(common.size, 
-							koi['kepid'].size, a[0].size)
+			if Verbose:
+				print ('  {} common out {} kois and {} stars in gaia'.format(common.size, 
+							koi['kepid'].size, a[0].size))
 			
 			# remove kois w/ no gaia data
 			koi_in_gaia= np.in1d(koi['kepid'], a[0])
 			for key in koi:
 				koi[key]= koi[key][koi_in_gaia]
-			print '  {} stars, {} kois in gaia'.format(koi['kepid'].size, 
-				np.unique(koi['kepid']).size)
+			if Verbose:
+				print ('  {} stars, {} kois in gaia'.format(koi['kepid'].size, 
+					np.unique(koi['kepid']).size))
 			
 			# remove gaia data w/ no koi
 			gaia_in_koi= np.in1d(a[0], koi['kepid'])
@@ -95,7 +92,7 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 					  distance=a[4][gaia_in_koi],
 					  Rst= a[7][gaia_in_koi],
 					  giantflag= a[11][gaia_in_koi])
-			print '  {} gaia stars that are kois'.format(gaia['starID'].size)
+			if Verbose: print ('  {} gaia stars that are kois'.format(gaia['starID'].size))
 			assert gaia['starID'].size == np.unique(koi['kepid']).size
 			
 			# stars w/ multiple planet candidates		
@@ -105,7 +102,7 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 			# update radii
 			with np.errstate(divide='ignore'):
 				increase= np.nanmedian(gaia['Rst'][st_to_pl]/ koi['koi_srad'])-1.
-			print '  KOI radii increased by {:.1%}'.format(increase)
+			if Verbose: print ('  KOI radii increased by {:.1%}'.format(increase))
 			
 			koi['koi_steff']= gaia['Teff'][st_to_pl]
 			with np.errstate(divide='ignore', invalid='ignore'):
@@ -113,7 +110,7 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 			koi['distance']= gaia['distance'][st_to_pl]
 			koi['giantflag']= gaia['giantflag'][st_to_pl]
 
-			#print np.nanmedian((koi['koi_srad']*koi['koi_depth']**0.5)/ koi['koi_prad'])
+			#print (np.nanmedian((koi['koi_srad']*koi['koi_depth']**0.5)/ koi['koi_prad'])
 		
 		np.savez(fkoi, **koi)
 
@@ -135,11 +132,12 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 	''' Select reliable candidates '''
 	iscandidate= koi['koi_pdisposition']=='CANDIDATE'
 	isreliable= koi['koi_score']>=score # removes rolling band, ~ 500 planets
-	print '  {}/{} dwarfs'.format(isdwarf.sum(), isdwarf.size)
-	print '  {} candidates, {} false positives'.format((isdwarf&iscandidate).sum(), 
-				(isdwarf&~iscandidate).sum() )
-	print '  {}+{} with score > {:.2f}'.format((isdwarf&iscandidate&isreliable).sum(), 
-				(isdwarf&~iscandidate&isreliable).sum(),score )
+	if Verbose:
+		print ('  {}/{} dwarfs'.format(isdwarf.sum(), isdwarf.size))
+		print ('  {} candidates, {} false positives'.format((isdwarf&iscandidate).sum(), 
+					(isdwarf&~iscandidate).sum() ))
+		print ('  {}+{} with score > {:.2f}'.format((isdwarf&iscandidate&isreliable).sum(), 
+					(isdwarf&~iscandidate&isreliable).sum(),score ))
 
 	if score >= 0.5:
 		isall= isdwarf & isreliable # reliability score cuts out false positives
@@ -162,9 +160,10 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 	#if Huber: slice['subgiants']=issubgiant
 	
 	obs= {'xvar':koi['koi_period'][slice],
-		'yvar':koi['koi_prad'][slice], 
+		'yvar':koi['koi_prad'][slice],
 		'starID':koi['kepid'][slice],
-		'score':koi['koi_score'][slice]}
+		'score':koi['koi_score'][slice],
+		'tdur':koi['koi_duration'][slice]}
 	
 	''' Load pre-calculated detection efficiencies '''
 	# from dr25_epos.py
@@ -178,27 +177,15 @@ def dr25(subsample='all', score=0.9, Gaia=False, Huber=True, Vetting=False):
 	''' Add vetting completeness '''
 	if Vetting:
 		X,Y= np.meshgrid(eff['P'], eff['Rp'], indexing='ij')
-		if subsample=='all' and score == 0.9:
-			if Gaia:
-				vetpars= 0.84, 55., -0.07, -0.37, 8.2, 0.13, 0.13
-			else:
-				vetpars= 0.88, 53., -0.07, -0.39, 5.7, 0.19, 0.19
-								
-		elif subsample=='all' and score == 0.0:
-			if Gaia:
-				vetpars= 0.88, 210, -0.0035, -0.24, 6.9, -0.029, -0.029
-			else:
-				vetpars= 0.86, 210, 0.002, -0.22, 5.5, -0.057, -0.057
-		else:
-			raise ValueError('no vetting completeness for {} with score={}'.format(subsample, score))
-		
+		vetpars=vetting_parameters(score, subsample, Gaia=Gaia)		
 		vet_2D= fbpl2d( (X,Y), *vetpars)
 		survey['vet_2D']= vet_2D
 		assert vet_2D.shape == eff['fsnr'].shape
 
 	return obs, survey
 	
-def fbpl2d((x,y), a, b, c, d, e, f, g):
+def fbpl2d(xy, a, b, c, d, e, f, g):
+	x,y= xy
 	bpl= a* (x/b)**np.where(x<b, c, d) * (y/e)**np.where(y<e, f,g)
 	return np.maximum(0.2, np.minimum(bpl, 1.))
 
@@ -245,6 +232,53 @@ def single():
 			'Mstar': 1.0, 'Rstar':1.0}
 
 	return obs, survey
+
+def vetting_parameters(score=0.9, subsample='all', Gaia=True):
+	''' Returns the fit parameters to reconstruct the vetting efficiency '''
+	errormessage= 'no vetting completeness for {} with score={}'.format(subsample, score)
+
+	if Gaia:
+		if score == 0.9:
+			if subsample=='all':
+				vetpars= 0.9, 50, -0.07, -0.4, 5.7, 0.1, 0.1 #-2.7 # Rachel
+				# 0.84, 55., -0.07, -0.37, 8.2, 0.13, 0.13 # previous
+			elif subsample=='F':
+				vetpars= 0.58, 200, -0.12, -0.77, 7.6, 0.096, 0.096 #-1.1
+			elif subsample=='G':
+				vetpars= 0.5, 180, -0.13, -0.77, 2.3, 0.11, 0.11 #0.28
+			elif subsample=='K':
+				vetpars= 0.65, 190, -0.13, -0.98, 3.1, 0.3, 0.3 #0.21
+			elif subsample=='M':
+				vetpars= 0.8, 16, -0.01, -0.3, 6.9, 0.0009, 0.0009 #3.8
+			else:
+				raise ValueError(errormessage)
+
+		elif score == 0.0:
+			if subsample=='all':
+				vetpars= 0.78, 210, -0.00091, -0.25, 52, -0.048, -0.048 # 3.3 # Rachel
+				# 0.88, 210, -0.0035, -0.24, 6.9, -0.029, -0.029 # previous
+			elif subsample=='F':
+				vetpars= 0.74, 210, -0.013, -0.22, 41, -0.075, -0.075 #3.3
+			elif subsample=='G':
+				vetpars= 0.89, 200, -0.019, -0.23, 62, -0.0062, -0.0062 #3.3
+			elif subsample=='K':
+				vetpars= 0.89, 200, -0.0048, -0.32, 30, -0.018, -0.018 # 3.3
+			elif subsample=='M':
+				vetpars= 0.8, 86, -0.0079, -0.31, 4.4, -0.1, -0.1 # 3.3
+			else:
+				raise ValueError(errormessage)
+		else:
+			raise ValueError('Score cut must be 0 or 0.9')
+
+	else:
+		if subsample=='all' and score == 0.9:
+			vetpars= 0.88, 53., -0.07, -0.39, 5.7, 0.19, 0.19
+		elif subsample=='all' and score == 0.0:
+			vetpars= 0.86, 210, 0.002, -0.22, 5.5, -0.057, -0.057
+		else:
+			raise ValueError(errormessage)
+
+	return vetpars
 
 
 '''

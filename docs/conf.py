@@ -31,7 +31,8 @@ from EPOS import __version__, __shortversion__
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['sphinx.ext.autodoc',
-    'sphinx.ext.githubpages','sphinx.ext.napoleon']
+    'sphinx.ext.githubpages','sphinx.ext.napoleon', 'nbsphinx',
+    'sphinx.ext.mathjax']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['.templates']
@@ -40,7 +41,10 @@ templates_path = ['.templates']
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = '.rst'
+source_suffix = ['.rst', '.ipynb']
+
+# For nbspinx, if it ever works
+#nbsphinx_execute = 'never'
 
 # The master toctree document.
 master_doc = 'index'
@@ -70,7 +74,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['.build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['.build', 'Thumbs.db', '.DS_Store', '_build', '**.ipynb_checkpoints']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -124,6 +128,11 @@ html_sidebars = {
         'searchbox.html',
     ]
 }
+
+# logo in sidebar
+html_logo= 'logo-epos.png'
+logo_only= False
+# convert logo-2.png -background white -alpha remove logo-2-white.png
 
 # add stuff to sidebar:
 # https://stackoverflow.com/questions/33029008/how-to-edit-sidebar-under-sphinx-alabaster-theme?rq=1

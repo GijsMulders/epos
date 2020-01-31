@@ -4,3 +4,4 @@ exclude EPOS/scriptdir/examples/example_4_*.py
 exclude EPOS/scriptdir/examples/example_6_*.py
 exclude EPOS/scriptdir/examples/example_7_*.py
 exclude EPOS/scriptdir/examples/example_8_*.py
+include docs/example_notebooks/*.ipynb

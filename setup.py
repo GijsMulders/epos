@@ -26,10 +26,11 @@ setup(name='epospy',
           'emcee >= 2.0',
           'corner >= 2.0',
           'h5py',
-	       'shapely'
+	        'shapely',
+          'tqdm',
       ],
       classifiers=[
-        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.6",
         "License :: OSI Approved :: MIT License",
       ],
       include_package_data=True,

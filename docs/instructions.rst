@@ -4,7 +4,7 @@ Installation
 Pip
 ---
 
-You can now install epos with ``pip``:
+You can install epos with ``pip``:
 ::
 
    pip install epospy
@@ -27,7 +27,7 @@ Download the source from `github <https://github.com/GijsMulders/epos>`_, prefer
 
 You can then do a local install::
 
-   ipython setup.py sdist
+   python setup.py sdist
    sudo -H pip install -e .
 
 In the future you can update to the latest version with::
@@ -39,11 +39,12 @@ Dependencies
 
 EPOS has the following dependencies:
 
-* python 2.7
+* python 3
 * numpy 1.13+
 * scipy
 * matplotlib 2.0+
 * astropy
+* tqdm
 
 The following software is required if you want to use the MCMC part of EPOS 
 
@@ -54,7 +55,9 @@ The following software is required if you want to use the MCMC part of EPOS
 
 Testing
 -------
-To test the basic functionality of EPOS, you can run the test scripts.
+The quickest way to test EPOS is by running the :doc:`notebooks` locally.
+
+To test the basic functionality of EPOS, you can also run the test scripts.
 First, copy the test and example scripts to a local directory:
 
 >>> import EPOS
@@ -187,7 +190,9 @@ Planet Formation Mode
 ---------------------
 
 Example 3 is a template for using EPOS with a planet formation / population synthesis model.
+
 ::
+
    ./example_3_population_synthesis.py
 
 Generate some random data in the same format as the outcome of a planet formation model. (These are 77 systems with 8 planets each)
@@ -233,7 +238,9 @@ Then run epos and save/plot as usual
 Radial Velocity Surveys
 -----------------------
 Example 5 shows how to estimate the distribution of planets from a radial velocity survey:
+
 ::
+
    ./example_5_radial_velocity.py
 
 Two commands are different from fitting a transit survey:

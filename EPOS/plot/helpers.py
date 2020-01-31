@@ -46,6 +46,10 @@ def set_axis_size(ax, epos, Trim=False, Eff=False, In=False, IsY=True):
 		if hasattr(epos,'y_inticks'):
 			ticks= epos.y_inticks
 			ticklabels= epos.y_inticklabels
+		elif hasattr(epos,'yticks'):
+			ticks= epos.yticks
+			ticklabels= epos.yticklabels
+
 	elif epos.RV:
 		label= r'M sin i [M$_\bigoplus$]'
 		if hasattr(epos,'yticks'):
@@ -206,15 +210,17 @@ def default_pyplot2_colors(colors):
 	colors.ColorConverter.colors['C8']='#bcbd22'
 	colors.ColorConverter.colors['C9']='#17becf'
 
-def save(plt, name, dpi=300):
-
-	# make sure path exists
-	ipath= name.rfind('/')
-	if ipath!= -1:
-		#print name[:ipath]
-		if not os.path.isdir(name[:ipath]): os.makedirs(name[:ipath])
+def save(plt, name, dpi=150, NB=False,bbox_inches='tight'):
+	if NB:
+		plt.show()
+	else:
+		# make sure path exists
+		ipath= name.rfind('/')
+		if ipath!= -1:
+			#print name[:ipath]
+			if not os.path.isdir(name[:ipath]): os.makedirs(name[:ipath])
 	
-	plt.savefig(name+'.png',bbox_inches='tight', dpi=dpi)
+		plt.savefig(name+'.png',bbox_inches=bbox_inches, dpi=dpi)
 	plt.close()
 
 def color_array(vals, vmin=None, vmax=None, cmap='jet'):
@@ -227,7 +233,6 @@ def color_array(vals, vmin=None, vmax=None, cmap='jet'):
 
 import matplotlib.pyplot as plt
 from matplotlib import transforms
-
 
 def rainbow_text(x, y, strings, colors, orientation='horizontal',
 				 ax=None, f=None, fudge=1.5, **kwargs):

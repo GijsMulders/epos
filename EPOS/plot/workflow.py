@@ -5,7 +5,7 @@ import matplotlib.patches as patches
 import matplotlib.cm as cm
 import matplotlib.gridspec as gridspec
 
-import helpers
+from EPOS.plot import helpers
 
 
 def periodradius_2x2(epos):
@@ -271,3 +271,142 @@ def periodradius(epos, color='C4', alpha=1):
 
 	#f.tight_layout()
 	helpers.save(plt, epos.plotdir+'workflow/arrows')
+
+def multi(epos, color='C4', nplanets=10, PlotObs=True):
+
+	pars_in=['dM', 'Pin', 'dP', 'n', 'inc'] # inc / ecc
+	pars_out= ['dR', 'Pin', 'dP', 'n']
+
+	#pars= ['mass', 'dM', 'Pin', 'dP', 'inc','n']
+	titles= dict(inc='Mutual\nInclination', dP='Period\n Ratio', 
+	Pin='Inner\n Planet', dM='Mass\n Ratio', dR='Radius\n Ratio', n='# Planets\nper System')
+	units=dict(inc='[$\\degree$]',dP='',Pin='[day]',dM='',dR='',n='')
+	xlim= dict(inc=[1e-2,90], dP=[1,10], Pin=[1,100], dM=[0.1,10], dR=[0.1,10], 
+		n=[0,nplanets])
+	nbins= dict(mass=30, sma=30, inc=30, dP=20, Pin=20, dM=20, dR=20 , n=nplanets+1)
+	xticks= dict(mass=[0.1,1,10,30], inc=[1e-2,0.1,10,90], 
+		dP=[1,2,4,10], Pin=[1,10,100], dM=[0.1,1,10], dR=[0.1,1,10] ,
+		n=[nn for nn in [0,5,10,20] if nn<=nplanets])
+
+
+	# axis layout
+	gs = gridspec.GridSpec(nrows=4, ncols=5, top=0.8) # top to make space for title
+	f=plt.figure()
+
+	f.set_size_inches(13, 7) # default 7, 5
+	f.subplots_adjust(wspace=0.2, hspace=0.0)
+
+	ax_in= [f.add_subplot(gs[0,i]) for i in range(len(pars_in))]
+
+	ax_out= [f.add_subplot(gs[3,i], sharex=ax_in[i]) 
+		for i in range(len(pars_out)) ]
+
+	f.suptitle('Compare Model Planetary Systems to Observed Exoplanets with epos',
+		bbox=dict(boxstyle='round', fc='w', ec='k'))
+
+	''' Input '''
+	model={}
+	model['Pin']= epos.pfm['Pin']
+	model['dP']= epos.pfm['dP'][epos.pfm['dP']>1]
+	model['dM']= epos.pfm['dM'][epos.pfm['dP']>1]
+	model['n']= epos.pfm['n']
+	model['inc']= epos.pfm['inc']
+
+	for ax, par in zip(ax_in, pars_in):
+		ax.set_title(titles[par])
+		ax.set_xlim(xlim[par])
+		ax.tick_params(left=False, labelleft=False)
+		ax.tick_params(which='minor', bottom=False)
+		[s(xticks[par]) for s in [ax.xaxis.set_ticks, ax.xaxis.set_ticklabels]]
+
+		if par not in ['n']:
+			ax.set_xscale('log')
+			makespace= np.geomspace
+		else:
+			makespace= np.linspace
+
+		bins= makespace(num=nbins[par], *xlim[par])
+
+		# data
+		ax.hist(model[par], bins=bins, color=color)
+
+	''' Output '''
+	zoomed={}
+	zoomed['n']= epos.synthetic_survey['multi']['n']
+	zoomed['dP']= epos.synthetic_survey['multi']['Pratio']
+	zoomed['Pin']= epos.synthetic_survey['multi']['Pinner']
+	zoomed['dR']= epos.synthetic_survey['multi']['Rratio']
+
+	for ax, par in zip(ax_out, pars_out):
+		ax.set_title(titles[par])
+		#ax.tick_params(which='minor', bottom=False)
+		[s(xticks[par]) for s in [ax.xaxis.set_ticks, ax.xaxis.set_ticklabels]]
+		ax.tick_params(which='both',left=False, labelleft=False)
+
+		if par not in ['n']:
+			#ax.set_xscale('log')
+			makespace= np.geomspace
+		else:
+			makespace= np.linspace
+			ax.set_yscale('log')
+
+
+		bins= makespace(num=nbins[par], *xlim[par])
+
+		# data
+		ax.hist(zoomed[par], bins=bins, color=color)
+
+	''' Observations '''
+	if PlotObs:
+		obs_zoomed={}
+		obs_zoomed['n']= epos.obs_zoom['multi']['n']
+		obs_zoomed['dP']= epos.obs_zoom['multi']['Pratio']
+		obs_zoomed['Pin']= epos.obs_zoom['multi']['Pinner']
+		obs_zoomed['dR']= epos.obs_zoom['multi']['Rratio']
+
+		for ax, par in zip(ax_out, pars_out):
+			ax2= ax.twinx() # twinx re-adds ticks to orignal axis?
+			ax.tick_params(left=False, labelleft=False, right=False, labelright=False)
+
+			if par not in ['n']:
+				makespace= np.geomspace
+			else:
+				makespace= np.linspace
+				ax2.set_yscale('log')
+			bins= makespace(num=nbins[par], *xlim[par])
+
+			# data
+			ax2.hist(obs_zoomed[par], bins=bins, color='C3', histtype='step',ls='--')
+			ax2.tick_params(left=False, labelleft=False, right=False, labelright=False)
+
+
+	''' Arrows '''
+	props=dict(arrowstyle='simple', connectionstyle='arc3,rad=0',
+		alpha = 1, fc = 'w', ec='k', mutation_scale=30, zorder=0)
+	
+	xc= 0.5
+	for ax, par in zip(ax_out, pars_out):
+		arrow = patches.FancyArrowPatch( (xc, 2.5), (xc, 1.5), transform=ax.transAxes, **props)
+		f.patches.append(arrow)
+	
+	if len(pars_in) > len(pars_out):
+		arrow = patches.FancyArrowPatch((xc, -0.5),(xc-0.7, -1.5),
+			transform=ax_in[-1].transAxes, **props)
+		f.patches.append(arrow)
+
+
+	''' Text '''
+	bbox=dict(boxstyle='round', fc='w', ec='k')
+	props= dict(ha='center', va='center', bbox=bbox)
+
+	f.text(-0.5,0.5,'Formation\nModel',color=color, transform=ax_in[0].transAxes, **props)
+
+	f.text(-0.5,0.7,'Observable\nPlanets',color=color, transform=ax_out[0].transAxes, **props)
+	if PlotObs:
+		f.text(-0.5,0.2,'Kepler\nObservations',color='r', 
+			ha='center', va='center', transform=ax_out[0].transAxes)
+	
+	f.text(0,-1,'Simulate\nTransit\nSurvey',color='k', 
+			ha='center', va='center', transform=ax_in[0].transAxes)
+
+	helpers.save(plt, epos.plotdir+'workflow/multi', bbox_inches=None)

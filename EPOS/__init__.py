@@ -1,12 +1,14 @@
-__shortversion__= u'2.0'
-__version__= u'2.0.2' # [N!]N(.N)*[{a|b|rc}N][.postN][.devN]
+__shortversion__= u'3.0'
+__version__= u'3.0.2' # [N!]N(.N)*[{a|b|rc}N][.postN][.devN]
 
 __all__ = ['epos','fitparameters','kepler','rv','run','population','plot','occurrence',
-	'fitfunctions','pfmodel','massradius','regression','multi','analytics','save',
-	'scripts', 'cgs']
+	'fitfunctions','massradius','regression','multi','analytics','save',
+	'scripts', 'cgs','classes']
 
-import kepler, rv, run, plot, occurrence, population
-import fitfunctions, pfmodel, regression, massradius, multi, analytics, save
-import scripts, cgs
+from . import kepler, rv, run, plot, occurrence, population
+from . import fitfunctions, regression, massradius, multi, analytics, save
+from . import scripts, cgs
 
-from classes import epos, fitparameters
+# is this correct python 3?
+from . import classes
+from EPOS.classes import epos, fitparameters

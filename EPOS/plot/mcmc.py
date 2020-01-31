@@ -2,25 +2,25 @@ import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 
-import helpers
-import parametric, periodradius, multi
+from . import helpers
+from . import parametric, periodradius, multi
 
 try:
 	import corner
 except ImportError:
-	print '\nWarning: corner.py not imported'
+	print ('\nWarning: corner.py not imported')
 	warnings.warn('corner.py not imported',ImportWarning)
 except:
-	print '??'
+	print ('??')
 
 def all(epos):
 	if hasattr(epos, 'chain'):
-		print '\nPlotting chain...'
+		print ('\nPlotting chain...')
 		chain(epos)
 		try:
 			corners(epos)
 		except NameError:
-			print '  (skipping corner plot)'
+			print ('  (skipping corner plot)')
 		
 		if epos.Parametric:
 			parametric.oneD(epos, MCMC=True)
@@ -38,13 +38,13 @@ def all(epos):
 				multi.periodinner(epos, MCMC=True)
 			
 	else:
-		print '\nNo chain to plot, did you run EPOS.run.mcmc()? \n'
+		print ('\nNo chain to plot, did you run EPOS.run.mcmc()? \n')
 	
-def chain(epos):
+def chain(epos, NB=False):
 	nwalker, nstep, npara= epos.chain.shape
 
 	# axes grid
-	f, axlist = plt.subplots((npara+1)/2, 2, sharex=True)
+	f, axlist = plt.subplots(round((npara+1)/2), 2, sharex=True)
 	f.set_size_inches(8,8)
 
 	#axlis.set_title('')
@@ -75,9 +75,9 @@ def chain(epos):
 	
 	f.subplots_adjust(hspace=0.15, wspace=0.4)
 			
-	helpers.save(plt, '{}mcmc/chain'.format(epos.plotdir))	
+	helpers.save(plt, '{}mcmc/chain'.format(epos.plotdir), NB=NB)	
 
-def corners(epos):
+def corners(epos, dpi=150, NB=False):
 	if hasattr(epos.fitpars,'latexkeys'):
 		labels= [epos.fitpars.latexkeys[key] if key in epos.fitpars.latexkeys else key for key in epos.fitpars.keysfit]
 	else:
@@ -86,5 +86,6 @@ def corners(epos):
 	fig = corner.corner(epos.samples, labels=labels,
                       truths=epos.fitpars.getfit(Init=True), 
                       quantiles=[0.16, 0.5, 0.84], show_titles=True)
-	fig.savefig('{}mcmc/triangle.png'.format(epos.plotdir))
+	
+	helpers.save(plt, '{}mcmc/triangle'.format(epos.plotdir), NB=NB)
 		

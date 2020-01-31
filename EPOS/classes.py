@@ -8,7 +8,7 @@ see example.py for a simple demonstration of the class
 
 import numpy as np
 
-import cgs
+from . import cgs
 import EPOS.multi
 from EPOS.plot.helpers import set_pyplot_defaults
 from EPOS import __version__
@@ -37,6 +37,10 @@ class fitparameters:
 			is2D(bool): use this parameter in the 2D parametric :meth:`EPOS.fitfunctions`
 			isnorm(bool): this parameter is the normalization factor for the number of planet per star :meth:`EPOS.fitfunctions`
 		'''
+		if key in self.keysall:
+			print ('Skipped adding key {}, it was already defined before'.format(key))
+			return
+
 		fp=self.fitpars[key]= {}
 		
 		# list of keys
@@ -59,10 +63,10 @@ class fitparameters:
 			dx=0.1*value if dx is None else dx
 			fp['dx']=abs(dx) if (dx!=0) else 0.1
 
-	def default(self, key, value, Verbose=True):
+	def default(self, key, value, isnorm=False, Verbose=True):
 		if not key in self.keysall: 
-			if Verbose: print '  Set {} to default {}'.format(key, value)
-			self.add(key, value, fixed=True)
+			if Verbose: print ('  Set {} to default {}'.format(key, value))
+			self.add(key, value, fixed=True, isnorm=isnorm)
 	
 	def set(self, key, value):
 		self.fitpars[key]['value_init']=value
@@ -140,6 +144,7 @@ class epos:
 
 	Args:
 		name (str): name to use for directories
+		survey(str): Survey data to load. ['Kepler', 'RV']. Default None
 		RV(bool): Compare to radial velocity instead of transits
 		MC(bool): Generate planet population by random draws 
 		Msini(bool): Convert the planet mass distribution into an Msini distribution
@@ -153,21 +158,20 @@ class epos:
 		RV(bool): Compare to Radial Velocity instead of transit data
 		Multi(bool): Do multi-planet statistics
 		RandomPairing(bool): multis are randomly paired
-		Isotropic(bool): Assume isotropic mutual inclinations
 		Parametric(bool): parametric planet population?
 		Debug(bool): Verbose logging
 		seed(): Random seed, can be any of int, True, or None
 	"""
 	def __init__(self, name, Debug=False, seed=True, title=None, 
-		RV=False, Norm=False, MC=True, Msini=False):
+		RV=False, Norm=False, MC=True, Msini=False, survey=None):
 		"""
 		Initialize the class
 		"""
 		self.name=name
 		self.title=name if title is None else title
 
-		print '\n\n |~| epos {} |~|\n'.format(__version__)
-
+		print ('\n |~| epos {} |~|\n'.format(__version__))
+		print ('Initializing \'{}\''.format(name))
 		''' Directories '''
 		self.plotdir='png/{}/'.format(name)
 		self.jsondir='json/{}/'.format(name)
@@ -178,7 +182,6 @@ class epos:
 		self.Msini= Msini # do an M -> Msini conversion
 		self.Multi=False
 		self.RandomPairing= False
-		self.Isotropic= False # phase out?
 		self.MonteCarlo= MC
 		
 		# Seed for the random number generator
@@ -186,7 +189,7 @@ class epos:
 		else:
 			if type(seed) is int: self.seed= seed
 			else: self.seed= np.random.randint(0, 4294967295)
-			print '\nUsing random seed {}'.format(self.seed)
+			print ('\nUsing random seed {}'.format(self.seed))
 		
 		self.Debug= False
 		self.Parallel= True # speed up a few calculations 
@@ -204,8 +207,23 @@ class epos:
 		
 		self.plotpars={} # dictionary to hold some customization keywords
 
+		''' Load Default Settings for each Survey '''
+		if survey is 'Kepler':
+			print ('\nSurvey: Kepler-Gaia all dwarfs, reliability > 0.9')
+			obs, survey= EPOS.kepler.dr25(Huber=False, Gaia=True, Vetting=True, score=0.9, 
+				Verbose=False)
+			self.set_observation(Verbose=False, radiusError=0.02, **obs)
+			self.set_survey(**survey)
+			self.set_ranges(xtrim=[0,730],ytrim=[0.3,20.],xzoom=[2,400],yzoom=[1,6], Occ=True)
+		elif survey is 'RV':
+			print ('Survey: Radial Velocity HARPS-CORALIE')
+			self.RV=True
+			raise ValueError('To do')
+		else:
+			print ('Survey: None selected')
+
 	def set_observation(self, xvar, yvar, starID, nstars=1.6862e5, 
-		radiusError=0.1, score=None):
+		radiusError=0.1, score=None, tdur=None, Verbose=True):
 		''' Observed planet population
 		
 		Args:
@@ -226,6 +244,9 @@ class epos:
 
 		if score is not None:
 			self.obs_score= np.asarray(score)[order]
+
+		if tdur is not None:
+			self.obs_tdur= np.asarray(tdur)[order]
 		
 		assert self.obs_xvar.ndim == self.obs_yvar.ndim == self.obs_starID.ndim == 1, 'only 1D arrays'
 		assert self.obs_xvar.size == self.obs_yvar.size == self.obs_starID.size, 'arrays not same length'
@@ -242,15 +263,18 @@ class epos:
 		self.radiusError= radiusError
 		
 		# print some stuff
-		print '\nObservations:\n  {} stars'.format(int(nstars))
-		print '  {} planets'.format(self.obs_starID.size)
-		EPOS.multi.indices(self.obs_starID, Verbose=True)
+		if Verbose:
+			print ('\nObservations:\n  {} stars'.format(int(nstars)))
+			print ('  {} planets'.format(self.obs_starID.size))
+		EPOS.multi.indices(self.obs_starID, Verbose=Verbose)
+
 		epos.multi={}
 		epos.multi['bin'], epos.multi['count']= \
-			EPOS.multi.frequency(self.obs_starID, Verbose=True)
+			EPOS.multi.frequency(self.obs_starID, Verbose=Verbose)
 		epos.multi['pl cnt']= epos.multi['bin']* epos.multi['count']
 		epos.multi['Pratio'], epos.multi['Pinner'], epos.multi['Rpair']= \
-			EPOS.multi.periodratio(self.obs_starID, self.obs_xvar, R=self.obs_yvar, Verbose=True)
+			EPOS.multi.periodratio(self.obs_starID, self.obs_xvar, R=self.obs_yvar, 
+				Verbose=Verbose)
 		epos.multi['cdf']= EPOS.multi.cdf(self.obs_starID, Verbose=True)	
 	
 	def set_survey(self, xvar, yvar, eff_2D, Rstar=1.0, Mstar=1.0, vet_2D=None):
@@ -288,10 +312,10 @@ class epos:
 			self.Pindex= -2./3.
 			fourpi2_GM= 4.*np.pi**2. / (cgs.G*self.Mstar*cgs.Msun)
 			self.fgeo_prefac= self.Rstar*cgs.Rsun * fourpi2_GM**(1./3.) / cgs.day**(2./3.)
-			#print self.fgeo_prefac
 			P, R= np.meshgrid(self.eff_xvar, self.eff_yvar, indexing='ij')
 			
-			self.completeness= self.eff_2D * self.fgeo_prefac*P**self.Pindex
+			self.fgeo= self.fgeo_prefac*P**self.Pindex
+			self.completeness= self.eff_2D * self.fgeo
 		
 		if vet_2D is not None:
 			self.vetting= np.asarray(vet_2D)
@@ -301,7 +325,7 @@ class epos:
 					'\n: (nx,ny)={}, (nx,ny={})'.format(self.eff_2D.shape,
 								self.vetting.shape))
 
-			self.completeness_novet= self.completeness
+			self.completeness_novet= 1.*self.completeness
 			self.completeness*= self.vetting
 
 		self.DetectionEfficiency=True
@@ -309,32 +333,35 @@ class epos:
 	def set_ranges(self, xtrim=None, ytrim=None, xzoom=None, yzoom=None, 
 		LogArea=False, Occ=False, UnitTicks=True, plotxgrid= None, plotygrid=None):
 		
-		if self.Range: raise ValueError('Range already defined')
+		if self.Range: 
+			#raise ValueError('Range already defined')
+			print ('Ranges already defined')
+			return
 		if not self.Observation: raise ValueError('No observation defined')
 		if not self.DetectionEfficiency: raise ValueError('No detection effifiency defined')
 		
 		''' Define the region where completeness is calculated'''
 		if xtrim is None:
-			print 'Trimming x-axis from detection efficiency'
+			print ('Trimming x-axis from detection efficiency')
 			self.xtrim= self.eff_xlim
 		else:
 			self.xtrim= [max(xtrim[0], self.eff_xlim[0]), min(xtrim[1], self.eff_xlim[1])]
 
 		if ytrim is None:
-			print 'Trimming y-axis from detection efficiency'
+			print ('Trimming y-axis from detection efficiency')
 			self.ytrim= self.eff_ylim
 		else:
 			self.ytrim= [max(ytrim[0], self.eff_ylim[0]), min(ytrim[1], self.eff_ylim[1])]
 		
 		''' Define a smaller region where observational comparison is performed'''	
 		if xzoom is None:
-			print 'Not zooming in on x-axis for model comparison'
+			print ('Not zooming in on x-axis for model comparison')
 			self.xzoom= self.xtrim
 		else:
 			self.xzoom= [max(xzoom[0], self.xtrim[0]), min(xzoom[1], self.xtrim[1])]
 
 		if yzoom is None:
-			print 'Not zooming in on y-axis for model comparison'
+			print ('Not zooming in on y-axis for model comparison')
 			self.yzoom= self.ytrim
 		else:
 			self.yzoom= [max(yzoom[0], self.ytrim[0]), min(yzoom[1], self.ytrim[1])]
@@ -343,7 +370,7 @@ class epos:
 			self.Zoom=False
 		elif (self.xzoom==self.xtrim) and (self.yzoom==self.ytrim):
 			self.Zoom=False
-			print 'Trim equal to zoom' # so??
+			print ('Trim equal to zoom') # so??
 		else:
 			self.Zoom=True
 		
@@ -407,13 +434,20 @@ class epos:
 				self.in_ytrim= self.in_yvar[([0,-1])]
 				self.scale_in_y= self.scale_y 
 				self.scale_in= self.scale
-				self.X_in, self.Y_in= np.meshgrid(self.MC_xvar,self.in_yvar,indexing='ij')	
+				self.X_in, self.Y_in= np.meshgrid(self.MC_xvar,self.in_yvar,indexing='ij')
 			else:
 				self.in_ytrim= self.ytrim
 				self.in_yvar= self.MC_yvar
 				self.scale_in_y= self.scale_y 
 				self.scale_in= self.scale
 				self.X_in, self.Y_in= self.X, self.Y
+				
+		else:
+			self.in_ytrim= self.ytrim
+			self.in_yvar= self.MC_yvar
+			self.scale_in_y= self.scale_y 
+			self.scale_in= self.scale
+			self.X_in, self.Y_in= self.X, self.Y
 			
 		''' plot ticks '''
 		yr= 365.24
@@ -573,7 +607,7 @@ class epos:
 		focc['poly']={}
 		focc['poly']['coords']=[]
 
-		print '\nTrying {} polygons'.format(len(polys))
+		print ('\nTrying {} polygons'.format(len(polys)))
 		for coords in polys:
 			npc= np.asarray(coords)
 			assert npc.ndim==2, 'coords needs to de 2dim list'
@@ -611,7 +645,7 @@ class epos:
 		self.fitpars=self.pdfpars
 		self.summarystatistic= ['N','xvar','yvar']
 	
-	def set_multi(self, spacing=None):
+	def set_multi(self, spacing=None, Correlated=False):
 		if not self.Parametric:
 			raise ValueError('Define a parametric planet population first')
 		self.Multi=True
@@ -619,17 +653,19 @@ class epos:
 		self.RandomPairing= (spacing==None)
 		self.spacing= spacing # None, brokenpowerlaw, dimensionless
 
+		self.Correlated=Correlated
+
 		# skipping yvar here
-		self.summarystatistic= ['N','xvar','Nk','dP','Pin']
+		self.summarystatistic= ['N','xvar','Nk','dP','Pin'] # dR?
 	
-	def set_population(self, name, sma, mass, 
+	def set_population(self, name, sma, mass=None, 
 		radius=None, inc=None, starID=None, ecc=None, tag=None, 
 		Verbose=False, **kwargs):
 		# tag is fit parameter, i.e. metallicity, surface density, or model #
 
 		if Verbose:
-			print '\nArguments not used by set_population:'
-			print '  ',kwargs.keys()
+			print ('\nArguments not used by set_population:')
+			print ('  {}'.format(kwargs.keys()))
 
 		if hasattr(self, 'pfm'):
 			raise ValueError('expand: adding multiple populations?')
@@ -638,36 +674,56 @@ class epos:
 		self.modelpars= fitparameters()
 		self.fitpars= self.modelpars
 		
+		# the summary statistic to use for the MCMC fitting
 		if inc is None:
 			self.summarystatistic= ['N'] # xvar, yvar?
 		else:
 			self.summarystatistic= ['N','Nk','dP'] #,'Pin']
 		
-		# length checks
-		try:
-			if len(sma) != len(mass): 
-				raise ValueError('sma ({}) and mass ({}) not same length'.format(len(sma),len(mass)))
-		except: 
-			raise ValueError('sma ({}) and mass ({}) have to be iterable'.format(type(sma), type(mass)))
-		
-		# model has mutual inclinations?
-		self.Multi= (inc != None)
-		
+		# store the planet formation models in a dictionary
 		pfm= self.pfm= {}
 		pfm['name']= name
 		
-		# lexsort?
 		pfm['sma']= np.asarray(sma)
-		pfm['M']= np.asarray(mass)
-		
+
 		# ID is array 0...ns with np elements
 		if starID is None:
 			pfm['ID']= np.arange(len(sma))
 		else:
 			_, pfm['ID']= np.unique(starID, return_inverse=True)
-			
+
+		# size is mass, radius, or both?
+		if mass is None and radius is None:
+			raise ValueError('Set either mass or radius')
+
+		if mass is not None:
+			try:
+				if len(sma) != len(mass): 
+					raise ValueError('sma ({}) and mass ({}) not same length'.format(
+						len(sma),len(mass)))
+			except TypeError:
+				raise ValueError('sma ({}) and mass ({}) have to be iterable'.format(
+					type(sma), type(mass)))
+			pfm['M']= np.asarray(mass)
+
 		if radius is not None:
-			pfm['R']= np.asarray(radius)
+			try: 
+				if len(sma) != len(radius): 
+					raise ValueError('sma ({}) and radius ({}) not same length'.format(
+						len(sma),len(radius)))
+				pfm['R']= np.asarray(radius)
+			except TypeError:
+				raise ValueError('sma ({}) and radius ({}) have to be iterable'.format(
+					type(sma), type(radius)))
+			pfm['R']=np.asarray(radius)
+
+		elif hasattr(self, 'MR'):
+			pfm['R'], _= self.MR(pfm['M']) # no scatter
+
+				
+		# model has mutual inclinations?
+		self.Multi= (inc != None)
+
 		if ecc is not None:
 			pfm['ecc']= np.asarray(ecc)			
 		if tag is not None:
@@ -686,7 +742,12 @@ class epos:
 		''' If multiple planets per stars: Lexsort, period ratio'''
 		if pfm['np'] > pfm['ns']:
 			
+			_ , pfm['n']= np.unique(pfm['ID'],return_counts=True)
+			#pfm['dP'], pfm['Pin'], pfm['dM']= EPOS.multi.periodratio(pfm['ID'], pfm['P'], 
+			#R=pfm['mass'])
+
 			order= np.lexsort((pfm['sma'],pfm['ID'])) # sort by ID, then sma
+			pfm['order']=order
 			for key in ['ID','sma','M','P','inc','ecc','tag','R']:
 				if key in pfm: pfm[key]=pfm[key][order]
 			
@@ -695,7 +756,7 @@ class epos:
 			
 			# period ratio, multi-planet index
 			single, multi, ksys, multis= EPOS.multi.nth_planet(pfm['ID'],pfm['P'])
-			pfm['dP']=np.ones_like(pfm['P'])
+			pfm['dP']=np.ones_like(pfm['P'])	
 			pfm['kth']=np.zeros_like(pfm['P'], dtype=int)
 
 			pfm['dP'][single]= 0 #np.nan
@@ -703,11 +764,18 @@ class epos:
 				# 2nd, 3rd, 4th??
 				pfm['dP'][km]= pfm['P'][km]/pfm['P'][np.array(km)-1]
 				pfm['kth'][km]= k+1
-			#print pfm['ID'][1:6]
-			#print pfm['P'][1:6]
-			#print pfm['dP'] # not ok?	
-			#for a,b in zip(pfm['ID'], pfm['kth']):
-			#	print a,b
+
+			if 'R' in pfm:
+				pfm['dR']=np.ones_like(pfm['R'])
+				pfm['dR'][single]= 0 #np.nan
+				for k, km in enumerate(multis[1:]):
+					pfm['dR'][km]= pfm['R'][km]/pfm['R'][np.array(km)-1]
+
+			if 'M' in pfm:
+				pfm['dM']=np.ones_like(pfm['M'])
+				pfm['dM'][single]= 0 #np.nan
+				for k, km in enumerate(multis[1:]):
+					pfm['dM'][km]= pfm['M'][km]/pfm['M'][np.array(km)-1]
 
 			# innermost planet in multi
 			pfm['Pin']= np.squeeze(pfm['P'][np.array(multis[1])-1])
@@ -723,12 +791,20 @@ class epos:
 			if 'tag' in pfm:
 				pfm['system tag']= pfm['tag']
 
-		pfm['M limits']=[np.min(pfm['M']),np.max(pfm['M'])]
+			pfm['order']= np.arange(len(sma))
+
+		if 'M' in pfm:
+			pfm['M limits']=[np.min(pfm['M']),np.max(pfm['M'])]
+
 		pfm['P limits']=[np.min(pfm['P']),np.max(pfm['P'])]
 		
 		# set plot limits in model 5% wider than data
 		xmin,xmax= min(pfm['P']), max(pfm['P'])
-		ymin,ymax= min(pfm['M']), max(pfm['M'])
+		if 'M' in pfm:
+			ymin,ymax= min(pfm['M']), max(pfm['M'])
+		else:
+			ymin,ymax= min(pfm['R']), max(pfm['R'])
+
 		dx= (xmax/xmin)**0.05
 		dy= (ymax/ymin)**0.05
 		self.mod_xlim=[xmin/dx, xmax*dx]
@@ -738,7 +814,7 @@ class epos:
 		self.mod_ylim=[min(ymin/dy, self.mod_ylim[0]),max(ymax*dy, self.mod_ylim[1])]
 	
 	def set_massradius(self, MR, name, masslimits= [0.01,1e3]):
-		print '\nMass-Radius relation from {}'.format(name)
+		print ('\nMass-Radius relation from {}'.format(name))
 		if self.MassRadius:
 			raise ValueError('Already defined a Mass-Radius conversion function ')
 		# actually radius as funtion of mass (mass-to-radius)
@@ -750,9 +826,9 @@ class epos:
 		
 		self.masslimits=masslimits 
 		meanradius= MR(masslimits)[0]
-		print 'Mass and Radius limits:'
-		print '  min M = {:.3f}-> <R> ={:.2f}'.format(masslimits[0], meanradius[0] )
-		print '  max M = {:.0f}-> <R> ={:.1f}'.format(masslimits[-1], meanradius[-1] )
+		print ('Mass and Radius limits:')
+		print ('  min M = {:.3f}-> <R> ={:.2f}'.format(masslimits[0], meanradius[0] ))
+		print ('  max M = {:.0f}-> <R> ={:.1f}'.format(masslimits[-1],meanradius[-1]))
 
 def _trimarray(array,trim):
 	# trims array of points not needed for interpolation

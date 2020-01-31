@@ -15,7 +15,7 @@ def install(fdir='epos-scripts'):
 		scriptdir= '{}/{}'.format(fdir, subdir)
 		if not os.path.isdir(scriptdir): os.makedirs(scriptdir)
 
-		print '\nCopying scripts into {}'.format(scriptdir)
+		print ('\nCopying scripts into {}'.format(scriptdir))
 
 		flist= glob.glob('{}/scriptdir/{}/*.py'.format(fpath, subdir))
 		for fname in flist:
@@ -23,9 +23,9 @@ def install(fdir='epos-scripts'):
 			fdest= '{}/{}'.format(scriptdir, fname_stripped)
 			shutil.copyfile(fname, fdest)
 			# make them executable
-			print '  copied {}'.format(fname_stripped)
+			print ('  copied {}'.format(fname_stripped))
 
-	print '\nRun scripts with\n'
-	print '  ./test_1_survey.py\n'
-	print 'or\n'
-	print '  ipython test_1_survey.py\n'
+	print ('\nRun scripts with\n')
+	print ('  ./test_1_survey.py\n')
+	print ('or\n')
+	print ('  ipython test_1_survey.py\n')

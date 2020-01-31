@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
 import scipy.stats
 
-import helpers
+from . import helpers
 import EPOS.multi
 from EPOS.population import periodradius as draw_PR
 from EPOS.population import periodratio as draw_dP
@@ -124,7 +124,7 @@ def periodradius(epos, Nth=False, MC=True):
 
 	helpers.save(plt, '{}{}/PR.multi{}'.format(epos.plotdir, outdir, suffix))
 
-def multiplicity(epos, MC=False, Planets=False, MCMC=False, color='C1'):
+def multiplicity(epos, MC=False, Planets=False, MCMC=False, color='C1', NB=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
 	ax.set_title('Multi-Planet Frequency')
@@ -202,7 +202,7 @@ def multiplicity(epos, MC=False, Planets=False, MCMC=False, color='C1'):
 	if MCMC: prefix= 'mcmc'
 	suffix='.planets' if Planets else ''
 	
-	helpers.save(plt, '{}{}/multiplicity{}'.format(epos.plotdir,prefix,suffix))
+	helpers.save(plt, '{}{}/multiplicity{}'.format(epos.plotdir,prefix,suffix), NB=NB)
 
 def multiplicity_cdf(epos, MC=False, color='C1'):
 	# plot multiplicity cdf
@@ -241,7 +241,7 @@ def multiplicity_cdf(epos, MC=False, color='C1'):
 	
 	helpers.save(plt, '{}{}/cdf'.format(epos.plotdir,prefix))
 	
-def periodratio(epos, MC=False, N=False, Input=False, MCMC=False, color='C1'):
+def periodratio(epos, MC=False, N=False, Input=False, MCMC=False, color='C1', NB=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
 	ax.set_title('Period Ratio of Adjacent Planets')
@@ -325,9 +325,9 @@ def periodratio(epos, MC=False, N=False, Input=False, MCMC=False, color='C1'):
 	if Input: suffix+= '.input' 
 	if MCMC: prefix= 'mcmc'
 
-	if MC: ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
+	if MC or NB: ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
 		
-	helpers.save(plt, '{}{}/periodratio{}'.format(epos.plotdir, prefix, suffix))	
+	helpers.save(plt, '{}{}/periodratio{}'.format(epos.plotdir, prefix, suffix), NB=NB)	
 
 def periodratio_cdf(epos, Input=True, MC=False, color='C1'):
 
@@ -390,7 +390,7 @@ def periodratio_cdf(epos, Input=True, MC=False, color='C1'):
 
 ''' these are practically identical to periodratio -> merge?'''
 
-def periodinner(epos, MC=False, N=False, Input=False, MCMC=False, color='C1'):
+def periodinner(epos, MC=False, N=False, Input=False, MCMC=False, color='C1', NB=False):
 	# plot multiplicity
 	f, ax = plt.subplots()
 	ax.set_title('Period of the Innermost Planet')
@@ -472,7 +472,7 @@ def periodinner(epos, MC=False, N=False, Input=False, MCMC=False, color='C1'):
 
 	if MC: ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
 		
-	helpers.save(plt, '{}{}/innerperiod{}'.format(epos.plotdir, prefix,suffix))	
+	helpers.save(plt, '{}{}/innerperiod{}'.format(epos.plotdir, prefix,suffix), NB=NB)	
 
 def periodinner_cdf(epos, MC=False, color='C1'):
 	# plot multiplicity
@@ -513,6 +513,133 @@ def periodinner_cdf(epos, MC=False, color='C1'):
 	if MC: ax.legend(loc='lower right', shadow=False, prop={'size':14}, numpoints=1)
 		
 	helpers.save(plt, '{}{}/innerperiod.cdf'.format(epos.plotdir, prefix))	
+
+''' Radius ratio '''
+def radiusratio(epos, MC=False, Input=False, MCMC=False, color='C1', NB=False):
+
+	# plot multiplicity
+	f, ax = plt.subplots()
+	ax.set_title('Radius Ratio of Adjacent Planets')
+	ax.set_xlabel(r'$\mathcal{R}$ = Radius Outer/Inner')
+	ax.set_ylabel('Planet Counts')
+
+	ax.set_xlim(0.1, 10)
+	ax.set_xscale('log')
+	#for s in [ax.set_xticks,ax.set_xticklabels]: s([1,2,3,4,5,7,10])
+	#ax.set_xticks([], minor=True) # minor ticks generate labels
+
+	bins=np.geomspace(0.1,10, 25) # 1,10
+	
+	# MC data
+	if MC or MCMC:
+		ss=epos.synthetic_survey
+		if MCMC:
+			for ss in epos.ss_sample:
+				# bar?
+				dR= ss['multi']['Rratio'][ss['multi']['Pratio']>1]
+				ax.hist(dR, bins=bins, histtype='step', color='b', alpha=0.1)
+				#ax.hist(ss['multi']['Pratio'], bins=bins, color='b', alpha=1./len(epos.ss_sample))
+		else:
+			dR= ss['multi']['Rratio'][ss['multi']['Pratio']>1]
+			ax.hist(dR, bins=bins,
+					color=color, histtype='stepfilled', label='Simulated')
+	
+			if hasattr(epos, 'pfm'):
+				dR_mod= epos.pfm['dR'][epos.pfm['dP']>1.]
+				scale= 1.*dR.size/dR_mod.size
+				ax.hist(dR_mod, bins=bins, weights=np.full_like(dR_mod, scale),
+					color='C7',label='Input/{:.2f}'.format(scale), histtype='step', ls=':')
+		
+		if hasattr(epos, 'ss_extra'):
+			# advance color cycle
+			# ax._get_lines.get_next_color()
+			ax.plot([], [])
+			ax.plot([], [])
+			ax.plot([], [])
+			
+			# plot extra epos runs
+			for ss in epos.ss_extra:
+				ax.hist(ss['multi']['Rratio'], bins=bins, 
+					histtype='step', label=ss['name'])
+
+		# Observed zoom
+		dR_obs= epos.obs_zoom['multi']['Rratio'][epos.obs_zoom['multi']['Pratio']>1.]
+		ax.hist(dR_obs, bins=bins, color='C3', histtype='step', ls='--', label='Kepler')
+
+
+	else:
+		# observed all
+		ax.hist(epos.multi['Rratio'], bins=bins, color='0.7', label='Kepler all')
+		#ax.axvline(np.median(epos.multi['Pratio']), color='0.7', ls='--')
+	
+	''' input distribution '''	
+	if Input and epos.Parametric:
+		dR= epos.fitpars.get('dR')
+		Rgrid= np.logspace(-1,1, 25)
+		pdf= scipy.stats.normal(np.log10(Rgrid), loc=0, scale=dR)
+		pdf*= 0.95* ax.get_ylim()[1] / max(pdf)	
+		ax.plot(Rgrid, pdf, marker='', ls='-', color='r',label='Intrinsic')
+
+	elif epos.Zoom:
+		if not MCMC:
+			ax.axvline(np.median(epos.obs_zoom['multi']['Rratio']), color='C1', ls='--')
+	
+	prefix= 'output' if MC else 'survey'
+	suffix= ''
+	if Input: suffix+= '.input' 
+	if MCMC: prefix= 'mcmc'
+
+	if MC or NB: ax.legend(loc='upper right', shadow=False, prop={'size':14}, numpoints=1)
+		
+	helpers.save(plt, '{}{}/radiusratio{}'.format(epos.plotdir, prefix, suffix), NB=NB)	
+
+def radiusratio_cdf(epos, Input=True, MC=False, color='C1'):
+
+	# plot radius ratio CDF
+	f, ax = plt.subplots()
+	ax.set_title('Radius Ratio Adjacent Planets')
+	ax.set_xlabel('$\mathcal{P}$ = Radius Outer/Inner')
+	ax.set_ylabel('CDF')
+
+	ax.set_xlim(0.1, 10)
+
+	ax.set_xscale('log')
+	#for s in [ax.set_xticks,ax.set_xticklabels]: s([1,2,3,4,5,7,10])
+	#ax.set_xticks([], minor=True) # minor ticks generate labels
+	
+	# MC data
+	if MC:
+		ss=epos.synthetic_survey
+		dR= ss['multi']['Rratio'][ss['multi']['Pratio']>1.]
+		Rsort= np.sort(dR)
+		cdf= np.arange(Rsort.size, dtype=float)/Rsort.size
+		ax.plot(Rsort, cdf, color=color, label=epos.name)
+	
+		# Observed zoom
+		dR_obs= epos.obs_zoom['multi']['Rratio'][epos.obs_zoom['multi']['Pratio']>1.]
+		Rsort= np.sort(dR_obs)
+		cdf= np.arange(Rsort.size, dtype=float)/Rsort.size
+		ax.plot(Rsort, cdf, color='C3', label='Kepler', ls='--')
+
+		if hasattr(epos, 'pfm'):
+			dR= epos.pfm['dR'][epos.pfm['dP']>1.]
+			Rsort= np.sort(dR)
+			cdf= np.arange(Rsort.size, dtype=float)/Rsort.size
+			ax.plot(Rsort, cdf, color=color, ls=':', label='Input')			
+
+	else:
+		# all observed
+		dR= epos.multi['Rratio'][epos.multi['Pratio']>1]
+		Rsort= np.sort(dR)
+		cdf= np.arange(Rsort.size, dtype=float)/Rsort.size
+		ax.plot(Rsort, cdf ,color='C7', ls=':', label='Kepler all')	
+	
+	prefix= 'output' if MC else 'survey'
+	
+	if MC: ax.legend(loc='lower right', shadow=False, prop={'size':14}, numpoints=1)
+		
+	helpers.save(plt, '{}{}/radiusratio.cdf'.format(epos.plotdir,prefix))	
+
 
 ''' Plot planet population '''
 
@@ -603,7 +730,7 @@ def polar(epos):
 			ax.set_thetamin(0)
 			ax.set_thetamax(180)
 		except AttributeError:
-			print 'Update pyplot'
+			print ('Update pyplot')
 			raise
 		
 		if Bugged:
@@ -647,7 +774,7 @@ def polar(epos):
 		ax4.set_thetamin(0)
 		ax4.set_thetamax(180)
 	except AttributeError:
-		print 'Update pyplot'
+		print ('Update pyplot')
 		raise
 	
 	ax4.plot(pop['order']*np.pi, pop['P'],

@@ -18,7 +18,7 @@ def periodradius(epos, Init=False, fpara=None, fdet=None,
 	else:
 		pps= epos.pdfpars.getpps_fromlist(fpara)
 		fpar2d= epos.pdfpars.get2d_fromlist(fpara)
-		#print fpara
+		#print (fpara
 	
 	pdf= epos.func(epos.X_in, epos.Y_in, *fpar2d)
 	pdf_X, pdf_Y= np.sum(pdf, axis=1), np.sum(pdf, axis=0)
@@ -70,10 +70,10 @@ def periodradius(epos, Init=False, fpara=None, fdet=None,
 			#func_fdet= interp2d(xgrid, ygrid, fdet.T, kind='cubic')
 			func_fdet= RectBivariateSpline(epos.MC_xvar, epos.MC_yvar, fdet) # was in_yvar
 			_fdet= func_fdet(xgrid, ygrid)
-			#print fdet.shape, _fdet.shape
-			#print xgrid
-			#print ygrid
-			#print _fdet
+			#print (fdet.shape, _fdet.shape
+			#print (xgrid
+			#print (ygrid
+			#print (_fdet
 			pdf *= _fdet
 
 		dlnx= np.log(xgrid[-1]/xgrid[0])
@@ -111,7 +111,7 @@ def periodratio(epos, Pgrid=None, fpara=None, Init=False):
 			with np.errstate(divide='ignore'): 
 				Dgrid= np.log10(2.*(Pgrid**(2./3.)-1.)/(Pgrid**(2./3.)+1.))
 			Dgrid[0]= -2
-			#print Dgrid
+			#print (Dgrid
 			pdf= scipy.stats.norm(logD,sigma).pdf(Dgrid)
 			
 		cdf= np.cumsum(pdf)
@@ -125,15 +125,15 @@ def periodratio(epos, Pgrid=None, fpara=None, Init=False):
 ''' Helper function '''
 def _int_fmsini(x):
 	''' Integral of x/sqrt(1.-x**2.) to avoid infinite value at x=1'''
-   	return -np.sqrt(1.-x**2.)
+	return -np.sqrt(1.-x**2.)
 
 def _convert_pdf_M_to_Msini(xgrid, in_ygrid, out_ygrid, pdf):
 	'''Generate the shape of the Msini distribution'''
 	fint1d= _int_fmsini(in_ygrid[1:]/in_ygrid[-1])-_int_fmsini(in_ygrid[:-1]/in_ygrid[-1])
 	fint2d= np.tile(fint1d, (xgrid.size,1))
-	#print 'fint 1d {}'.format(fint1d.shape)
-	#print 'fint 2d {}'.format(fint2d.shape)
-	#print 'pdf {}'.format(pdf.shape)
+	#print ('fint 1d {}'.format(fint1d.shape)
+	#print ('fint 2d {}'.format(fint2d.shape)
+	#print ('pdf {}'.format(pdf.shape)
 
 	''' Convolve the the pdf with the msini distribution through shift and add'''	
 	pdf_ext= np.zeros_like(pdf) # extended grid
@@ -143,5 +143,5 @@ def _convert_pdf_M_to_Msini(xgrid, in_ygrid, out_ygrid, pdf):
 
 	''' Truncate the pdf to the mass range of Msini'''
 	pdf_out= pdf_ext[:,:out_ygrid.size] # this in on out grid
-	#print 'pdf before {}, after {}'.format(pdf.shape, pdf_ext[:,:out_ygrid.size].shape)
+	#print ('pdf before {}, after {}'.format(pdf.shape, pdf_ext[:,:out_ygrid.size].shape)
 	return pdf_out 
