@@ -214,7 +214,7 @@ class epos:
 				Verbose=False)
 			self.set_observation(Verbose=False, radiusError=0.02, **obs)
 			self.set_survey(**survey)
-			self.set_ranges(xtrim=[0,730],ytrim=[0.3,20.],xzoom=[2,400],yzoom=[1,6], Occ=True)
+			self.set_ranges(xtrim=[0,730],ytrim=[0.3,20.],xzoom=[2,400],yzoom=[1,6], Occ=False)
 		elif survey is 'RV':
 			print ('Survey: Radial Velocity HARPS-CORALIE')
 			self.RV=True

@@ -11,7 +11,7 @@ except:
 from EPOS.population import periodradius
 import EPOS.analytics
 
-def all(epos, BinnedMetric=False, MLE=False, Verbose=True):
+def all(epos, BinnedMetric=False, MLE=False, Verbose=False):
 	if hasattr(epos,'occurrence'):
 		planets(epos)
 
@@ -45,6 +45,8 @@ def planets(epos, Log=False):
 	if not epos.Range: epos.set_ranges()
 	
 	''' Interpolate occurrence for each planet (on log scale) '''
+	if not hasattr(epos,'occurrence'):
+		epos.occurrence={}
 	focc= epos.occurrence
 	
 	print ('\nInterpolating planet occurrence')

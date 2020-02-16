@@ -278,8 +278,9 @@ def multi(epos, color='C4', nplanets=10, PlotObs=True):
 	pars_out= ['dR', 'Pin', 'dP', 'n']
 
 	#pars= ['mass', 'dM', 'Pin', 'dP', 'inc','n']
-	titles= dict(inc='Mutual\nInclination', dP='Period\n Ratio', 
-	Pin='Inner\n Planet', dM='Mass\n Ratio', dR='Radius\n Ratio', n='# Planets\nper System')
+	titles= dict(inc='Mutual\nInclination', dP='Planet Pair\nPeriod Ratio', 
+	Pin='Inner Planet\nOrbital Period', dM='Planet Pair\n Mass Ratio', 
+	dR='Planet Pair\nRadius Ratio', n='# Planets\nper System')
 	units=dict(inc='[$\\degree$]',dP='',Pin='[day]',dM='',dR='',n='')
 	xlim= dict(inc=[1e-2,90], dP=[1,10], Pin=[1,100], dM=[0.1,10], dR=[0.1,10], 
 		n=[0,nplanets])
@@ -301,7 +302,7 @@ def multi(epos, color='C4', nplanets=10, PlotObs=True):
 	ax_out= [f.add_subplot(gs[3,i], sharex=ax_in[i]) 
 		for i in range(len(pars_out)) ]
 
-	f.suptitle('Compare Model Planetary Systems to Observed Exoplanets with epos',
+	f.suptitle('Compare Model Planetary Systems to Kepler Exoplanets with epos',
 		bbox=dict(boxstyle='round', fc='w', ec='k'))
 
 	''' Input '''
@@ -401,7 +402,8 @@ def multi(epos, color='C4', nplanets=10, PlotObs=True):
 
 	f.text(-0.5,0.5,'Formation\nModel',color=color, transform=ax_in[0].transAxes, **props)
 
-	f.text(-0.5,0.7,'Observable\nPlanets',color=color, transform=ax_out[0].transAxes, **props)
+	# Observable\nPlanets
+	f.text(-0.5,0.7,'Simulated\nSurvey',color=color, transform=ax_out[0].transAxes, **props)
 	if PlotObs:
 		f.text(-0.5,0.2,'Kepler\nObservations',color='r', 
 			ha='center', va='center', transform=ax_out[0].transAxes)

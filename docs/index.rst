@@ -23,6 +23,7 @@ Applications
 
 Use EPOS to calculate:
 
+* Planet ocurrence rates (`notebook <tutorials/occurrence_rate.ipynb>`_)
 * Planet occurrence rate distributions (`notebook <tutorials/parameteric_mode.ipynb>`_)
 * Planetary system architectures (`notebook <tutorials/multiplanet_mode.ipynb>`_)
 * Synthetic observations of planet formation models
@@ -59,6 +60,7 @@ Familiarize yourself with the code is to take a look at the :doc:`notebooks`
    :maxdepth: 2
    :caption: Tutorials
 
+   tutorials/occurrence_rate.ipynb
    tutorials/parameteric_mode.ipynb
    tutorials/multiplanet_mode.ipynb
    tutorials/radial_velocity.ipynb

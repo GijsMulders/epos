@@ -4,6 +4,7 @@ Notebooks
 Examples
 --------
 
+* :ref:`/tutorials/occurrence_rate.ipynb`  (:download:`save to disk </tutorials/occurrence_rate.ipynb>`)
 * :ref:`/tutorials/parameteric_mode.ipynb`  (:download:`save to disk </tutorials/parameteric_mode.ipynb>`)
 * :ref:`/tutorials/multiplanet_mode.ipynb`  (:download:`save to disk </tutorials/multiplanet_mode.ipynb>`)
 * :ref:`/tutorials/custom_survey.ipynb`  (:download:`save to disk </tutorials/custom_survey.ipynb>`)

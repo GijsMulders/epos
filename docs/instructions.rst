@@ -79,7 +79,9 @@ Each command is described in the comments, and provides an introduction to the b
 Examples
 ========
 
-There are a number of example scripts included that demonstrate different functionality. The scripts contains comments describing each command.
+Please take a look at the :doc:`notebooks`
+
+There are also a number of example scripts included that demonstrate different functionality. The scripts contains comments describing each command.
 These scripts are copied to the ``epos-scripts/examples/`` directory by ``EPOS.scripts.install()``.
 
 Parametric mode
@@ -254,50 +256,6 @@ Second, we define the radial velocity survey data, here from Mayor+ 2011
 >>> epos.set_observation(**obs)
 >>> epos.set_survey(**survey)
 
-Planet Ocurrence Rates
-----------------------
-
-Example 9 shows how to estimate occurrence rates using the inverse detection efficiency method. You can run the entire script with:
-:: 
-
-   ./example_9_occurrence_rate_inverse.py
-
-Here, is a step-by-step description of each set of commands.
-First, load EPOS and set the output directory name
-
->>> import EPOS
->>> epos= EPOS.epos(name='example_9')
-
-Second, load the observations (Kepler DR25 planet candidate list) and survey dectetion efficiency
-
->>> obs, survey= EPOS.kepler.dr25(Huber=True, Vetting=True, score=0.9)
->>> epos.set_observation(**obs)
->>> epos.set_survey(**survey)
-
-Next, define the occurrence rate bins for hot Jupiters and super-earths/mini-Neptunes:
-
->>> x_HJ= [1,10] # Orbital period range in days
->>> y_HJ= [7,20] # Planet size range in earth radii
->>> x_SEMN, y_SEMN= [2,150],[1.0,4.0] # super-Earths/mini-Neptunes
->>> epos.set_bins(xbins=[x_HJ, x_SEMN], ybins=[y_HJ, y_SEMN])
-
-The rates are then calculated, plotted, and saved
-
->>> EPOS.occurrence.all(epos)
->>> EPOS.save.occurrence(epos)
->>> EPOS.plot.occurrence.all(epos)
-
-The output appears in ``png/occurrence/bins.png`` and should look like this:
-
-.. image:: fig_example_9.png
-
-Alternatively, you can generate a 1D or 2D grid of bins, for example the SAG13 grid:
-
->>> import numpy as np
->>> epos.set_bins(xgrid=np.geomspace(10,640,7), 
-   ybins=np.geomspace(0.67,17,9), Grid=True)
-
-.. image:: fig_example_9_SAG13.png
 
 FAQ
 ===
