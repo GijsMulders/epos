@@ -327,6 +327,8 @@ class epos:
 
 			self.completeness_novet= 1.*self.completeness
 			self.completeness*= self.vetting
+		else:
+			self.completeness_novet= self.completeness
 
 		self.DetectionEfficiency=True
 	
