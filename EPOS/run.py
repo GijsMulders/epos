@@ -265,26 +265,33 @@ def mcmc(epos, nMC=500, nwalkers=100, dx=0.1, nburn=50, threads=1, npos=30, Save
 	print ('\nStarting the best-fit MC run')
 	runonce(epos, np.array([p[0] for p in fitpars]), Store=True, BestFit=True)
 	
-def prep_obs(epos):
-	# occurrence pdf on sma from plot_input_diag?
+def prep_obs(epos, Reliability=False):
+	''' Generates the planet sample to compare to '''
 
 	# cdf of obs, zoomed only
 	z=epos.obs_zoom={}
 	ix= (epos.xzoom[0]<=epos.obs_xvar) & (epos.obs_xvar<=epos.xzoom[1])
 	iy= (epos.yzoom[0]<=epos.obs_yvar) & (epos.obs_yvar<=epos.yzoom[1])
-	
-	if np.sum(ix&iy)==0:
+	iobs= ix&iy
+
+	''' draw the observed sample using Monte Carlo according to the reliability'''
+	#if epos.Reliability:
+	if Reliability:
+		ir= np.random.uniform(0,1,epos.obs_xvar.size) <= epos.obs_rel
+		iobs = ix&iy&ir
+
+	if np.sum(iobs)==0:
 		raise ValueError('No planets in the box!')
 	
-	x= epos.obs_xvar[ix&iy]
-	y= epos.obs_yvar[ix&iy]
+	x= epos.obs_xvar[iobs]
+	y= epos.obs_yvar[iobs]
 	for key, var in zip(['x','y'], [x,y]):
 		z[key]= np.sort(var) # add (x0,0) and (x1,1)?
 		z[key+' cum']= np.arange(z[key].size,dtype=float)
 		z[key+' cdf']= z[key+' cum']/z[key+' cum'][-1]
 
 	if hasattr(epos, 'obs_tdur') and not epos.RV:
-		t= epos.obs_tdur[ix&iy]
+		t= epos.obs_tdur[iobs]
 
 		for key, var in zip(['t'], [t]):
 			z[key]= np.sort(var) # add (x0,0) and (x1,1)?
@@ -293,13 +300,13 @@ def prep_obs(epos):
 	
 	# multis
 	z['multi']={}
-	z['multi']['bin'], z['multi']['count']= multi.frequency(epos.obs_starID[ix&iy])
+	z['multi']['bin'], z['multi']['count']= multi.frequency(epos.obs_starID[iobs])
 	z['multi']['pl cnt']= z['multi']['bin']*z['multi']['count']
 	
 	z['multi']['Pratio'], z['multi']['Pinner'], z['multi']['Rratio']= \
-		multi.periodratio(epos.obs_starID[ix&iy], epos.obs_xvar[ix&iy], R=epos.obs_yvar[ix&iy])
-	_, z['multi']['n']= np.unique(epos.obs_starID[ix&iy],return_counts=True)
-	z['multi']['cdf']= multi.cdf(epos.obs_starID[ix&iy])
+		multi.periodratio(epos.obs_starID[iobs], epos.obs_xvar[iobs], R=epos.obs_yvar[iobs])
+	_, z['multi']['n']= np.unique(epos.obs_starID[iobs],return_counts=True)
+	z['multi']['cdf']= multi.cdf(epos.obs_starID[iobs])
 
 def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None, 
 		BestFit=False, Verbose=True):
@@ -596,6 +603,10 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 	prob={}
 	lnp={}
 	
+	if epos.Reliability:
+		if Verbose: print (' MC-ing planet sample for reliability')
+		prep_obs(epos, Reliability=True)
+
 	# make sure that x=P, y=R (where?)
 	ix= (epos.xzoom[0]<=det_P) & (det_P<=epos.xzoom[1])
 	iy= (epos.yzoom[0]<=det_Y) & (det_Y<=epos.yzoom[1])
@@ -738,8 +749,9 @@ def MC(epos, fpara, Store=False, Sample=False, StorePopulation=False, Extra=None
 		#if len(alldP)>0
 		if epos.Multi:
 			ss['ID']= det_ID # ?? 
-			#ss['ID']= det_ID[ix&iy] 
+			
 			ss['multi']={}
+			ss['multi']['ID']= det_ID[ix&iy] 
 			ss['multi']['bin'], ss['multi']['count']= multi.frequency(det_ID[ix&iy])
 			ss['multi']['pl cnt']=ss['multi']['bin']* ss['multi']['count']
 			_, ss['multi']['n']= np.unique(det_ID[ix&iy],return_counts=True)

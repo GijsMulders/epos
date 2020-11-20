@@ -2,7 +2,7 @@ import matplotlib, warnings
 #warnings.filterwarnings("ignore", category=UserWarning, module='matplotlib')
 with warnings.catch_warnings():
 	warnings.simplefilter("ignore")
-	matplotlib.use('Agg')
+	#matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches

@@ -60,6 +60,10 @@ def planets(epos, Log=False):
 	focc['planet']['yvar']= epos.obs_yvar	
 	focc['planet']['completeness']= completeness
 	focc['planet']['occ']= 1./completeness/epos.nstars
+	
+	if epos.Reliability:
+		focc['planet']['occ']*= epos.obs_rel
+
 	#for key in focc['planet']:
 	#	print key, focc['planet'][key].shape
 
@@ -297,6 +301,10 @@ def _occ_per_bin_MLE(epos, foccbin, Log=False, nres= 30):
 		#_comp.append(gmean(completeness))	
 		_comp.append(np.mean(completeness))	
 		_occ.append(1.*_n[-1]/_comp[-1]/epos.nstars)
+
+		#if epos.Reliability:
+		#	rel= np.mean(epos.obs_rel[inbinx & inbiny])
+		#	_occ[-1] /= rel # note this is not on the observed side like for MC?
 
 		#_compinv.append(np.mean(1./completeness))	
 		#_occ.append(_compinv[-1]*_n[-1]/epos.nstars)

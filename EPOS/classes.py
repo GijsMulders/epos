@@ -223,7 +223,7 @@ class epos:
 			print ('Survey: None selected')
 
 	def set_observation(self, xvar, yvar, starID, nstars=1.6862e5, 
-		radiusError=0.1, score=None, tdur=None, Verbose=True):
+		radiusError=0.1, score=None, tdur=None, reliability=None, Verbose=True):
 		''' Observed planet population
 		
 		Args:
@@ -247,6 +247,10 @@ class epos:
 
 		if tdur is not None:
 			self.obs_tdur= np.asarray(tdur)[order]
+
+		if reliability is not None:
+			self.obs_rel= np.asarray(reliability)[order]
+			self.Reliability=True
 		
 		assert self.obs_xvar.ndim == self.obs_yvar.ndim == self.obs_starID.ndim == 1, 'only 1D arrays'
 		assert self.obs_xvar.size == self.obs_yvar.size == self.obs_starID.size, 'arrays not same length'
